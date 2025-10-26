@@ -31,12 +31,15 @@ export const useFormValidation = <T extends Record<string, unknown>>(
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         const newErrors: FormErrors = {};
+        const touchedFields: Record<string, boolean> = {};
         err.inner.forEach((error) => {
           if (error.path) {
             newErrors[error.path] = error.message;
+            touchedFields[error.path] = true;
           }
         });
         setErrors(newErrors);
+        setTouched((prev) => ({ ...prev, ...touchedFields }));
       }
       return false;
     }
