@@ -5,6 +5,7 @@ import { LogOut, User } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 export const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -23,6 +24,8 @@ export const Header: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
+          
           {isAuthenticated && user ? (
             <>
               <div className="flex items-center gap-3">
