@@ -105,9 +105,9 @@ export const Sidebar: React.FC = () => {
       <aside
         className={`fixed left-0 top-16 h-[calc(100vh-64px)] w-64 border-r bg-background transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        } lg:static lg:translate-x-0 z-30`}
+        } lg:static lg:h-auto lg:translate-x-0 z-30`}
       >
-        <nav className="flex flex-col h-full p-4 space-y-2 overflow-y-auto">
+        <nav className="flex flex-col h-full p-4 space-y-2">
           {visibleItems.length > 0 ? (
             visibleItems.map((item) => {
               const Icon = item.icon;
