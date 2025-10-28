@@ -41,7 +41,7 @@ export default function AdminLayout({
       <Header />
       <div className="flex flex-1">
         <Sidebar />
-        <main className="flex-1">
+        <main className="flex-1 min-w-0 overflow-x-hidden">
           {children}
           <Footer />
         </main>
