@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldAlert, Home, ArrowLeft } from 'lucide-react';
@@ -42,13 +42,17 @@ export function UnauthorizedPage({
         </CardHeader>
         
         <CardContent className="space-y-6">
-          <Alert variant="destructive">
-            <ShieldAlert className="h-4 w-4" />
-            <AlertTitle>Truy cập bị từ chối</AlertTitle>
-            <AlertDescription>
-              {message}
-            </AlertDescription>
-          </Alert>
+          <div className="p-4 border border-destructive/50 bg-destructive/10 rounded-md">
+            <div className="flex gap-3">
+              <ShieldAlert className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-destructive mb-1">Truy cập bị từ chối</p>
+                <p className="text-sm text-destructive/90">
+                  {message}
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             {showBackButton && (

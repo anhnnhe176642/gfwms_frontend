@@ -1,173 +1,164 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { createUserColumns } from './columns';
 import { userService } from '@/services/user.service';
+import { useServerTable } from '@/hooks/useServerTable';
 import type { UserListItem, UserListParams, UserStatus, UserRole } from '@/types/user';
-import { Search } from 'lucide-react';
-import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
+import { Search, RefreshCw } from 'lucide-react';
 
 export type UserManagementTableProps = {
   initialParams?: UserListParams;
 };
 
 export function UserManagementTable({ initialParams }: UserManagementTableProps) {
-  const [users, setUsers] = useState<UserListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-    hasNext: false,
-    hasPrev: false,
+  const [tempSearchQuery, setTempSearchQuery] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | number | null>(null);
+
+  // Use custom hook for table state and data fetching
+  const {
+    data: users,
+    loading,
+    error,
+    sorting,
+    setSorting,
+    columnFilters,
+    setColumnFilters,
+    searchQuery,
+    pagination,
+    handlePaginationChange,
+    handleSearch,
+    refresh,
+    reset
+  } = useServerTable<UserListItem, UserListParams>({
+    fetchData: userService.getUsers,
+    initialParams,
+    filterConfig: {
+      // Define which filters are array-based (multi-select)
+      arrayFilters: {
+        status: 'status',
+        role: 'role',
+        gender: 'gender',
+      },
+      // Define which filters are date ranges
+      dateRangeFilters: {
+        createdAt: {
+          from: 'createdFrom',
+          to: 'createdTo',
+        },
+      },
+    },
+    onError: (err) => {
+      console.error('Failed to fetch users:', err);
+    },
   });
 
-  // Convert TanStack sorting state to API params
-  const getSortParams = useCallback(() => {
-    if (sorting.length === 0) return {};
-    
-    const sortBy = sorting.map(s => s.id).join(',');
-    const order = sorting.map(s => s.desc ? 'desc' : 'asc').join(',');
-    
-    return { sortBy, order };
-  }, [sorting]);
-
-  // Convert TanStack filters to API params
-  const getFilterParams = useCallback(() => {
-    const params: Record<string, string> = {};
-    
-    columnFilters.forEach(filter => {
-      if (filter.id === 'status' || filter.id === 'role') {
-        // Filter value is array of strings
-        const values = filter.value as string[];
-        if (values && values.length > 0) {
-          params[filter.id] = values.join(',');
-        }
-      } else if (filter.id === 'createdAt') {
-        // Filter value is date range object
-        const dateRange = filter.value as { from?: string; to?: string };
-        if (dateRange?.from) {
-          params['createdFrom'] = dateRange.from;
-        }
-        if (dateRange?.to) {
-          params['createdTo'] = dateRange.to;
-        }
-      }
-    });
-    
-    return params;
-  }, [columnFilters]);
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const params: UserListParams = {
-        ...initialParams,
-        page: pagination.page,
-        limit: pagination.limit,
-        search: searchQuery || undefined,
-        ...getSortParams(),
-        ...getFilterParams(),
-      };
-      
-      const response = await userService.getUsers(params);
-      setUsers(response.data);
-      setPagination(response.pagination);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Không thể tải danh sách người dùng');
-    } finally {
-      setLoading(false);
-    }
-  }, [initialParams, pagination.page, pagination.limit, searchQuery, getSortParams, getFilterParams]);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  // Re-fetch when sorting changes (filters will be applied via button click)
-  useEffect(() => {
-    if (!loading) {
-      fetchUsers();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sorting]);
-
-  // Re-fetch when columnFilters change (when user clicks "Áp dụng" button)
-  useEffect(() => {
-    if (!loading) {
-      fetchUsers();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columnFilters]);
-
+  /**
+   * Handle status change with optimistic UI update
+   */
   const handleStatusChange = async (userId: string | number, status: UserStatus) => {
+    setActionLoading(true);
     try {
       await userService.updateUserStatus({ userId, status });
-      await fetchUsers();
+      toast.success('Cập nhật trạng thái thành công');
+      await refresh();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Không thể cập nhật trạng thái');
+      const message = err?.response?.data?.message || 'Không thể cập nhật trạng thái';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
+  /**
+   * Handle role change
+   */
   const handleRoleChange = async (userId: string | number, role: UserRole) => {
+    setActionLoading(true);
     try {
       await userService.updateUserRole({ userId, role });
-      await fetchUsers();
+      toast.success('Cập nhật vai trò thành công');
+      await refresh();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Không thể cập nhật vai trò');
+      const message = err?.response?.data?.message || 'Không thể cập nhật vai trò';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleDelete = async (userId: string | number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
+  /**
+   * Handle delete with confirmation dialog
+   */
+  const handleDeleteClick = (userId: string | number) => {
+    setUserToDelete(userId);
+    setDeleteDialogOpen(true);
+  };
+
+  /**
+   * Confirm and execute delete
+   */
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+
+    setActionLoading(true);
     try {
-      await userService.deleteUser(userId);
-      await fetchUsers();
+      await userService.deleteUser(userToDelete);
+      toast.success('Xóa người dùng thành công');
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      await refresh();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Không thể xóa người dùng');
+      const message = err?.response?.data?.message || 'Không thể xóa người dùng';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleSearch = () => {
-    fetchUsers();
+  /**
+   * Handle search button click
+   */
+  const handleSearchClick = () => {
+    handleSearch(tempSearchQuery);
   };
 
-  const handleSortingChange = (updater: any) => {
-    setSorting(updater);
-  };
-
-  const handleColumnFiltersChange = (updater: any) => {
-    setColumnFilters(updater);
-  };
-
-  const handlePaginationChange = (pageIndex: number, pageSize: number) => {
-    setPagination(prev => ({
-      ...prev,
-      page: pageIndex + 1, // API uses 1-based indexing
-      limit: pageSize,
-    }));
+  /**
+   * Handle search on Enter key
+   */
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearchClick();
+    }
   };
 
   const columns = createUserColumns({
     onStatusChange: handleStatusChange,
     onRoleChange: handleRoleChange,
-    onDelete: handleDelete,
+    onDelete: handleDeleteClick,
   });
 
   if (loading && users.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p className="text-gray-500">Đang tải...</p>
+        <div className="flex flex-col items-center gap-2">
+          <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+          <p className="text-gray-500">Đang tải...</p>
+        </div>
       </div>
     );
   }
@@ -177,7 +168,7 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <p className="text-red-500 mb-2">{error}</p>
-          <Button onClick={fetchUsers} variant="outline">
+          <Button onClick={() => {reset(); refresh();}} variant="outline">
             Thử lại
           </Button>
         </div>
@@ -193,13 +184,17 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Tìm kiếm theo tên, email, số điện thoại..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            value={tempSearchQuery}
+            onChange={(e) => setTempSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
             className="pl-10"
+            disabled={loading}
           />
         </div>
-        <Button onClick={handleSearch}>Tìm kiếm</Button>
+        <Button onClick={handleSearchClick} disabled={loading}>
+          <Search className="h-4 w-4 mr-2" />
+          Tìm kiếm
+        </Button>
       </div>
 
       {/* Info bar */}
@@ -225,6 +220,34 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
         pageSize={pagination.limit}
         onPaginationChange={handlePaginationChange}
       />
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa người dùng</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={actionLoading}
+            >
+              {actionLoading ? 'Đang xóa...' : 'Xóa'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
