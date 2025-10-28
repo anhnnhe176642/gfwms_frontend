@@ -70,7 +70,7 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
   /**
    * Handle status change with optimistic UI update
    */
-  const handleStatusChange = async (userId: string | number, status: UserStatus) => {
+  const handleStatusChange = async (userId: string, status: UserStatus) => {
     setActionLoading(true);
     try {
       await userService.updateUserStatus({ userId, status });

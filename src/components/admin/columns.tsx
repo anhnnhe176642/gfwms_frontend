@@ -19,9 +19,9 @@ import { StatusBadge, RoleBadge } from "./table/Badges"
 import { USER_STATUS_OPTIONS, USER_ROLE_OPTIONS } from "@/constants/user"
 
 export type UserColumnActions = {
-  onStatusChange: (userId: string | number, status: UserStatus) => void
-  onRoleChange: (userId: string | number, role: UserRole) => void
-  onDelete: (userId: string | number) => void
+  onStatusChange: (userId: string, status: UserStatus) => void
+  onRoleChange: (userId: string, role: UserRole) => void
+  onDelete: (userId: string) => void
 }
 
 export const createUserColumns = (actions: UserColumnActions): ColumnDef<UserListItem>[] => [

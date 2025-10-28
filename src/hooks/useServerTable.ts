@@ -218,7 +218,6 @@ export function useServerTable<TData, TParams extends ServerTableParams = Server
         abortControllerRef.current.abort();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     pagination.page,
     pagination.limit,
