@@ -14,30 +14,25 @@ export default function AdminLayout({
   children: React.ReactNode;
 }>) {
   const router = useRouter();
-  const { isAuthenticated, isReady, hasPermission } = useAuth();
+  const { isAuthenticated, isReady } = useAuth();
 
   useEffect(() => {
-    if (isReady) {
-      if (!isAuthenticated) {
-        router.replace('/login');
-      } else if (!hasPermission('system:config')) {
-        router.replace('/');
-      }
+    if (isReady && !isAuthenticated) {
+      router.replace('/login');
     }
-  }, [isReady, isAuthenticated, hasPermission, router]);
+  }, [isReady, isAuthenticated, router]);
 
-  // Hiển thị loading khi chưa sẵn sàng hoặc kiểm tra quyền
+  // Hiển thị loading khi chưa sẵn sàng
   if (!isReady) {
     return (
       <>
         <Header />
-        <IsLoading message="Đang kiểm tra quyền..." />
+        <IsLoading message="Đang tải..." />
       </>
     );
   }
 
-  // Nếu không có quyền hoặc chưa xác thực, không render gì (đang redirect)
-  if (!isAuthenticated || !hasPermission('system:config')) {
+  if (!isAuthenticated) {
     return null;
   }
 

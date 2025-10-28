@@ -7,19 +7,15 @@ import LoginForm from '@/components/auth/LoginForm';
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
-  const { isAuthenticated, hasPermission } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Kiểm tra quyền system:config
-      if (hasPermission('system:config')) {
-        router.replace('/admin/dashboard');
-      } else {
-        // Nếu không có quyền, chuyển về trang chủ
-        router.replace('/');
-      }
+      // Sau khi đăng nhập, chuyển về dashboard
+      // Từng page sẽ tự kiểm tra quyền riêng
+      router.replace('/admin/dashboard');
     }
-  }, [isAuthenticated, hasPermission, router]);
+  }, [isAuthenticated, router]);
 
   if (isAuthenticated) return null;
 
