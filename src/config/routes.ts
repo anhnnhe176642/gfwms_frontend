@@ -230,18 +230,19 @@ export const ROUTES = {
       },
     },
 
-    // Profile
-    PROFILE: {
-      VIEW: {
-        path: '/admin/profile',
-        name: 'Hồ sơ cá nhân',
-        requiredPermission: PERMISSIONS.USERS.VIEW_OWN_PROFILE.key,
-      },
-      EDIT: {
-        path: '/admin/profile/edit',
-        name: 'Chỉnh sửa hồ sơ',
-        requiredPermission: PERMISSIONS.USERS.UPDATE_OWN_PROFILE.key,
-      },
+  },
+
+  // Profile (chung cho tất cả người dùng)
+  PROFILE: {
+    VIEW: {
+      path: '/profile',
+      name: 'Hồ sơ cá nhân',
+      requiredPermission: PERMISSIONS.USERS.VIEW_OWN_PROFILE.key,
+    },
+    EDIT: {
+      path: '/profile/edit',
+      name: 'Chỉnh sửa hồ sơ',
+      requiredPermission: PERMISSIONS.USERS.UPDATE_OWN_PROFILE.key,
     },
   },
 } as const;

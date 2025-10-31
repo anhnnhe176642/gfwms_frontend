@@ -2,9 +2,7 @@ import type { PaginationState } from './common';
 
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
-export type UserRole = 'ADMIN' | 'USER' | 'MANAGER';
-
-export type UserGender = 'MALE' | 'FEMALE' | 'OTHER';
+export type UserGender = 'MALE' | 'FEMALE';
 
 export type UserListItem = {
   id: string;
@@ -21,7 +19,11 @@ export type UserListItem = {
   emailVerifiedAt?: string | null;
   createdAt: string;
   updatedAt: string;
-  role: UserRole;
+  role: {
+    id: string;
+    name: string;
+    description?: string | null;
+  };
   creditRegistration?: any | null;
   permissionKeys?: string[];
   lastLogin?: string;
@@ -53,5 +55,59 @@ export type UpdateUserStatusPayload = {
 
 export type UpdateUserRolePayload = {
   userId: string | number;
-  role: UserRole;
+  roleId: string; // ID của role từ database
+};
+
+// Profile Management Types
+export type UpdateProfileDTO = {
+  fullname?: string;
+  phone?: string;
+  gender?: UserGender;
+  address?: string;
+  dob?: string; // ISO date string (YYYY-MM-DD)
+};
+
+export type ChangePasswordDTO = {
+  currentPassword: string;
+  newPassword: string;
+};
+
+export type ProfileUser = {
+  id: string;
+  username: string;
+  email: string;
+  fullname: string | null;
+  phone: string | null;
+  gender: UserGender | null;
+  address: string | null;
+  dob: string | null; // ISO date
+  avatar: string | null;
+  avatarPublicId?: string | null;
+  status: UserStatus;
+  emailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  role: {
+    id: string;
+    name: string;
+    description?: string | null;
+  };
+  permissionKeys?: string[];
+};
+
+export type ProfileResponse = {
+  message: string;
+  user: ProfileUser;
+};
+
+export type UpdateAvatarResponse = {
+  message: string;
+  user: {
+    avatar: string;
+    avatarPublicId: string;
+  };
+};
+
+export type ChangePasswordResponse = {
+  message: string;
 };

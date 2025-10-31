@@ -36,6 +36,12 @@ export const Sidebar: React.FC = () => {
       requiredPermission: null,
     },
     {
+      label: 'Hồ sơ cá nhân',
+      href: ROUTES.PROFILE.VIEW.path,
+      icon: Users,
+      requiredPermission: PERMISSIONS.USERS.VIEW_OWN_PROFILE.key,
+    },
+    {
       label: 'Quản lý người dùng',
       href: ROUTES.ADMIN.USERS.LIST.path,
       icon: Users,
