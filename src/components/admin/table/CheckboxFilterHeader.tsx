@@ -18,6 +18,7 @@ type CheckboxFilterHeaderProps<TData> = {
   column: Column<TData, unknown>;
   title: string;
   options: CheckboxFilterOption[];
+  loading?: boolean;
 };
 
 /**
@@ -28,6 +29,7 @@ export function CheckboxFilterHeader<TData>({
   column,
   title,
   options,
+  loading = false,
 }: CheckboxFilterHeaderProps<TData>) {
   const [open, setOpen] = useState(false);
   const filterValue = (column.getFilterValue() as string[]) || [];
@@ -91,24 +93,34 @@ export function CheckboxFilterHeader<TData>({
               </Button>
             </div>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {options.map((option) => {
-                const checkboxId = `${componentId}-${option.value}`;
-                return (
-                  <div key={option.value} className="flex items-center gap-2">
-                    <Checkbox
-                      id={checkboxId}
-                      checked={tempFilterValue.includes(option.value)}
-                      onCheckedChange={() => toggleTempFilter(option.value)}
-                    />
-                    <Label
-                      htmlFor={checkboxId}
-                      className="text-sm cursor-pointer flex-1"
-                    >
-                      {option.label}
-                    </Label>
-                  </div>
-                );
-              })}
+              {loading ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="text-sm text-gray-500">Đang tải...</div>
+                </div>
+              ) : options.length === 0 ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="text-sm text-gray-500">Không có dữ liệu</div>
+                </div>
+              ) : (
+                options.map((option) => {
+                  const checkboxId = `${componentId}-${option.value}`;
+                  return (
+                    <div key={option.value} className="flex items-center gap-2">
+                      <Checkbox
+                        id={checkboxId}
+                        checked={tempFilterValue.includes(option.value)}
+                        onCheckedChange={() => toggleTempFilter(option.value)}
+                      />
+                      <Label
+                        htmlFor={checkboxId}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {option.label}
+                      </Label>
+                    </div>
+                  );
+                })
+              )}
             </div>
             <div className="flex gap-2 mt-3 pt-2 border-t">
               {(tempFilterValue.length > 0 || filterValue.length > 0) && (

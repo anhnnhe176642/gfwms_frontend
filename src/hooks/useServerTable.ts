@@ -1,14 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
-
-export type PaginationState = {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-};
+import type { PaginationState } from '@/types/common';
 
 export type ServerTableParams = {
   page?: number;

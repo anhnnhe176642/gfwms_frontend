@@ -1,3 +1,5 @@
+import type { PaginationState } from './common';
+
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
 export type UserRole = 'ADMIN' | 'USER' | 'MANAGER';
@@ -28,14 +30,7 @@ export type UserListItem = {
 export type UserListResponse = {
   message: string;
   data: UserListItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
+  pagination: PaginationState;
 };
 
 export type UserListParams = {

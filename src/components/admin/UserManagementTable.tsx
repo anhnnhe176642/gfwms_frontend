@@ -16,6 +16,7 @@ import {
 import { createUserColumns } from './columns';
 import { userService } from '@/services/user.service';
 import { useServerTable } from '@/hooks/useServerTable';
+import { useRoles } from '@/hooks/useRoles';
 import type { UserListItem, UserListParams, UserStatus, UserRole } from '@/types/user';
 import { Search, RefreshCw } from 'lucide-react';
 
@@ -28,6 +29,9 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | number | null>(null);
+
+  // Fetch roles from API
+  const { roles: roleOptions, loading: roleOptionsLoading } = useRoles();
 
   // Use custom hook for table state and data fetching
   const {
@@ -146,11 +150,17 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
     }
   };
 
-  const columns = createUserColumns({
-    onStatusChange: handleStatusChange,
-    onRoleChange: handleRoleChange,
-    onDelete: handleDeleteClick,
-  });
+  const columns = createUserColumns(
+    {
+      onStatusChange: handleStatusChange,
+      onRoleChange: handleRoleChange,
+      onDelete: handleDeleteClick,
+    },
+    {
+      roleOptions,
+      roleOptionsLoading,
+    }
+  );
 
   if (loading && users.length === 0) {
     return (

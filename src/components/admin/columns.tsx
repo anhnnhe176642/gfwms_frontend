@@ -12,11 +12,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { UserListItem, UserStatus, UserRole } from "@/types/user"
+import type { RoleOption } from "@/types/role"
 import { SortButton } from "./table/SortButton"
 import { CheckboxFilterHeader } from "./table/CheckboxFilterHeader"
 import { DateRangeFilterHeader } from "./table/DateRangeFilterHeader"
 import { StatusBadge, RoleBadge } from "./table/Badges"
-import { USER_STATUS_OPTIONS, USER_ROLE_OPTIONS } from "@/constants/user"
+import { USER_STATUS_OPTIONS } from "@/constants/user"
 
 export type UserColumnActions = {
   onStatusChange: (userId: string, status: UserStatus) => void
@@ -24,7 +25,15 @@ export type UserColumnActions = {
   onDelete: (userId: string) => void
 }
 
-export const createUserColumns = (actions: UserColumnActions): ColumnDef<UserListItem>[] => [
+export type UserColumnsOptions = {
+  roleOptions: RoleOption[];
+  roleOptionsLoading?: boolean;
+}
+
+export const createUserColumns = (
+  actions: UserColumnActions, 
+  options: UserColumnsOptions
+): ColumnDef<UserListItem>[] => [
   {
     id: "stt",
     header: "STT",
@@ -91,9 +100,14 @@ export const createUserColumns = (actions: UserColumnActions): ColumnDef<UserLis
   {
     accessorKey: "role",
     header: ({ column }) => (
-      <CheckboxFilterHeader column={column} title="Vai trò" options={USER_ROLE_OPTIONS} />
+      <CheckboxFilterHeader 
+        column={column} 
+        title="Vai trò" 
+        options={options.roleOptions}
+        loading={options.roleOptionsLoading}
+      />
     ),
-    cell: ({ row }) => <RoleBadge role={row.getValue("role")} />,
+    cell: ({ row }) => <RoleBadge role={row.getValue("role")} roleOptions={options.roleOptions} />,
     filterFn: (row, id, value) => {
       if (!value || value.length === 0) return true
       return value.includes(row.getValue(id))
@@ -184,15 +198,25 @@ export const createUserColumns = (actions: UserColumnActions): ColumnDef<UserLis
             <DropdownMenuLabel className="text-xs font-normal text-gray-500">
               Thay đổi vai trò
             </DropdownMenuLabel>
-            {USER_ROLE_OPTIONS.map((role) => (
-              <DropdownMenuItem
-                key={role.value}
-                onClick={() => actions.onRoleChange(user.id, role.value)}
-                disabled={user.role === role.value}
-              >
-                {role.label}
+            {options.roleOptionsLoading ? (
+              <DropdownMenuItem disabled>
+                Đang tải...
               </DropdownMenuItem>
-            ))}
+            ) : options.roleOptions.length === 0 ? (
+              <DropdownMenuItem disabled>
+                Không có vai trò
+              </DropdownMenuItem>
+            ) : (
+              options.roleOptions.map((role) => (
+                <DropdownMenuItem
+                  key={role.value}
+                  onClick={() => actions.onRoleChange(user.id, role.value as UserRole)}
+                  disabled={user.role === role.value}
+                >
+                  {role.label}
+                </DropdownMenuItem>
+              ))
+            )}
             
             <DropdownMenuSeparator />
             <DropdownMenuItem
