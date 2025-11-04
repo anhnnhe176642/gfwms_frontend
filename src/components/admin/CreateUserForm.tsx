@@ -115,7 +115,7 @@ export function CreateUserForm() {
                   id="username"
                   name="username"
                   placeholder="john_doe123"
-                  value={values.username}
+                  value={values.username ?? ''}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   disabled={isLoading}
@@ -136,7 +136,7 @@ export function CreateUserForm() {
                   name="password"
                   type="password"
                   placeholder="••••••••"
-                  value={values.password}
+                  value={values.password ?? ''}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   disabled={isLoading}
@@ -157,7 +157,7 @@ export function CreateUserForm() {
                   name="email"
                   type="email"
                   placeholder="john@example.com"
-                  value={values.email}
+                  value={values.email ?? ''}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   disabled={isLoading}
@@ -177,7 +177,7 @@ export function CreateUserForm() {
                   id="phone"
                   name="phone"
                   placeholder="+84123456789"
-                  value={values.phone}
+                  value={values.phone ?? ''}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   disabled={isLoading}
@@ -204,7 +204,7 @@ export function CreateUserForm() {
                   id="fullname"
                   name="fullname"
                   placeholder="John Doe"
-                  value={values.fullname || ''}
+                  value={values.fullname ?? ''}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   disabled={isLoading}
@@ -217,7 +217,7 @@ export function CreateUserForm() {
               {/* Gender */}
               <div className="space-y-2">
                 <Label htmlFor="gender">Giới tính</Label>
-                <Select value={values.gender || ''} onValueChange={(value) => {
+                <Select value={values.gender ?? ''} onValueChange={(value) => {
                   handleChange({
                     target: { name: 'gender', value },
                   } as any);
@@ -245,7 +245,7 @@ export function CreateUserForm() {
                   id="dob"
                   name="dob"
                   type="date"
-                  value={values.dob || ''}
+                  value={values.dob ?? ''}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   disabled={isLoading}
@@ -262,7 +262,7 @@ export function CreateUserForm() {
                   id="address"
                   name="address"
                   placeholder="123 Main St, City"
-                  value={values.address || ''}
+                  value={values.address ?? ''}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   disabled={isLoading}
@@ -287,7 +287,7 @@ export function CreateUserForm() {
               <Label htmlFor="role">
                 Vai trò <span className="text-destructive">*</span>
               </Label>
-              <Select value={values.role || ''} onValueChange={(value) => {
+              <Select value={values.role ?? ''} onValueChange={(value) => {
                 handleChange({
                   target: { name: 'role', value },
                 } as any);
@@ -311,7 +311,7 @@ export function CreateUserForm() {
             {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status">Trạng thái</Label>
-              <Select value={values.status || 'ACTIVE'} onValueChange={(value) => {
+              <Select value={values.status ?? 'ACTIVE'} onValueChange={(value) => {
                 handleChange({
                   target: { name: 'status', value },
                 } as any);
