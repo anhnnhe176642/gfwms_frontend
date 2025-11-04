@@ -58,6 +58,10 @@ export const useAuth = () => {
     return data;
   }, [setAuth]);
 
+  const setAuthData = useCallback((user: User, token: string) => {
+    setAuth(user, token);
+  }, [setAuth]);
+
   const logout = useCallback(async () => {
     clearAuth();
   }, [clearAuth]);
@@ -66,7 +70,7 @@ export const useAuth = () => {
     return useAuthStore.getState().hasPermission(perm);
   }, []);
 
-  return { user, token, isAuthenticated, login, logout, hasPermission, isReady } as const;
+  return { user, token, isAuthenticated, login, setAuthData, logout, hasPermission, isReady } as const;
 };
 
 export default useAuth;

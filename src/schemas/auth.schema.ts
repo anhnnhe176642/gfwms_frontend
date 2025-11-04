@@ -44,7 +44,7 @@ export const registerSchema = yup.object().shape({
   gender: yup
     .string()
     .required('Vui lòng chọn giới tính')
-    .oneOf(['MALE', 'FEMALE', 'OTHER'], 'Giới tính không hợp lệ'),
+    .oneOf(['MALE', 'FEMALE'], 'Giới tính không hợp lệ'),
   address: yup
     .string()
     .required('Vui lòng nhập địa chỉ'),

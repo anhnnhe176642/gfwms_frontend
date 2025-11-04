@@ -35,6 +35,12 @@ export const ROUTES = {
       name: 'Đăng ký',
       isPublic: true,
     },
+    VERIFY_EMAIL: {
+      path: '/verify-email',
+      name: 'Xác thực Email',
+      description: 'Xác thực địa chỉ email',
+      isPublic: true,
+    },
   },
 
   // Admin routes

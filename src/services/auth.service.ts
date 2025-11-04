@@ -1,5 +1,6 @@
+import { UserGender } from '@/types';
 import api from '../lib/api';
-import type { AuthResponse, User } from '../types/auth';
+import type { AuthResponse, RegisterResponse, User } from '../types/auth';
 
 const AUTH_PATH = process.env.NEXT_PUBLIC_AUTH_PATH || '/v1/auth';
 
@@ -9,7 +10,7 @@ export interface RegisterPayload {
   email: string;
   phone: string;
   fullname: string;
-  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  gender: UserGender;
   address: string;
   dob: string;
 }
@@ -20,7 +21,7 @@ export const authService = {
     return res.data;
   },
   register: async (payload: RegisterPayload) => {
-    const res = await api.post<AuthResponse>(`${AUTH_PATH}/register`, payload);
+    const res = await api.post<RegisterResponse>(`${AUTH_PATH}/register`, payload);
     return res.data;
   },
   verifyEmail: async (email: string, pin: string) => {

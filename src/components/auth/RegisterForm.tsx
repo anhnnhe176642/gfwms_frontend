@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,12 +21,11 @@ import {
 
 type Props = {
   className?: string;
-  onSuccess?: () => void;
+  onSuccess?: (email: string) => void;
 } & React.ComponentProps<'div'>;
 
 export const RegisterForm: React.FC<Props> = ({ className, onSuccess, ...props }) => {
   const [serverError, setServerError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const {
     values,
@@ -37,7 +38,6 @@ export const RegisterForm: React.FC<Props> = ({ className, onSuccess, ...props }
     setFieldErrors,
   } = useFormValidation<RegisterFormData>(registerSchema, async (formData) => {
     setServerError(null);
-    setSuccessMessage(null);
     try {
       const payload: RegisterPayload = {
         username: formData.username,
@@ -45,14 +45,17 @@ export const RegisterForm: React.FC<Props> = ({ className, onSuccess, ...props }
         email: formData.email,
         phone: formData.phone || '',
         fullname: formData.fullname || '',
-        gender: (formData.gender as 'MALE' | 'FEMALE' | 'OTHER') || 'OTHER',
+        gender: (formData.gender as 'MALE' | 'FEMALE'),
         address: formData.address || '',
         dob: formData.dob || '',
       };
 
-      await authService.register(payload);
-      setSuccessMessage('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.');
-      onSuccess?.();
+      const response = await authService.register(payload);
+      
+      // Gọi callback (được truyền từ page)
+      if (onSuccess) {
+        onSuccess(response.user.email);
+      }
     } catch (err: unknown) {
       const message = getServerErrorMessage(err);
       const fieldErrors = extractFieldErrors(err);
@@ -191,7 +194,6 @@ export const RegisterForm: React.FC<Props> = ({ className, onSuccess, ...props }
                     <SelectContent>
                       <SelectItem value="MALE">Nam</SelectItem>
                       <SelectItem value="FEMALE">Nữ</SelectItem>
-                      <SelectItem value="OTHER">Khác</SelectItem>
                     </SelectContent>
                   </Select>
                   {touched.gender && errors.gender && (
@@ -239,13 +241,6 @@ export const RegisterForm: React.FC<Props> = ({ className, onSuccess, ...props }
               {serverError && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md" role="alert">
                   {serverError}
-                </div>
-              )}
-
-              {/* Success Alert */}
-              {successMessage && (
-                <div className="p-3 text-sm text-green-700 bg-green-50 dark:bg-green-950 dark:text-green-300 rounded-md">
-                  {successMessage}
                 </div>
               )}
 

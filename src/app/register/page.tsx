@@ -18,10 +18,10 @@ export default function RegisterPage() {
 
   if (isAuthenticated) return null;
 
-  const handleSuccess = () => {
-    setSuccessMessage('Đăng ký thành công! Đang chuyển hướng...');
+  const handleSuccess = (email: string) => {
+    setSuccessMessage('Đăng ký thành công! Mã xác thực đã được gửi tới email của bạn.');
     setTimeout(() => {
-      router.push('/login');
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     }, 1500);
   };
 
