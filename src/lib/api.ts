@@ -23,11 +23,27 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response helper: could centralize error handling
+// Response interceptor: handle auth errors and auto-logout
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    // Add global error handling here if needed
+    // Check if it's an auth-related error
+    const status = err?.response?.status;
+
+    // Handle token expired, user locked, user deleted, or invalid token
+    if (status === 401) {
+      // Only clear auth if we're on client side and not already logging out
+      if (isBrowser() && localStorage.getItem('gfwms_token')) {
+        localStorage.removeItem('gfwms_token');
+        
+        // Redirect to login if not already there
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/login')) {
+          window.location.href = '/login?from=401';
+        }
+      }
+    }
+
     return Promise.reject(err);
   }
 );

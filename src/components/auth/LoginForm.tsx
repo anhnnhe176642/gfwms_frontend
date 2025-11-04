@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import useAuth from '../../hooks/useAuth';
 import useFormValidation from '../../hooks/useFormValidation';
 import { loginSchema, type LoginFormData } from '../../schemas/auth.schema';
 import { extractFieldErrors, getServerErrorMessage } from '../../lib/errorHandler';
+import { isBrowser } from '../../lib/isBrowser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,6 +28,17 @@ export const LoginForm: React.FC<Props> = ({ className, onSuccess, ...props }) =
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  // Check if redirected from 401 (session timeout)
+  useEffect(() => {
+    if (isBrowser()) {
+      // Check if this is a redirect from 401
+      const from = window.location.search.includes('from=401');
+      if (from) {
+        setServerError('Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+    }
+  }, []);
 
   const {
     values,

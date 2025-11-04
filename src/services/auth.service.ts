@@ -43,6 +43,10 @@ export const authService = {
     const res = await api.post(`${AUTH_PATH}/set-new-password`, { email, pin, newPassword });
     return res.data;
   },
+  me: async () => {
+    const res = await api.get<AuthResponse>(`${AUTH_PATH}/me`);
+    return res.data;
+  },
   getProfile: async () => {
     const res = await api.get<{ user: User }>(`${AUTH_PATH}/profile`);
     return res.data;

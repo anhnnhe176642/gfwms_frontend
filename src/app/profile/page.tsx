@@ -47,7 +47,6 @@ export default function ProfilePage() {
 
   const handleProfileUpdate = (updatedUser: ProfileUser) => {
     setProfile(updatedUser);
-    // You might want to update the auth store here as well
   };
 
   const handleAvatarUpdate = (avatarUrl: string) => {
