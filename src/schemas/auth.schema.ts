@@ -87,6 +87,26 @@ export const resetPasswordSchema = yup.object().shape({
 });
 
 /**
+ * Schema cho bước 2: Verify PIN (chỉ PIN)
+ */
+export const verifyResetPinSchema = yup.object().shape({
+  pin: yup
+    .string()
+    .required('Vui lòng nhập mã PIN')
+    .length(6, 'Mã PIN phải là 6 ký tự'),
+});
+
+/**
+ * Schema cho bước 3: Set new password (chỉ password)
+ */
+export const setNewPasswordSchema = yup.object().shape({
+  newPassword: yup
+    .string()
+    .required('Vui lòng nhập mật khẩu mới')
+    .min(6, 'Mật khẩu phải ít nhất 6 ký tự'),
+});
+
+/**
  * Schema xác thực đổi mật khẩu
  */
 export const changePasswordSchema = yup.object().shape({
@@ -130,5 +150,7 @@ export type LoginFormData = yup.InferType<typeof loginSchema>;
 export type RegisterFormData = yup.InferType<typeof registerSchema>;
 export type RequestPasswordResetData = yup.InferType<typeof requestPasswordResetSchema>;
 export type ResetPasswordData = yup.InferType<typeof resetPasswordSchema>;
+export type VerifyResetPinData = yup.InferType<typeof verifyResetPinSchema>;
+export type SetNewPasswordData = yup.InferType<typeof setNewPasswordSchema>;
 export type ChangePasswordData = yup.InferType<typeof changePasswordSchema>;
 export type VerifyEmailData = yup.InferType<typeof verifyEmailSchema>;
