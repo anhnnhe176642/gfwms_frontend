@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { UserListItem, UserStatus, UserRole } from "@/types/user"
+import type { UserListItem, UserStatus } from "@/types/user"
 import type { RoleOption } from "@/types/role"
 import { SortButton } from "./table/SortButton"
 import { CheckboxFilterHeader } from "./table/CheckboxFilterHeader"
@@ -21,7 +21,7 @@ import { USER_STATUS_OPTIONS } from "@/constants/user"
 
 export type UserColumnActions = {
   onStatusChange: (userId: string, status: UserStatus) => void
-  onRoleChange: (userId: string, role: UserRole) => void
+  onRoleChange: (userId: string, roleName: string) => void
   onDelete: (userId: string) => void
 }
 
@@ -110,7 +110,8 @@ export const createUserColumns = (
     cell: ({ row }) => <RoleBadge role={row.getValue("role")} roleOptions={options.roleOptions} />,
     filterFn: (row, id, value) => {
       if (!value || value.length === 0) return true
-      return value.includes(row.getValue(id))
+      const role = row.getValue(id) as { name: string; description?: string | null };
+      return value.includes(role?.name)
     },
     sortingFn: "text", // Enable text sorting
     meta: {
@@ -210,8 +211,8 @@ export const createUserColumns = (
               options.roleOptions.map((role) => (
                 <DropdownMenuItem
                   key={role.value}
-                  onClick={() => actions.onRoleChange(user.id, role.value as UserRole)}
-                  disabled={user.role === role.value}
+                  onClick={() => actions.onRoleChange(user.id, role.value)}
+                  disabled={user.role.name === role.value}
                 >
                   {role.label}
                 </DropdownMenuItem>

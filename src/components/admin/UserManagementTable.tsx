@@ -17,7 +17,7 @@ import { createUserColumns } from './columns';
 import { userService } from '@/services/user.service';
 import { useServerTable } from '@/hooks/useServerTable';
 import { useRoles } from '@/hooks/useRoles';
-import type { UserListItem, UserListParams, UserStatus, UserRole } from '@/types/user';
+import type { UserListItem, UserListParams, UserStatus } from '@/types/user';
 import { Search, RefreshCw } from 'lucide-react';
 
 export type UserManagementTableProps = {
@@ -91,10 +91,10 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
   /**
    * Handle role change
    */
-  const handleRoleChange = async (userId: string | number, role: UserRole) => {
+  const handleRoleChange = async (userId: string, roleName: string) => {
     setActionLoading(true);
     try {
-      await userService.updateUserRole({ userId, role });
+      await userService.updateUserRole({ userId, roleName });
       toast.success('Cập nhật vai trò thành công');
       await refresh();
     } catch (err: any) {

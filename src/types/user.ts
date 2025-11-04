@@ -20,7 +20,6 @@ export type UserListItem = {
   createdAt: string;
   updatedAt: string;
   role: {
-    id: string;
     name: string;
     description?: string | null;
   };
@@ -55,7 +54,7 @@ export type UpdateUserStatusPayload = {
 
 export type UpdateUserRolePayload = {
   userId: string | number;
-  roleId: string; // ID của role từ database
+  roleName: string; // Tên của role từ database
 };
 
 // Profile Management Types
@@ -88,7 +87,6 @@ export type ProfileUser = {
   createdAt: string;
   updatedAt: string;
   role: {
-    id: string;
     name: string;
     description?: string | null;
   };

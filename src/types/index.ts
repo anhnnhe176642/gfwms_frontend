@@ -8,7 +8,6 @@ export type { PaginationState } from './common';
 // User types
 export type {
   UserStatus,
-  UserRole,
   UserGender,
   UserListItem,
   UserListResponse,

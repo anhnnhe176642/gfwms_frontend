@@ -1,4 +1,4 @@
-import type { UserStatus, UserRole } from '@/types/user';
+import type { UserStatus } from '@/types/user';
 import type { RoleOption } from '@/types/role';
 import { Badge } from '@/components/ui/badge';
 import { USER_STATUS_CONFIG } from '@/constants/user';
@@ -16,7 +16,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 }
 
 type RoleBadgeProps = {
-  role: UserRole;
+  role: string;
   roleOptions?: RoleOption[];
 };
 
