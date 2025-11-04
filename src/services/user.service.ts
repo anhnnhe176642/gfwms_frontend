@@ -43,7 +43,7 @@ export const userService = {
   updateUserRole: async (payload: UpdateUserRolePayload): Promise<UserListItem> => {
     const response = await api.patch<UserListItem>(
       `${BASE_PATH}/${payload.userId}/role`,
-      { role: payload.role }
+      { role: payload.roleName }
     );
     return response.data;
   },
