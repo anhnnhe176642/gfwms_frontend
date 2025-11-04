@@ -6,6 +6,7 @@ import type {
   UpdateUserStatusPayload,
   UpdateUserRolePayload,
 } from '@/types/user';
+import type { CreateUserFormData } from '@/schemas/user.schema';
 
 const BASE_PATH = '/v1/users';
 
@@ -23,6 +24,14 @@ export const userService = {
    */
   getUserById: async (id: string | number): Promise<UserListItem> => {
     const response = await api.get<UserListItem>(`${BASE_PATH}/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Tạo user mới
+   */
+  createUser: async (data: CreateUserFormData): Promise<UserListItem> => {
+    const response = await api.post<UserListItem>(BASE_PATH, data);
     return response.data;
   },
 

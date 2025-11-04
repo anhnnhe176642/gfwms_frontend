@@ -15,7 +15,16 @@ export const useFormValidation = <T extends Record<string, unknown>>(
   schema: yup.Schema<unknown>,
   onSubmit: (values: T) => Promise<void> | void
 ) => {
-  const [values, setValues] = useState<T>({} as T);
+  // Initialize values with schema defaults
+  const getInitialValues = useCallback(() => {
+    try {
+      return schema.cast({}) as T;
+    } catch {
+      return {} as T;
+    }
+  }, [schema]);
+
+  const [values, setValues] = useState<T>(getInitialValues());
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
