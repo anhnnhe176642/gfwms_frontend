@@ -69,7 +69,8 @@ export const createUserColumns = (
     ),
     meta: {
       title: "Email"
-    }
+    },
+    enableHiding: true,
   },
   {
     accessorKey: "fullname",

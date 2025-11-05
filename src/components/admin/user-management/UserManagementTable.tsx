@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { VisibilityState } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
@@ -30,6 +31,9 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | number | null>(null);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    email: false, // Hide email column by default
+  });
 
   // Fetch roles from API
   const { roles: roleOptions, loading: roleOptionsLoading } = useRoles();
@@ -222,6 +226,8 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
         onSortingChange={setSorting}
         columnFilters={columnFilters}
         onColumnFiltersChange={setColumnFilters}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={setColumnVisibility}
         manualSorting={true}
         manualFiltering={true}
         manualPagination={true}

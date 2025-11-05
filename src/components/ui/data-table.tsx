@@ -51,6 +51,8 @@ interface DataTableProps<TData, TValue> {
   onSortingChange?: OnChangeFn<SortingState>
   columnFilters?: ColumnFiltersState
   onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>
+  columnVisibility?: VisibilityState
+  onColumnVisibilityChange?: OnChangeFn<VisibilityState>
   manualSorting?: boolean
   manualFiltering?: boolean
   // Server-side pagination props
@@ -70,6 +72,8 @@ export function DataTable<TData, TValue>({
   onSortingChange: externalOnSortingChange,
   columnFilters: externalColumnFilters,
   onColumnFiltersChange: externalOnColumnFiltersChange,
+  columnVisibility: externalColumnVisibility,
+  onColumnVisibilityChange: externalOnColumnVisibilityChange,
   manualSorting = false,
   manualFiltering = false,
   manualPagination = false,
@@ -80,7 +84,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
   const [internalColumnFilters, setInternalColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [internalColumnVisibility, setInternalColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
 
   // Use external state if provided, otherwise use internal state
@@ -88,6 +92,8 @@ export function DataTable<TData, TValue>({
   const setSorting = externalOnSortingChange || setInternalSorting
   const columnFilters = externalColumnFilters !== undefined ? externalColumnFilters : internalColumnFilters
   const setColumnFilters = externalOnColumnFiltersChange || setInternalColumnFilters
+  const columnVisibility = externalColumnVisibility !== undefined ? externalColumnVisibility : internalColumnVisibility
+  const setColumnVisibility = externalOnColumnVisibilityChange || setInternalColumnVisibility
 
   const table = useReactTable({
     data,
