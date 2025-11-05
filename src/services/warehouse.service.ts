@@ -5,12 +5,18 @@ import type {
   WarehouseListItem,
   WarehouseStatus,
 } from '@/types/warehouse';
+import type { CreateWarehouseFormData } from '@/schemas/warehouse.schema';
 
 const BASE_PATH = '/v1/warehouses';
 
 export type UpdateWarehouseStatusPayload = {
   warehouseId: number;
   status: WarehouseStatus;
+};
+
+export type CreateWarehouseResponse = {
+  message: string;
+  warehouse: WarehouseListItem;
 };
 
 export const warehouseService = {
@@ -28,6 +34,14 @@ export const warehouseService = {
   getWarehouseById: async (id: string | number): Promise<WarehouseListItem> => {
     const response = await api.get<WarehouseListItem>(`${BASE_PATH}/${id}`);
     return response.data;
+  },
+
+  /**
+   * Tạo warehouse mới
+   */
+  createWarehouse: async (data: CreateWarehouseFormData): Promise<WarehouseListItem> => {
+    const response = await api.post<CreateWarehouseResponse>(BASE_PATH, data);
+    return response.data.warehouse;
   },
 
   /**
