@@ -5,40 +5,44 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useFormValidation } from '@/hooks/useFormValidation';
-import { createRoleSchema, type CreateRoleFormData } from '@/schemas/role.schema';
+import { updateRoleSchema, type UpdateRoleFormData } from '@/schemas/role.schema';
 import { roleService } from '@/services/role.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
 import { PermissionsSection } from './PermissionsSection';
-import type { Permission } from '@/types/role';
+import type { Permission, RoleDetail } from '@/types/role';
 
 type PermissionGroup = {
   group: string;
   permissions: Permission[];
 };
 
-export function CreateRoleForm() {
+export type EditRoleFormProps = {
+  roleId: number | string;
+};
+
+export function EditRoleForm({ roleId }: EditRoleFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingPermissions, setIsFetchingPermissions] = useState(true);
+  const [isFetchingData, setIsFetchingData] = useState(true);
   const [serverError, setServerError] = useState('');
   const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
+  const [roleDetail, setRoleDetail] = useState<RoleDetail | null>(null);
 
   // Form validation and state management
   const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors, setFieldValue } =
-    useFormValidation<CreateRoleFormData>(
-      createRoleSchema,
-      async (data: CreateRoleFormData) => {
+    useFormValidation<UpdateRoleFormData>(
+      updateRoleSchema,
+      async (data: UpdateRoleFormData) => {
         setIsLoading(true);
         setServerError('');
 
         try {
-          await roleService.createRole(data);
-          toast.success('Tạo vai trò thành công');
+          await roleService.updateRole(roleId, data);
+          toast.success('Cập nhật vai trò thành công');
           router.push('/admin/roles');
         } catch (err) {
           const fieldErrors = extractFieldErrors(err);
@@ -54,16 +58,21 @@ export function CreateRoleForm() {
       }
     );
 
-  // Fetch permissions khi component mount
+  // Fetch role details and permissions khi component mount
   useEffect(() => {
-    const fetchPermissions = async () => {
+    const fetchData = async () => {
       try {
-        setIsFetchingPermissions(true);
-        const response = await roleService.getPermissions();
+        setIsFetchingData(true);
         
-        // Nhóm permissions theo resource (phần đầu của key, ví dụ: "warehouse")
-        const grouped = response.data.reduce((acc, permission) => {
-          // Tách group từ key (vd: "warehouse:view_list" -> "warehouse")
+        // Fetch role detail
+        const roleResponse = await roleService.getRoleDetail(roleId);
+        setRoleDetail(roleResponse.data);
+
+        // Fetch permissions
+        const permissionsResponse = await roleService.getPermissions();
+        
+        // Nhóm permissions theo resource
+        const grouped = permissionsResponse.data.reduce((acc, permission) => {
           const [group] = permission.key.split(':');
           const groupName = group.charAt(0).toUpperCase() + group.slice(1);
           
@@ -80,27 +89,31 @@ export function CreateRoleForm() {
           return acc;
         }, [] as PermissionGroup[]);
 
-        // Sắp xếp mỗi group theo key
+        // Sắp xếp
         grouped.forEach(group => {
           group.permissions.sort((a, b) => a.key.localeCompare(b.key));
         });
-
-        // Sắp xếp các group
         grouped.sort((a, b) => a.group.localeCompare(b.group));
 
         setPermissionGroups(grouped);
+
+        // Set form values - extract permission IDs từ rolePermissions
+        const rolePermissionIds = roleResponse.data.rolePermissions?.map(rp => rp.permission.id) || [];
+        setFieldValue('name', roleResponse.data.name);
+        setFieldValue('description', roleResponse.data.description || '');
+        setFieldValue('permissions', rolePermissionIds);
       } catch (err) {
         const message = getServerErrorMessage(err);
-        setServerError(message || 'Không thể lấy danh sách quyền');
-        toast.error(message || 'Không thể lấy danh sách quyền');
+        setServerError(message || 'Không thể tải dữ liệu');
+        toast.error(message || 'Không thể tải dữ liệu');
       } finally {
-        setIsFetchingPermissions(false);
+        setIsFetchingData(false);
       }
     };
 
-    fetchPermissions();
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [roleId]);
 
   const handleGoBack = () => {
     router.push('/admin/roles');
@@ -109,7 +122,7 @@ export function CreateRoleForm() {
   const togglePermission = (permissionId: number) => {
     const current = values.permissions || [];
     const updated = current.includes(permissionId)
-      ? current.filter(id => id !== permissionId)
+      ? current.filter((id: number) => id !== permissionId)
       : [...current, permissionId];
     
     setFieldValue('permissions', updated);
@@ -121,15 +134,24 @@ export function CreateRoleForm() {
     const allGroupSelected = groupPermissionIds.every(id => current.includes(id));
     
     if (allGroupSelected) {
-      // Deselect all in group
-      const updated = current.filter(id => !groupPermissionIds.includes(id));
+      const updated = current.filter((id: number) => !groupPermissionIds.includes(id));
       setFieldValue('permissions', updated);
     } else {
-      // Select all in group
       const updated = [...new Set([...current, ...groupPermissionIds])];
       setFieldValue('permissions', updated);
     }
   };
+
+  if (isFetchingData) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="flex flex-col items-center gap-2">
+          <Loader className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-muted-foreground">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -145,9 +167,9 @@ export function CreateRoleForm() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tạo vai trò mới</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Cập nhật vai trò</h1>
           <p className="text-muted-foreground mt-1">
-            Tạo một vai trò mới và gán quyền cho nó
+            Chỉnh sửa thông tin và quyền của vai trò
           </p>
         </div>
       </div>
@@ -164,28 +186,18 @@ export function CreateRoleForm() {
         {/* Basic Information Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Thông tin cơ bản</CardTitle>
-            <CardDescription>Nhập tên và mô tả cho vai trò mới</CardDescription>
+            <CardTitle>Thông tin vai trò</CardTitle>
+            <CardDescription>Cập nhật mô tả cho vai trò</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Name */}
+            {/* Role Name - Display only */}
             <div className="space-y-2">
-              <Label htmlFor="name">
-                Tên vai trò <span className="text-destructive">*</span>
+              <Label className="text-base font-medium">
+                Tên vai trò
               </Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="vd: Manager, Editor, Viewer"
-                value={values.name ?? ''}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                disabled={isLoading || isFetchingPermissions}
-                className={errors.name && touched.name ? 'border-destructive' : ''}
-              />
-              {errors.name && touched.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
-              )}
+              <div className="p-3 bg-muted rounded-md border border-border">
+                <p className="text-sm font-medium">{roleDetail?.name}</p>
+              </div>
             </div>
 
             {/* Description */}
@@ -200,7 +212,7 @@ export function CreateRoleForm() {
                 value={values.description ?? ''}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                disabled={isLoading || isFetchingPermissions}
+                disabled={isLoading || isFetchingData}
                 className={errors.description && touched.description ? 'border-destructive' : ''}
                 rows={3}
               />
@@ -215,7 +227,7 @@ export function CreateRoleForm() {
         <PermissionsSection
           permissionGroups={permissionGroups}
           selectedPermissions={values.permissions || []}
-          isFetching={isFetchingPermissions}
+          isFetching={false}
           errors={errors.permissions}
           touched={touched.permissions}
           onTogglePermission={togglePermission}
@@ -228,16 +240,16 @@ export function CreateRoleForm() {
             type="button"
             variant="outline"
             onClick={handleGoBack}
-            disabled={isLoading || isFetchingPermissions}
+            disabled={isLoading || isFetchingData}
           >
             Hủy
           </Button>
           <Button
             type="submit"
-            disabled={isLoading || isFetchingPermissions}
+            disabled={isLoading || isFetchingData}
           >
             {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Đang tạo...' : 'Tạo vai trò'}
+            {isLoading ? 'Đang cập nhật...' : 'Cập nhật vai trò'}
           </Button>
         </div>
       </form>
@@ -245,4 +257,4 @@ export function CreateRoleForm() {
   );
 }
 
-export default CreateRoleForm;
+export default EditRoleForm;

@@ -48,3 +48,28 @@ export type CreateRoleResponse = {
   message: string;
   data: Role;
 };
+
+export type RolePermission = {
+  permission: Permission;
+};
+
+export type RoleDetail = {
+  name: string;
+  description: string | null;
+  rolePermissions?: RolePermission[];
+};
+
+export type RoleDetailResponse = {
+  message: string;
+  data: RoleDetail;
+};
+
+export type UpdateRoleRequest = {
+  description?: string;
+  permissions: number[]; // Mảng các permission ID
+};
+
+export type UpdateRoleResponse = {
+  message: string;
+  data: RoleDetail;
+};

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,15 +17,22 @@ import {
 import { createRoleColumns } from './roleColumns';
 import { roleService } from '@/services/role.service';
 import { useServerTable } from '@/hooks/useServerTable';
+import { useRouteAccess } from '@/hooks/useRouteAccess';
+import { useAuth } from '@/hooks/useAuth';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import type { Role, RoleListParams } from '@/types/role';
 import { Search, RefreshCw } from 'lucide-react';
+import { ROUTES } from '@/config/routes';
+import { PERMISSIONS } from '@/constants/permissions';
 
 export type RoleManagementTableProps = {
   initialParams?: RoleListParams;
 };
 
 export function RoleManagementTable({ initialParams }: RoleManagementTableProps) {
+  const router = useRouter();
+  const { canAccess } = useRouteAccess();
+  const { hasPermission } = useAuth();
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -62,6 +70,20 @@ export function RoleManagementTable({ initialParams }: RoleManagementTableProps)
   };
 
   /**
+   * Handle edit role
+   */
+  const handleEditRole = (roleName: string) => {
+    router.push(`/admin/roles/${roleName}/edit`);
+  };
+
+  /**
+   * Handle view role detail
+   */
+  const handleViewRole = (roleName: string) => {
+    router.push(`/admin/roles/${roleName}`);
+  };
+
+  /**
    * Confirm and execute delete
    */
   const confirmDelete = async () => {
@@ -69,8 +91,7 @@ export function RoleManagementTable({ initialParams }: RoleManagementTableProps)
 
     setActionLoading(true);
     try {
-      // TODO: Implement delete role API when available
-      // await roleService.deleteRole(roleToDelete);
+      await roleService.deleteRole(roleToDelete);
       toast.success('Xóa vai trò thành công');
       setDeleteDialogOpen(false);
       setRoleToDelete(null);
@@ -100,7 +121,9 @@ export function RoleManagementTable({ initialParams }: RoleManagementTableProps)
   };
 
   const columns = createRoleColumns({
-    onDelete: handleDeleteClick,
+    onDelete: hasPermission(PERMISSIONS.ROLES.DELETE.key) ? handleDeleteClick : undefined,
+    onEdit: canAccess(ROUTES.ADMIN.ROLES.EDIT) ? handleEditRole : undefined,
+    onView: canAccess(ROUTES.ADMIN.ROLES.DETAIL) ? handleViewRole : undefined,
   });
 
   if (loading && roles.length === 0) {

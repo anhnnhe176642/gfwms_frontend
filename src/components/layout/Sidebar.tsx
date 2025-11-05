@@ -81,7 +81,7 @@ export const Sidebar: React.FC = () => {
       label: 'Quản lý vai trò',
       href: ROUTES.ADMIN.ROLES.LIST.path,
       icon: ShieldCheck,
-      requiredPermission: PERMISSIONS.ROLES.VIEW.key,
+      requiredPermission: PERMISSIONS.ROLES.VIEW_LIST.key,
     },
     {
       label: 'Cài đặt',

@@ -175,7 +175,12 @@ export const ROUTES = {
       LIST: {
         path: '/admin/roles',
         name: 'Quản lý vai trò',
-        requiredPermission: PERMISSIONS.ROLES.VIEW.key,
+        requiredPermission: PERMISSIONS.ROLES.VIEW_LIST.key,
+      },
+      DETAIL: {
+        path: '/admin/roles/:name',
+        name: 'Chi tiết vai trò',
+        requiredPermission: PERMISSIONS.ROLES.VIEW_DETAIL.key,
       },
       CREATE: {
         path: '/admin/roles/create',
@@ -183,7 +188,7 @@ export const ROUTES = {
         requiredPermission: PERMISSIONS.ROLES.CREATE.key,
       },
       EDIT: {
-        path: '/admin/roles/:id/edit',
+        path: '/admin/roles/:name/edit',
         name: 'Chỉnh sửa vai trò',
         requiredPermission: PERMISSIONS.ROLES.UPDATE.key,
       },

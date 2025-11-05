@@ -15,7 +15,9 @@ import type { Role } from "@/types/role"
 import { SortButton } from "@/components/admin/table/SortButton"
 
 export type RoleColumnActions = {
-  onDelete: (roleName: string) => void
+  onDelete?: (roleName: string) => void
+  onEdit?: (roleName: string) => void
+  onView?: (roleName: string) => void
 }
 
 export const createRoleColumns = (
@@ -112,12 +114,28 @@ export const createRoleColumns = (
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Hành động</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => actions.onDelete(role.name)}
-              className="text-red-600"
-            >
-              Xóa
-            </DropdownMenuItem>
+            {actions.onView && (
+              <DropdownMenuItem
+                onClick={() => actions.onView?.(role.name)}
+              >
+                Xem chi tiết
+              </DropdownMenuItem>
+            )}
+            {actions.onEdit && (
+              <DropdownMenuItem
+                onClick={() => actions.onEdit?.(role.name)}
+              >
+                Chỉnh sửa
+              </DropdownMenuItem>
+            )}
+            {actions.onDelete && (
+              <DropdownMenuItem
+                onClick={() => actions.onDelete?.(role.name)}
+                className="text-red-600"
+              >
+                Xóa
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )

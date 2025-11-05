@@ -22,7 +22,7 @@ export const PERMISSIONS = {
     VIEW_OWN_PROFILE:   { key: 'user:view_own_profile',   description: 'Xem hồ sơ cá nhân' },
     UPDATE_OWN_PROFILE: { key: 'user:update_own_profile', description: 'Cập nhật hồ sơ cá nhân' }
   },
-  
+
   // Fabric Management
   FABRICS: {
     VIEW_LIST:          { key: 'fabric:view_list',          description: 'Xem danh sách vải' },
@@ -33,19 +33,28 @@ export const PERMISSIONS = {
     MANAGE_CATEGORIES:  { key: 'fabric:manage_categories',  description: 'Quản lý danh mục vải' },
     MANAGE_COLORS:      { key: 'fabric:manage_colors',      description: 'Quản lý màu sắc vải' },
     MANAGE_GLOSS:       { key: 'fabric:manage_gloss',       description: 'Quản lý độ bóng vải' },
-    MANAGE_SUPPLIER:    { key: 'fabric:manage_supplier',    description: 'Quản lý nhà cung cấp vải' }
+    MANAGE_SUPPLIER:    { key: 'fabric:manage_supplier',    description: 'Quản lý nhà cung cấp vải' },
+    ALLOCATE_TO_SHELF:  { key: 'fabric:allocate_to_shelf',  description: 'Thêm vải vào các kệ' }
   },
 
   // Warehouse Management
   WAREHOUSES: {
-    VIEW_LIST:    { key: 'warehouse:view_list',    description: 'Xem danh sách kho' },
-    VIEW_DETAIL:  { key: 'warehouse:view_detail',  description: 'Xem chi tiết kho' },
-    CREATE:       { key: 'warehouse:create',       description: 'Tạo kho mới' },
-    UPDATE:       { key: 'warehouse:update',       description: 'Cập nhật thông tin kho' },
-    DELETE:       { key: 'warehouse:delete',       description: 'Xóa kho (soft delete)' },
-    MANAGE_STATUS:{ key: 'warehouse:manage_status',description: 'Quản lý trạng thái kho' }
+    VIEW_LIST:     { key: 'warehouse:view_list',     description: 'Xem danh sách kho' },
+    VIEW_DETAIL:   { key: 'warehouse:view_detail',   description: 'Xem chi tiết kho' },
+    CREATE:        { key: 'warehouse:create',        description: 'Tạo kho mới' },
+    UPDATE:        { key: 'warehouse:update',        description: 'Cập nhật thông tin kho' },
+    DELETE:        { key: 'warehouse:delete',        description: 'Xóa kho (soft delete)' },
+    MANAGE_STATUS: { key: 'warehouse:manage_status', description: 'Quản lý trạng thái kho' }
   },
-  
+
+  // Import Fabric
+  IMPORT_FABRICS: {
+    CREATE:             { key: 'import_fabrics:create',            description: 'Tạo phiếu nhập vải' },
+    VIEW_LIST:          { key: 'import_fabrics:view_list',         description: 'Xem danh sách phiếu nhập kho' },
+    VIEW_DETAIL:        { key: 'import_fabrics:view_detail',       description: 'Xem chi tiết phiếu nhập kho' },
+    SET_SELLING_PRICE:  { key: 'import_fabrics:set_selling_price', description: 'Nhập giá bán khi import vải' }
+  },
+
   // Credit Registration
   CREDITS: {
     VIEW_LIST:   { key: 'credit:view_list',   description: 'Xem danh sách đăng ký tín dụng' },
@@ -57,15 +66,16 @@ export const PERMISSIONS = {
     REJECT:      { key: 'credit:reject',      description: 'Từ chối đăng ký tín dụng' },
     VIEW_OWN:    { key: 'credit:view_own',    description: 'Xem đăng ký tín dụng của mình' }
   },
-  
+
   // Role Management
   ROLES: {
-    VIEW:   { key: 'role:view',   description: 'Xem danh sách vai trò' },
-    CREATE: { key: 'role:create', description: 'Tạo vai trò mới' },
-    UPDATE: { key: 'role:update', description: 'Cập nhật vai trò' },
-    DELETE: { key: 'role:delete', description: 'Xóa vai trò' }
+    VIEW_LIST:  { key: 'role:view_list',  description: 'Xem danh sách vai trò' },
+    VIEW_DETAIL: { key: 'role:view_detail', description: 'Xem chi tiết vai trò' },
+    CREATE:     { key: 'role:create',     description: 'Tạo vai trò mới' },
+    UPDATE:     { key: 'role:update',     description: 'Cập nhật vai trò' },
+    DELETE:     { key: 'role:delete',     description: 'Xóa vai trò' }
   },
-  
+
   // System Administration
   SYSTEM: {
     VIEW_AUDIT_LOGS:     { key: 'system:view_audit_logs',     description: 'Xem nhật ký kiểm tra hệ thống' },
@@ -74,17 +84,35 @@ export const PERMISSIONS = {
     SYSTEM_CONFIG:       { key: 'system:config',              description: 'Cấu hình hệ thống' }
   },
 
-  // Invoice Management 
+  // Invoice Management
   INVOICES: {
-    VIEW_LIST:    { key: 'invoice:view_list',    description: 'Xem danh sách hóa đơn' },
-    VIEW_DETAIL:  { key: 'invoice:view_detail',  description: 'Xem chi tiết hóa đơn' },
+    VIEW_LIST:   { key: 'invoice:view_list',   description: 'Xem danh sách hóa đơn' },
+    VIEW_DETAIL: { key: 'invoice:view_detail', description: 'Xem chi tiết hóa đơn' }
   },
 
   // Export Fabric Management
   EXPORT_FABRICS: {
-    VIEW_LIST:    { key: 'exportFabric:view_list',    description: 'Xem danh sách các đơn yêu cầu xuất kho' },
-    VIEW_DETAIL:  { key: 'exportFabric:view_detail',  description: 'Xem chi tiết các đơn yêu cầu xuất kho' },
+    VIEW_LIST:   { key: 'exportFabric:view_list',   description: 'Xem danh sách các đơn yêu cầu xuất kho' },
+    VIEW_DETAIL: { key: 'exportFabric:view_detail', description: 'Xem chi tiết các đơn yêu cầu xuất kho' }
   },
+
+  // Store Management
+  STORES: {
+    VIEW_LIST: { key: 'store:view_list',   description: 'Xem danh sách cửa hàng' },
+    VIEW_DETAIL: { key: 'store:view_detail', description: 'Xem chi tiết cửa hàng' },
+    CREATE:    { key: 'store:create',       description: 'Tạo cửa hàng mới' },
+    UPDATE:    { key: 'store:update',       description: 'Cập nhật thông tin cửa hàng' },
+    DELETE:    { key: 'store:delete',       description: 'Xóa cửa hàng (soft delete)' }
+  },
+
+  // Shelf Management
+  SHELVES: {
+    VIEW_LIST:  { key: 'shelf:view_list',   description: 'Xem danh sách kệ trong kho' },
+    VIEW_DETAIL: { key: 'shelf:view_detail', description: 'Xem chi tiết kệ' },
+    CREATE:     { key: 'shelf:create',      description: 'Tạo kệ mới' },
+    UPDATE:     { key: 'shelf:update',      description: 'Cập nhật thông tin kệ' },
+    DELETE:     { key: 'shelf:delete',      description: 'Xóa kệ (soft delete)' }
+  }
 } as const;
 
 /**

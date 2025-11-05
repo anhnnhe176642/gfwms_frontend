@@ -22,3 +22,21 @@ export const createRoleSchema = yup.object().shape({
 });
 
 export type CreateRoleFormData = yup.InferType<typeof createRoleSchema>;
+
+/**
+ * Schema xác thực cập nhật role
+ */
+export const updateRoleSchema = yup.object().shape({
+  name: yup.string().default(''),
+  description: yup
+    .string()
+    .default('')
+    .typeError('Mô tả phải là chuỗi'),
+  permissions: yup
+    .array()
+    .of(yup.number().required())
+    .required('Vui lòng chọn ít nhất một quyền')
+    .min(1, 'Vui lòng chọn ít nhất một quyền'),
+});
+
+export type UpdateRoleFormData = yup.InferType<typeof updateRoleSchema>;
