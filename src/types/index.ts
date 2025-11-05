@@ -30,6 +30,11 @@ export type {
   WarehouseListItem,
   WarehouseListResponse,
   WarehouseListParams,
+  ShelfListItem,
+  ShelfListResponse,
+  ShelfListParams,
+  CreateShelfPayload,
+  UpdateShelfPayload,
 } from './warehouse';
 
 // Auth types 

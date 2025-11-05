@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
-import { CreateUserForm } from '@/components/admin/CreateUserForm';
+import { CreateUserForm } from '@/components/admin/user-management/CreateUserForm';
 import { ROUTES } from '@/config/routes';
 
 export const metadata: Metadata = {

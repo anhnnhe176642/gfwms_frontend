@@ -35,11 +35,11 @@ export const updateRoleSchema = yup.object().shape({
   name: yup.string().default(''),
   fullName: yup
     .string()
-    .default('')
+    .required('Tên đầy đủ là bắt buộc')
     .typeError('Tên đầy đủ phải là chuỗi'),
   description: yup
     .string()
-    .default('')
+    .required('Mô tả là bắt buộc')
     .typeError('Mô tả phải là chuỗi'),
   permissions: yup
     .array()

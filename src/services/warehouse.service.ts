@@ -4,6 +4,14 @@ import type {
   WarehouseListParams,
   WarehouseListItem,
   WarehouseStatus,
+  ShelfListResponse,
+  ShelfListParams,
+  CreateShelfPayload,
+  UpdateShelfPayload,
+  CreateShelfResponse,
+  UpdateShelfResponse,
+  GetShelfResponse,
+  ShelfListItem,
 } from '@/types/warehouse';
 import type { CreateWarehouseFormData, UpdateWarehouseFormData } from '@/schemas/warehouse.schema';
 
@@ -78,6 +86,45 @@ export const warehouseService = {
    */
   deleteWarehouse: async (id: string | number): Promise<void> => {
     await api.delete(`${BASE_PATH}/${id}`);
+  },
+
+  /**
+   * Lấy danh sách kệ của một kho
+   */
+  getShelves: async (params?: ShelfListParams): Promise<ShelfListResponse> => {
+    const response = await api.get<ShelfListResponse>('/v1/shelves', { params });
+    return response.data;
+  },
+
+  /**
+   * Lấy thông tin chi tiết một kệ
+   */
+  getShelfById: async (id: string | number): Promise<ShelfListItem> => {
+    const response = await api.get<GetShelfResponse>(`/v1/shelves/${id}`);
+    return response.data.shelf;
+  },
+
+  /**
+   * Tạo kệ mới
+   */
+  createShelf: async (data: CreateShelfPayload): Promise<ShelfListItem> => {
+    const response = await api.post<CreateShelfResponse>('/v1/shelves', data);
+    return response.data.shelf;
+  },
+
+  /**
+   * Cập nhật thông tin kệ
+   */
+  updateShelf: async (id: string | number, data: UpdateShelfPayload): Promise<ShelfListItem> => {
+    const response = await api.put<UpdateShelfResponse>(`/v1/shelves/${id}`, data);
+    return response.data.shelf;
+  },
+
+  /**
+   * Xóa kệ
+   */
+  deleteShelf: async (id: string | number): Promise<void> => {
+    await api.delete(`/v1/shelves/${id}`);
   },
 };
 

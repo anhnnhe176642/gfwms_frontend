@@ -12,6 +12,7 @@ import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
 import type { WarehouseListItem } from '@/types/warehouse';
 import { WAREHOUSE_STATUS_CONFIG } from '@/constants/warehouse';
+import { ShelfManagementTable } from './ShelfManagementTable';
 
 export interface WarehouseDetailViewProps {
   warehouseId: string | number;
@@ -81,7 +82,7 @@ export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailView
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button
@@ -98,72 +99,73 @@ export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailView
         </div>
       </div>
 
-      {/* Main Information Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Thông tin cơ bản</CardTitle>
-          <CardDescription>Thông tin chính của kho hàng</CardDescription>
+      {/* Main Information Card - Full Width - Compact */}
+      <Card className="py-3">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl">Thông tin cơ bản</CardTitle>
+              <CardDescription className="text-xs">Thông tin chính của kho hàng</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleGoBack}
+                size="sm"
+              >
+                Quay lại
+              </Button>
+              <Button onClick={handleEdit} className="gap-2" size="sm">
+                <Edit className="h-4 w-4" />
+                Chỉnh sửa
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* ID & Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">ID Kho</p>
-              <p className="text-lg font-semibold">{warehouse.id}</p>
+        <CardContent className="space-y-3">
+          {/* ID & Status - First Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">ID Kho</p>
+              <p className="text-sm font-semibold">{warehouse.id}</p>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Trạng thái</p>
-              <div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Trạng thái</p>
+              <div className="mt-1">
                 <Badge value={warehouse.status} config={WAREHOUSE_STATUS_CONFIG} />
               </div>
             </div>
+
+            <div className="md:col-span-2">
+              <p className="text-xs font-medium text-muted-foreground">Ngày tạo</p>
+              <p className="text-xs">{new Date(warehouse.createdAt).toLocaleString('vi-VN')}</p>
+            </div>
           </div>
 
-          <Separator />
-
-          {/* Name */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Tên kho</p>
-            <p className="text-lg">{warehouse.name}</p>
-          </div>
-
-          {/* Address */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Địa chỉ</p>
-            <p className="text-lg">{warehouse.address}</p>
-          </div>
-
-          <Separator />
-
-          {/* Timestamps */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Ngày tạo</p>
-              <p className="text-sm">{new Date(warehouse.createdAt).toLocaleString('vi-VN')}</p>
+          {/* Name - Second Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Tên kho</p>
+              <p className="text-sm">{warehouse.name}</p>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Ngày cập nhật</p>
-              <p className="text-sm">{new Date(warehouse.updatedAt).toLocaleString('vi-VN')}</p>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Ngày cập nhật</p>
+              <p className="text-xs">{new Date(warehouse.updatedAt).toLocaleString('vi-VN')}</p>
             </div>
+          </div>
+
+          {/* Address - Third Row */}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Địa chỉ</p>
+            <p className="text-sm break-words">{warehouse.address}</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
-      <div className="flex gap-4 justify-end">
-        <Button
-          variant="outline"
-          onClick={handleGoBack}
-        >
-          Quay lại
-        </Button>
-        <Button onClick={handleEdit} className="gap-2">
-          <Edit className="h-4 w-4" />
-          Chỉnh sửa
-        </Button>
-      </div>
+      {/* Shelf Table - Below information card */}
+      <ShelfManagementTable warehouseId={Number(warehouse.id)} />
     </div>
   );
 }

@@ -27,3 +27,57 @@ export type WarehouseListParams = {
   createdFrom?: string; // ISO date string
   createdTo?: string; // ISO date string
 };
+
+export type ShelfListItem = {
+  id: number;
+  code: string;
+  currentQuantity: number;
+  maxQuantity: number;
+  warehouseId: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ShelfListResponse = {
+  message: string;
+  data: ShelfListItem[];
+  pagination: PaginationState;
+};
+
+export type ShelfListParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  warehouseId?: number;
+  sortBy?: string; // e.g., "code,createdAt"
+  order?: string; // e.g., "asc,desc"
+  createdFrom?: string; // ISO date string
+  createdTo?: string; // ISO date string
+};
+
+export type CreateShelfPayload = {
+  code: string;
+  maxQuantity: number;
+  warehouseId: number;
+};
+
+export type UpdateShelfPayload = {
+  code?: string;
+  maxQuantity?: number;
+  warehouseId?: number;
+};
+
+export type CreateShelfResponse = {
+  message: string;
+  shelf: ShelfListItem;
+};
+
+export type UpdateShelfResponse = {
+  message: string;
+  shelf: ShelfListItem;
+};
+
+export type GetShelfResponse = {
+  message: string;
+  shelf: ShelfListItem;
+};
