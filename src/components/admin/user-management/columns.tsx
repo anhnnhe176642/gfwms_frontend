@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { UserListItem, UserStatus } from "@/types/user"
 import type { RoleOption } from "@/types/role"
-import { SortButton } from "./table/SortButton"
-import { CheckboxFilterHeader } from "./table/CheckboxFilterHeader"
-import { DateRangeFilterHeader } from "./table/DateRangeFilterHeader"
-import { StatusBadge, RoleBadge } from "./table/Badges"
+import { SortButton } from "@/components/admin/table/SortButton"
+import { CheckboxFilterHeader } from "@/components/admin/table/CheckboxFilterHeader"
+import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterHeader"
+import { StatusBadge, RoleBadge } from "@/components/admin/table/Badges"
 import { USER_STATUS_OPTIONS } from "@/constants/user"
 
 export type UserColumnActions = {

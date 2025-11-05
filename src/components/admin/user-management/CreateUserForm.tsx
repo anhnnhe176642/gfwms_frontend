@@ -42,7 +42,7 @@ export function CreateUserForm() {
 
   // Form validation and state management
   const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors } =
-    useFormValidation<CreateUserFormData>(createUserSchema, async (data) => {
+    useFormValidation<CreateUserFormData>(createUserSchema, async (data: CreateUserFormData) => {
       setIsLoading(true);
       setServerError('');
 
@@ -50,7 +50,7 @@ export function CreateUserForm() {
         await userService.createUser(data);
         toast.success('Tạo người dùng thành công');
         router.push('/admin/users');
-      } catch (err: any) {
+      } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
           setFieldErrors(fieldErrors);
@@ -220,7 +220,7 @@ export function CreateUserForm() {
                 <Select value={values.gender ?? ''} onValueChange={(value) => {
                   handleChange({
                     target: { name: 'gender', value },
-                  } as any);
+                  } as React.ChangeEvent<HTMLInputElement>);
                 }}>
                   <SelectTrigger id="gender" disabled={isLoading}>
                     <SelectValue placeholder="Chọn giới tính" />
@@ -290,7 +290,7 @@ export function CreateUserForm() {
               <Select value={values.role ?? ''} onValueChange={(value) => {
                 handleChange({
                   target: { name: 'role', value },
-                } as any);
+                } as React.ChangeEvent<HTMLInputElement>);
               }}>
                 <SelectTrigger id="role" disabled={isLoading || roleOptionsLoading}>
                   <SelectValue placeholder="Chọn vai trò" />
@@ -314,7 +314,7 @@ export function CreateUserForm() {
               <Select value={values.status ?? 'ACTIVE'} onValueChange={(value) => {
                 handleChange({
                   target: { name: 'status', value },
-                } as any);
+                } as React.ChangeEvent<HTMLInputElement>);
               }}>
                 <SelectTrigger id="status" disabled={isLoading}>
                   <SelectValue placeholder="Chọn trạng thái" />

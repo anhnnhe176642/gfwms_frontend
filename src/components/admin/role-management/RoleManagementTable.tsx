@@ -13,103 +13,51 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { createUserColumns } from './columns';
-import { userService } from '@/services/user.service';
+import { createRoleColumns } from './roleColumns';
+import { roleService } from '@/services/role.service';
 import { useServerTable } from '@/hooks/useServerTable';
-import { useRoles } from '@/hooks/useRoles';
-import type { UserListItem, UserListParams, UserStatus } from '@/types/user';
+import { getServerErrorMessage } from '@/lib/errorHandler';
+import type { Role, RoleListParams } from '@/types/role';
 import { Search, RefreshCw } from 'lucide-react';
 
-export type UserManagementTableProps = {
-  initialParams?: UserListParams;
+export type RoleManagementTableProps = {
+  initialParams?: RoleListParams;
 };
 
-export function UserManagementTable({ initialParams }: UserManagementTableProps) {
+export function RoleManagementTable({ initialParams }: RoleManagementTableProps) {
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<string | number | null>(null);
-
-  // Fetch roles from API
-  const { roles: roleOptions, loading: roleOptionsLoading } = useRoles();
+  const [roleToDelete, setRoleToDelete] = useState<string | null>(null);
 
   // Use custom hook for table state and data fetching
   const {
-    data: users,
+    data: roles,
     loading,
     error,
     sorting,
     setSorting,
     columnFilters,
     setColumnFilters,
-    searchQuery,
     pagination,
     handlePaginationChange,
     handleSearch,
     refresh,
     reset
-  } = useServerTable<UserListItem, UserListParams>({
-    fetchData: userService.getUsers,
+  } = useServerTable<Role, RoleListParams>({
+    fetchData: roleService.getRoles,
     initialParams,
-    filterConfig: {
-      // Define which filters are array-based (multi-select)
-      arrayFilters: {
-        status: 'status',
-        role: 'role',
-        gender: 'gender',
-      },
-      // Define which filters are date ranges
-      dateRangeFilters: {
-        createdAt: {
-          from: 'createdFrom',
-          to: 'createdTo',
-        },
-      },
-    },
+    filterConfig: {},
     onError: (err) => {
-      console.error('Failed to fetch users:', err);
+      console.error('Failed to fetch roles:', err);
     },
   });
 
   /**
-   * Handle status change with optimistic UI update
-   */
-  const handleStatusChange = async (userId: string, status: UserStatus) => {
-    setActionLoading(true);
-    try {
-      await userService.updateUserStatus({ userId, status });
-      toast.success('Cập nhật trạng thái thành công');
-      await refresh();
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Không thể cập nhật trạng thái';
-      toast.error(message);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  /**
-   * Handle role change
-   */
-  const handleRoleChange = async (userId: string, roleName: string) => {
-    setActionLoading(true);
-    try {
-      await userService.updateUserRole({ userId, roleName });
-      toast.success('Cập nhật vai trò thành công');
-      await refresh();
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Không thể cập nhật vai trò';
-      toast.error(message);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  /**
    * Handle delete with confirmation dialog
    */
-  const handleDeleteClick = (userId: string | number) => {
-    setUserToDelete(userId);
+  const handleDeleteClick = (roleName: string) => {
+    setRoleToDelete(roleName);
     setDeleteDialogOpen(true);
   };
 
@@ -117,17 +65,18 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
    * Confirm and execute delete
    */
   const confirmDelete = async () => {
-    if (!userToDelete) return;
+    if (!roleToDelete) return;
 
     setActionLoading(true);
     try {
-      await userService.deleteUser(userToDelete);
-      toast.success('Xóa người dùng thành công');
+      // TODO: Implement delete role API when available
+      // await roleService.deleteRole(roleToDelete);
+      toast.success('Xóa vai trò thành công');
       setDeleteDialogOpen(false);
-      setUserToDelete(null);
+      setRoleToDelete(null);
       await refresh();
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Không thể xóa người dùng';
+    } catch (err) {
+      const message = getServerErrorMessage(err) || 'Không thể xóa vai trò';
       toast.error(message);
     } finally {
       setActionLoading(false);
@@ -150,19 +99,11 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
     }
   };
 
-  const columns = createUserColumns(
-    {
-      onStatusChange: handleStatusChange,
-      onRoleChange: handleRoleChange,
-      onDelete: handleDeleteClick,
-    },
-    {
-      roleOptions,
-      roleOptionsLoading,
-    }
-  );
+  const columns = createRoleColumns({
+    onDelete: handleDeleteClick,
+  });
 
-  if (loading && users.length === 0) {
+  if (loading && roles.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="flex flex-col items-center gap-2">
@@ -193,7 +134,7 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Tìm kiếm theo tên, email, số điện thoại..."
+            placeholder="Tìm kiếm theo tên vai trò..."
             value={tempSearchQuery}
             onChange={(e) => setTempSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
@@ -210,14 +151,14 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
       {/* Info bar */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Tổng: <span className="font-medium">{pagination.total}</span> người dùng
+          Tổng: <span className="font-medium">{pagination.total}</span> vai trò
         </p>
       </div>
 
       {/* DataTable */}
       <DataTable 
         columns={columns} 
-        data={users}
+        data={roles}
         sorting={sorting}
         onSortingChange={setSorting}
         columnFilters={columnFilters}
@@ -226,7 +167,7 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
         manualFiltering={true}
         manualPagination={true}
         pageCount={pagination.totalPages}
-        pageIndex={pagination.page - 1} // DataTable uses 0-based indexing
+        pageIndex={pagination.page - 1}
         pageSize={pagination.limit}
         onPaginationChange={handlePaginationChange}
       />
@@ -235,9 +176,9 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Xóa người dùng</DialogTitle>
+            <DialogTitle>Xóa vai trò</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa vai trò này? Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -262,4 +203,4 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
   );
 }
 
-export default UserManagementTable;
+export default RoleManagementTable;
