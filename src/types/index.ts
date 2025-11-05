@@ -24,5 +24,13 @@ export type {
   RoleOption,
 } from './role';
 
+// Warehouse types
+export type {
+  WarehouseStatus,
+  WarehouseListItem,
+  WarehouseListResponse,
+  WarehouseListParams,
+} from './warehouse';
+
 // Auth types 
 export type * from './auth';
