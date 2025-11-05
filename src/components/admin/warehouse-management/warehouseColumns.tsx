@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { WarehouseListItem, WarehouseStatus } from "@/types/warehouse"
+import type { WarehouseListItem } from "@/types/warehouse"
 import { SortButton } from "@/components/admin/table/SortButton"
 import { CheckboxFilterHeader } from "@/components/admin/table/CheckboxFilterHeader"
 import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterHeader"
@@ -19,12 +19,13 @@ import { StatusBadge } from "@/components/admin/table/Badges"
 import { WAREHOUSE_STATUS_OPTIONS } from "@/constants/warehouse"
 
 export type WarehouseColumnActions = {
-  onStatusChange: (warehouseId: number, status: WarehouseStatus) => void
-  onDelete: (warehouseId: number) => void
+  onView?: (warehouseId: number) => void
+  onEdit?: (warehouseId: number) => void
+  onDelete?: (warehouseId: number) => void
 }
 
 export const createWarehouseColumns = (
-  actions?: WarehouseColumnActions
+  actions: WarehouseColumnActions
 ): ColumnDef<WarehouseListItem>[] => [
   {
     id: "stt",
@@ -115,10 +116,6 @@ export const createWarehouseColumns = (
     cell: ({ row }) => {
       const warehouse = row.original
 
-      if (!actions) {
-        return null
-      }
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -131,26 +128,33 @@ export const createWarehouseColumns = (
             <DropdownMenuLabel>Hành động</DropdownMenuLabel>
             <DropdownMenuSeparator />
             
-            <DropdownMenuLabel className="text-xs font-normal text-gray-500">
-              Thay đổi trạng thái
-            </DropdownMenuLabel>
-            {WAREHOUSE_STATUS_OPTIONS.map((status) => (
+            {actions.onView && (
               <DropdownMenuItem
-                key={status.value}
-                onClick={() => actions.onStatusChange(warehouse.id, status.value)}
-                disabled={warehouse.status === status.value}
+                onClick={() => actions.onView?.(warehouse.id)}
               >
-                {status.label}
+                Xem chi tiết
               </DropdownMenuItem>
-            ))}
+            )}
+
+            {actions.onEdit && (
+              <DropdownMenuItem
+                onClick={() => actions.onEdit?.(warehouse.id)}
+              >
+                Chỉnh sửa
+              </DropdownMenuItem>
+            )}
             
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => actions.onDelete(warehouse.id)}
-              className="text-red-600"
-            >
-              Xóa
-            </DropdownMenuItem>
+            {actions.onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => actions.onDelete?.(warehouse.id)}
+                  className="text-red-600"
+                >
+                  Xóa
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )

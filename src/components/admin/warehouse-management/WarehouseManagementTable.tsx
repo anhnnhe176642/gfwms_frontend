@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { VisibilityState } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
@@ -17,8 +18,12 @@ import {
 import { createWarehouseColumns } from './warehouseColumns';
 import { warehouseService } from '@/services/warehouse.service';
 import { useServerTable } from '@/hooks/useServerTable';
+import { useRouteAccess } from '@/hooks/useRouteAccess';
+import { useAuth } from '@/hooks/useAuth';
 import { getServerErrorMessage } from '@/lib/errorHandler';
-import type { WarehouseListItem, WarehouseListParams, WarehouseStatus } from '@/types/warehouse';
+import { PERMISSIONS } from '@/constants/permissions';
+import { ROUTES } from '@/config/routes';
+import type { WarehouseListItem, WarehouseListParams } from '@/types/warehouse';
 import { Search, RefreshCw } from 'lucide-react';
 
 export type WarehouseManagementTableProps = {
@@ -26,6 +31,9 @@ export type WarehouseManagementTableProps = {
 };
 
 export function WarehouseManagementTable({ initialParams }: WarehouseManagementTableProps) {
+  const router = useRouter();
+  const { canAccess } = useRouteAccess();
+  const { hasPermission } = useAuth();
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -66,20 +74,17 @@ export function WarehouseManagementTable({ initialParams }: WarehouseManagementT
   });
 
   /**
-   * Handle status change
+   * Handle view detail
    */
-  const handleStatusChange = async (warehouseId: number, status: WarehouseStatus) => {
-    setActionLoading(true);
-    try {
-      await warehouseService.updateWarehouseStatus({ warehouseId, status });
-      toast.success('Cập nhật trạng thái thành công');
-      await refresh();
-    } catch (err) {
-      const message = getServerErrorMessage(err) || 'Không thể cập nhật trạng thái';
-      toast.error(message);
-    } finally {
-      setActionLoading(false);
-    }
+  const handleViewClick = (warehouseId: number) => {
+    router.push(`/admin/warehouses/${warehouseId}`);
+  };
+
+  /**
+   * Handle edit
+   */
+  const handleEditClick = (warehouseId: number) => {
+    router.push(`/admin/warehouses/${warehouseId}/edit`);
   };
 
   /**
@@ -128,8 +133,9 @@ export function WarehouseManagementTable({ initialParams }: WarehouseManagementT
   };
 
   const columns = createWarehouseColumns({
-    onStatusChange: handleStatusChange,
-    onDelete: handleDeleteClick,
+    onDelete: hasPermission(PERMISSIONS.WAREHOUSES.DELETE.key) ? handleDeleteClick : undefined,
+    onEdit: canAccess(ROUTES.ADMIN.WAREHOUSES.EDIT) ? handleEditClick : undefined,
+    onView: canAccess(ROUTES.ADMIN.WAREHOUSES.DETAIL) ? handleViewClick : undefined,
   });
 
   if (loading && warehouses.length === 0) {

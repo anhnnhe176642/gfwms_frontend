@@ -5,7 +5,7 @@ import type {
   WarehouseListItem,
   WarehouseStatus,
 } from '@/types/warehouse';
-import type { CreateWarehouseFormData } from '@/schemas/warehouse.schema';
+import type { CreateWarehouseFormData, UpdateWarehouseFormData } from '@/schemas/warehouse.schema';
 
 const BASE_PATH = '/v1/warehouses';
 
@@ -15,6 +15,16 @@ export type UpdateWarehouseStatusPayload = {
 };
 
 export type CreateWarehouseResponse = {
+  message: string;
+  warehouse: WarehouseListItem;
+};
+
+export type UpdateWarehouseResponse = {
+  message: string;
+  warehouse: WarehouseListItem;
+};
+
+export type GetWarehouseResponse = {
   message: string;
   warehouse: WarehouseListItem;
 };
@@ -32,8 +42,8 @@ export const warehouseService = {
    * Lấy thông tin chi tiết một warehouse
    */
   getWarehouseById: async (id: string | number): Promise<WarehouseListItem> => {
-    const response = await api.get<WarehouseListItem>(`${BASE_PATH}/${id}`);
-    return response.data;
+    const response = await api.get<GetWarehouseResponse>(`${BASE_PATH}/${id}`);
+    return response.data.warehouse;
   },
 
   /**
@@ -41,6 +51,14 @@ export const warehouseService = {
    */
   createWarehouse: async (data: CreateWarehouseFormData): Promise<WarehouseListItem> => {
     const response = await api.post<CreateWarehouseResponse>(BASE_PATH, data);
+    return response.data.warehouse;
+  },
+
+  /**
+   * Cập nhật warehouse
+   */
+  updateWarehouse: async (id: string | number, data: UpdateWarehouseFormData): Promise<WarehouseListItem> => {
+    const response = await api.patch<UpdateWarehouseResponse>(`${BASE_PATH}/${id}`, data);
     return response.data.warehouse;
   },
 
