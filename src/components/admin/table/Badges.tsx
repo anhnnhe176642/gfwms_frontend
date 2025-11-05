@@ -83,13 +83,14 @@ const getRoleColorClass = (roleName: string): string => {
 
 /**
  * Role badge component for users
- * Uses dynamic role options from API if provided, otherwise shows role name
+ * Displays fullName if available, otherwise uses label (which may be description or name)
  * Colors are randomly assigned but consistent for each role name
  */
 export function RoleBadge({ role, roleOptions }: RoleBadgeProps) {
   // Find the role label from API data
   const roleOption = roleOptions?.find(r => r.value === role);
-  const label = roleOption?.label || role;
+  // Prefer fullName, then label, then role
+  const label = roleOption?.fullName || roleOption?.label || role;
 
   return (
     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColorClass(role)}`}>

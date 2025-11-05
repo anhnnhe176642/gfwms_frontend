@@ -20,7 +20,8 @@ export function useRoles() {
         // Convert API response to options format
         const options: RoleOption[] = response.data.map((role) => ({
           value: role.name,
-          label: role.description || role.name, // Fallback to name if no description
+          label: role.fullName || role.name, 
+          fullName: role.fullName,
           description: role.description,
         }));
         

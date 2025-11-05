@@ -9,6 +9,11 @@ export const createRoleSchema = yup.object().shape({
     .required('Tên vai trò là bắt buộc')
     .min(2, 'Tên vai trò phải ít nhất 2 ký tự')
     .max(100, 'Tên vai trò không được quá 100 ký tự'),
+  fullName: yup
+    .string()
+    .required('Tên đầy đủ là bắt buộc')
+    .min(2, 'Tên đầy đủ phải ít nhất 2 ký tự')
+    .max(200, 'Tên đầy đủ không được quá 200 ký tự'),
   description: yup
     .string()
     .required('Mô tả là bắt buộc')
@@ -28,6 +33,10 @@ export type CreateRoleFormData = yup.InferType<typeof createRoleSchema>;
  */
 export const updateRoleSchema = yup.object().shape({
   name: yup.string().default(''),
+  fullName: yup
+    .string()
+    .default('')
+    .typeError('Tên đầy đủ phải là chuỗi'),
   description: yup
     .string()
     .default('')

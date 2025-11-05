@@ -14,6 +14,7 @@ export type PermissionsResponse = {
 export type Role = {
   id?: number;
   name: string;
+  fullName: string;
   description: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -35,11 +36,13 @@ export type RoleListParams = {
 export type RoleOption = {
   value: string;
   label: string;
+  fullName?: string | null;
   description?: string | null;
 };
 
 export type CreateRoleRequest = {
   name: string;
+  fullName: string;
   description: string;
   permissions: number[]; // Mảng các permission ID
 };
@@ -55,6 +58,7 @@ export type RolePermission = {
 
 export type RoleDetail = {
   name: string;
+  fullName: string;
   description: string | null;
   rolePermissions?: RolePermission[];
 };
@@ -65,6 +69,7 @@ export type RoleDetailResponse = {
 };
 
 export type UpdateRoleRequest = {
+  fullName?: string;
   description?: string;
   permissions: number[]; // Mảng các permission ID
 };

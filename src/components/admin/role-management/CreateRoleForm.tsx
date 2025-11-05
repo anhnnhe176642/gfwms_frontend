@@ -188,6 +188,26 @@ export function CreateRoleForm() {
               )}
             </div>
 
+            {/* Full Name */}
+            <div className="space-y-2">
+              <Label htmlFor="fullName">
+                Tên đầy đủ <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="fullName"
+                name="fullName"
+                placeholder="vd: Quản lý, Biên tập viên, Xem xét"
+                value={values.fullName ?? ''}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={isLoading || isFetchingPermissions}
+                className={errors.fullName && touched.fullName ? 'border-destructive' : ''}
+              />
+              {errors.fullName && touched.fullName && (
+                <p className="text-sm text-destructive">{errors.fullName}</p>
+              )}
+            </div>
+
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">

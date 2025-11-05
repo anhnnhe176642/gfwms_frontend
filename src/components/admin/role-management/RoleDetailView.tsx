@@ -166,6 +166,12 @@ export function RoleDetailView({ roleName }: RoleDetailViewProps) {
             <p className="text-base font-semibold">{roleDetail.name}</p>
           </div>
 
+          {/* Full Name */}
+          <div>
+            <p className="text-sm font-medium text-muted-foreground mb-1">Tên đầy đủ</p>
+            <p className="text-base font-semibold">{roleDetail.fullName}</p>
+          </div>
+
           {/* Description */}
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-1">Mô tả</p>

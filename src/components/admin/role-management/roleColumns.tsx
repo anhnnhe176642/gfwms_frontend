@@ -49,6 +49,18 @@ export const createRoleColumns = (
     }
   },
   {
+    accessorKey: "fullName",
+    header: ({ column }) => (
+      <div className="flex items-center gap-1">
+        <span className="font-medium">Tên đầy đủ</span>
+        <SortButton column={column} label="Sắp xếp theo tên đầy đủ" />
+      </div>
+    ),
+    meta: {
+      title: "Tên đầy đủ"
+    }
+  },
+  {
     accessorKey: "description",
     header: ({ column }) => (
       <div className="flex items-center gap-1">

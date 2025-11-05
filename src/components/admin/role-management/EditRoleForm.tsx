@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -100,6 +101,7 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
         // Set form values - extract permission IDs từ rolePermissions
         const rolePermissionIds = roleResponse.data.rolePermissions?.map(rp => rp.permission.id) || [];
         setFieldValue('name', roleResponse.data.name);
+        setFieldValue('fullName', roleResponse.data.fullName);
         setFieldValue('description', roleResponse.data.description || '');
         setFieldValue('permissions', rolePermissionIds);
       } catch (err) {
@@ -198,6 +200,26 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
               <div className="p-3 bg-muted rounded-md border border-border">
                 <p className="text-sm font-medium">{roleDetail?.name}</p>
               </div>
+            </div>
+
+            {/* Full Name */}
+            <div className="space-y-2">
+              <Label htmlFor="fullName">
+                Tên đầy đủ <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="fullName"
+                name="fullName"
+                placeholder="vd: Quản lý, Nhân viên, Kế toán,..."
+                value={values.fullName ?? ''}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={isLoading || isFetchingData}
+                className={errors.fullName && touched.fullName ? 'border-destructive' : ''}
+              />
+              {errors.fullName && touched.fullName && (
+                <p className="text-sm text-destructive">{errors.fullName}</p>
+              )}
             </div>
 
             {/* Description */}
