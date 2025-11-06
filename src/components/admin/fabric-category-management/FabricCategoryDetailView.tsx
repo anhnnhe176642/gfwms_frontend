@@ -50,7 +50,7 @@ export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryD
     if (onEdit && category) {
       onEdit(category.id);
     } else if (category) {
-      router.push(`/admin/fabric-categories/${category.id}/edit`);
+      router.push(`/admin/fabrics/categories/${category.id}/edit`);
     }
   };
 

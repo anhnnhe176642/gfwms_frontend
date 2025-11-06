@@ -44,7 +44,7 @@ export const fabricCategoryService = {
     id: string | number,
     data: UpdateFabricCategoryPayload
   ): Promise<FabricCategoryListItem> => {
-    const response = await api.patch<UpdateFabricCategoryResponse>(`${BASE_PATH}/${id}`, data);
+    const response = await api.put<UpdateFabricCategoryResponse>(`${BASE_PATH}/${id}`, data);
     return response.data.data;
   },
 

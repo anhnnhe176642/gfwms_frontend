@@ -51,7 +51,12 @@ export const createFabricCategoryColumns = (
   },
   {
     accessorKey: "description",
-    header: "Mô tả",
+    header: ({ column }) => (
+      <div className="flex items-center gap-1">
+        <span className="font-medium">Mô tả</span>
+        <SortButton column={column} label="Sắp xếp theo mô tả" />
+      </div>
+    ),
     cell: ({ row }) => row.getValue("description") || "-",
     meta: {
       title: "Mô tả"

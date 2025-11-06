@@ -54,6 +54,12 @@ export const Sidebar: React.FC = () => {
       requiredPermission: PERMISSIONS.FABRICS.VIEW_LIST.key,
     },
     {
+      label: 'Danh mục vải',
+      href: ROUTES.ADMIN.FABRICS.CATEGORIES.path,
+      icon: Package,
+      requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
+    },
+    {
       label: 'Quản lý kho',
       href: ROUTES.ADMIN.WAREHOUSES.LIST.path,
       icon: Warehouse,
