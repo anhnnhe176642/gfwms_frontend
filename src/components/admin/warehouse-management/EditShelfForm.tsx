@@ -50,6 +50,7 @@ export function EditShelfForm({
           code: data.code,
           maxQuantity: data.maxQuantity,
           warehouseId,
+          currentQuantity: shelf.currentQuantity,
         });
         toast.success('Cập nhật kệ thành công');
         resetForm();

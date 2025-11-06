@@ -64,6 +64,7 @@ export type CreateShelfPayload = {
 export type UpdateShelfPayload = {
   code?: string;
   maxQuantity?: number;
+  currentQuantity?: number;
   warehouseId?: number;
 };
 

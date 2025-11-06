@@ -11,6 +11,7 @@ import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
 import type { ShelfDetail, WarehouseListItem } from '@/types/warehouse';
 import { FabricShelfCard } from '@/components/admin/warehouse-management/FabricShelfCard';
+import { EditShelfForm } from '@/components/admin/warehouse-management/EditShelfForm';
 
 export interface ShelfDetailViewProps {
   shelfId: string | number;
@@ -24,6 +25,7 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
   const [shelf, setShelf] = useState<ShelfDetail | null>(null);
   const [warehouse, setWarehouse] = useState<WarehouseListItem | null>(null);
   const [error, setError] = useState('');
+  const [editShelfOpen, setEditShelfOpen] = useState(false);
 
   // Fetch shelf data
   useEffect(() => {
@@ -62,8 +64,8 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
   const handleEdit = () => {
     if (onEdit && shelf) {
       onEdit(shelf.id);
-    } else if (shelf && warehouseId) {
-      router.push(`/admin/warehouses/${warehouseId}/shelves/${shelf.id}/edit`);
+    } else if (shelf) {
+      setEditShelfOpen(true);
     }
   };
 
@@ -207,6 +209,30 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Shelf Form Dialog */}
+      {shelf && warehouseId && (
+        <EditShelfForm
+          shelf={shelf}
+          warehouseId={Number(warehouseId)}
+          open={editShelfOpen}
+          onOpenChange={setEditShelfOpen}
+          onSuccess={() => {
+            setEditShelfOpen(false);
+            // Reload shelf data without full page reload
+            const fetchShelf = async () => {
+              try {
+                const data = await warehouseService.getShelfById(shelfId);
+                setShelf(data);
+              } catch (err) {
+                const message = getServerErrorMessage(err) || 'Không thể tải lại dữ liệu kệ';
+                toast.error(message);
+              }
+            };
+            fetchShelf();
+          }}
+        />
+      )}
     </div>
   );
 }
