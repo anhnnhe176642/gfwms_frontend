@@ -7,4 +7,5 @@ export { ShelfManagementTable } from './ShelfManagementTable';
 export { createShelfColumns } from './shelfColumns';
 export { CreateShelfForm } from './CreateShelfForm';
 export { EditShelfForm } from './EditShelfForm';
-
+export { ShelfDetailView } from './ShelfDetailView';
+export { FabricShelfCard } from './FabricShelfCard';

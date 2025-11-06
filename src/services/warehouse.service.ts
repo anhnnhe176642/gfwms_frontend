@@ -12,6 +12,7 @@ import type {
   UpdateShelfResponse,
   GetShelfResponse,
   ShelfListItem,
+  ShelfDetail,
 } from '@/types/warehouse';
 import type { CreateWarehouseFormData, UpdateWarehouseFormData } from '@/schemas/warehouse.schema';
 
@@ -99,7 +100,7 @@ export const warehouseService = {
   /**
    * Lấy thông tin chi tiết một kệ
    */
-  getShelfById: async (id: string | number): Promise<ShelfListItem> => {
+  getShelfById: async (id: string | number): Promise<ShelfDetail> => {
     const response = await api.get<GetShelfResponse>(`/v1/shelves/${id}`);
     return response.data.shelf;
   },

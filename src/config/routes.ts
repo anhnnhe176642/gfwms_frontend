@@ -142,6 +142,31 @@ export const ROUTES = {
       },
     },
 
+    // Shelf Management
+    SHELVES: {
+      LIST: {
+        path: '/admin/shelves',
+        name: 'Quản lý kệ',
+        description: 'Danh sách kệ',
+        requiredPermission: PERMISSIONS.SHELVES.VIEW_LIST.key,
+      },
+      DETAIL: {
+        path: '/admin/warehouses/:id/shelves/:shelfId',
+        name: 'Chi tiết kệ',
+        requiredPermission: PERMISSIONS.SHELVES.VIEW_DETAIL.key,
+      },
+      CREATE: {
+        path: '/admin/shelves/create',
+        name: 'Tạo kệ mới',
+        requiredPermission: PERMISSIONS.SHELVES.CREATE.key,
+      },
+      EDIT: {
+        path: '/admin/warehouses/:id/shelves/:shelfId/edit',
+        name: 'Chỉnh sửa kệ',
+        requiredPermission: PERMISSIONS.SHELVES.UPDATE.key,
+      },
+    },
+
     // Credit Management
     CREDITS: {
       LIST: {

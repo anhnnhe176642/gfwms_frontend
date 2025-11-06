@@ -77,7 +77,43 @@ export type UpdateShelfResponse = {
   shelf: ShelfListItem;
 };
 
+export type GlossInfo = {
+  description: string;
+};
+
+export type CategoryInfo = {
+  name: string;
+};
+
+export type ColorInfo = {
+  name: string;
+};
+
+export type SupplierInfo = {
+  name: string;
+};
+
+export type FabricShelfItem = {
+  fabricId: number;
+  quantity: number;
+  fabric: {
+    id: number;
+    thickness: number;
+    length: number;
+    width: number;
+    weight: number;
+    gloss?: GlossInfo;
+    category?: CategoryInfo;
+    color?: ColorInfo;
+    supplier?: SupplierInfo;
+  };
+};
+
+export type ShelfDetail = ShelfListItem & {
+  fabricShelf: FabricShelfItem[];
+};
+
 export type GetShelfResponse = {
   message: string;
-  shelf: ShelfListItem;
+  shelf: ShelfDetail;
 };

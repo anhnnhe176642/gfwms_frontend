@@ -31,6 +31,7 @@ export interface ShelfManagementTableProps {
 }
 
 export function ShelfManagementTable({ warehouseId }: ShelfManagementTableProps) {
+  const router = useRouter();
   const { hasPermission } = useAuth();
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [createShelfOpen, setCreateShelfOpen] = useState(false);
@@ -137,12 +138,17 @@ export function ShelfManagementTable({ warehouseId }: ShelfManagementTableProps)
     }
   };
 
+  /**
+   * Handle view shelf detail
+   */
+  const handleViewShelf = (shelfId: number) => {
+    router.push(`/admin/warehouses/${warehouseId}/shelves/${shelfId}`);
+  };
+
   const columns = createShelfColumns({
     onDelete: hasPermission(PERMISSIONS.SHELVES.DELETE.key) ? handleDeleteClick : undefined,
     onEdit: hasPermission(PERMISSIONS.SHELVES.UPDATE.key) ? handleEditShelf : undefined,
-    onView: hasPermission(PERMISSIONS.SHELVES.VIEW_DETAIL.key) ? (shelfId) => {
-      toast.info(`Xem chi tiết kệ ${shelfId} (chưa implement)`);
-    } : undefined,
+    onView: hasPermission(PERMISSIONS.SHELVES.VIEW_DETAIL.key) ? handleViewShelf : undefined,
   });
 
   if (loading && shelves.length === 0) {
