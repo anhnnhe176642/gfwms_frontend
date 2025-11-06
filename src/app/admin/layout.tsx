@@ -18,7 +18,7 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (isReady && !isAuthenticated) {
-      router.replace('/login');
+      router.replace('/auth/login');
     }
   }, [isReady, isAuthenticated, router]);
 

@@ -130,7 +130,7 @@ export function ForgotPasswordForm() {
       try {
         await authService.setNewPassword(formState.email, formState.pin, data.newPassword);
         toast.success('Mật khẩu đã được đặt lại thành công');
-        router.push('/login');
+        router.push('/auth/login');
       } catch (err) {
         // Extract field-level errors từ backend
         const fieldErrors = extractFieldErrors(err);
@@ -196,7 +196,7 @@ export function ForgotPasswordForm() {
             </Button>
 
             <div className="text-center text-sm">
-              <Link href="/login" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link href="/auth/login" className="text-blue-600 hover:underline dark:text-blue-400">
                 Quay lại đăng nhập
               </Link>
             </div>

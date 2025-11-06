@@ -38,8 +38,8 @@ api.interceptors.response.use(
         
         // Redirect to login if not already there
         const currentPath = window.location.pathname;
-        if (!currentPath.includes('/login')) {
-          window.location.href = '/login?from=401';
+        if (!currentPath.includes('/auth/login')) {
+          window.location.href = '/auth/login?from=401';
         }
       }
     }

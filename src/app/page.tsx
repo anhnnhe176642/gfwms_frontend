@@ -49,14 +49,14 @@ export default function Home() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Button asChild className="w-full" size="lg">
-                    <Link href="/login">
+                    <Link href="/auth/login">
                       <LogIn className="mr-2 h-5 w-5" />
                       Đăng nhập
                     </Link>
                   </Button>
 
                   <Button asChild variant="outline" className="w-full" size="lg">
-                    <Link href="/register">
+                    <Link href="/auth/register">
                       <UserPlus className="mr-2 h-5 w-5" />
                       Đăng ký tài khoản
                     </Link>

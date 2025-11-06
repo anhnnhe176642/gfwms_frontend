@@ -286,7 +286,7 @@ export const RegisterForm: React.FC<Props> = ({ className, onSuccess, ...props }
               </Field>
 
               <FieldDescription className="text-center">
-                Đã có tài khoản? <a href="/login" className="text-primary hover:underline font-medium">Đăng nhập</a>
+                Đã có tài khoản? <a href="/auth/login" className="text-primary hover:underline font-medium">Đăng nhập</a>
               </FieldDescription>
             </FieldGroup>
           </form>

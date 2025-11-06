@@ -106,7 +106,7 @@ export const LoginForm: React.FC<Props> = ({ className, onSuccess, ...props }) =
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Mật khẩu</FieldLabel>
                   <a
-                    href="/forgot-password"
+                    href="/auth/forgot-password"
                     className="ml-auto text-sm underline-offset-2 hover:underline"
                   >
                     Quên mật khẩu?
@@ -208,7 +208,7 @@ export const LoginForm: React.FC<Props> = ({ className, onSuccess, ...props }) =
               </Field>
 
               <FieldDescription className="text-center">
-                Chưa có tài khoản? <a href="/register" className="text-primary hover:underline font-medium">Đăng ký</a>
+                Chưa có tài khoản? <a href="/auth/register" className="text-primary hover:underline font-medium">Đăng ký</a>
               </FieldDescription>
             </FieldGroup>
           </form>

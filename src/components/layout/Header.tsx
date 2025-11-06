@@ -74,7 +74,7 @@ export const Header: React.FC = () => {
             </>
           ) : (
             <Button asChild>
-              <Link href="/login">
+              <Link href="/auth/login">
                 Đăng nhập
               </Link>
             </Button>

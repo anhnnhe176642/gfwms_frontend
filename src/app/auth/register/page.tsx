@@ -21,7 +21,7 @@ export default function RegisterPage() {
   const handleSuccess = (email: string) => {
     setSuccessMessage('Đăng ký thành công! Mã xác thực đã được gửi tới email của bạn.');
     setTimeout(() => {
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
     }, 1500);
   };
 

@@ -37,5 +37,14 @@ export type {
   UpdateShelfPayload,
 } from './warehouse';
 
+// Fabric Category types
+export type {
+  FabricCategoryListItem,
+  FabricCategoryListResponse,
+  FabricCategoryListParams,
+  CreateFabricCategoryPayload,
+  UpdateFabricCategoryPayload,
+} from './fabricCategory';
+
 // Auth types 
 export type * from './auth';

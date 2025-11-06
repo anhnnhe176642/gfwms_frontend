@@ -72,7 +72,7 @@ export function ProtectedRoute({
 
     // Check authentication first
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push('/auth/login');
       return;
     }
   }, [isAuthenticated, isReady, router]);

@@ -222,7 +222,7 @@ export const VerifyEmailForm: React.FC<Props> = ({ className, defaultEmail, ...p
 
               <FieldDescription className="text-center">
                 Quay lại{' '}
-                <a href="/login" className="text-primary hover:underline font-medium">
+                <a href="/auth/login" className="text-primary hover:underline font-medium">
                   Đăng nhập
                 </a>
               </FieldDescription>

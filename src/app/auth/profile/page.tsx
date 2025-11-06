@@ -38,7 +38,7 @@ export default function ProfilePage() {
       
       // If 401, redirect to login
       if (err.response?.status === 401) {
-        router.push('/login');
+        router.push('/auth/login');
       }
     } finally {
       setIsLoading(false);

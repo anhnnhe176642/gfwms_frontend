@@ -26,17 +26,17 @@ export const ROUTES = {
       isPublic: true,
     },
     LOGIN: {
-      path: '/login',
+      path: '/auth/login',
       name: 'Đăng nhập',
       isPublic: true,
     },
     REGISTER: {
-      path: '/register',
+      path: '/auth/register',
       name: 'Đăng ký',
       isPublic: true,
     },
     VERIFY_EMAIL: {
-      path: '/verify-email',
+      path: '/auth/verify-email',
       name: 'Xác thực Email',
       description: 'Xác thực địa chỉ email',
       isPublic: true,
@@ -103,6 +103,21 @@ export const ROUTES = {
       CATEGORIES: {
         path: '/admin/fabrics/categories',
         name: 'Danh mục vải',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
+      },
+      CATEGORIES_CREATE: {
+        path: '/admin/fabrics/categories/create',
+        name: 'Tạo danh mục vải',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
+      },
+      CATEGORIES_DETAIL: {
+        path: '/admin/fabrics/categories/:id',
+        name: 'Chi tiết danh mục vải',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
+      },
+      CATEGORIES_EDIT: {
+        path: '/admin/fabrics/categories/:id/edit',
+        name: 'Chỉnh sửa danh mục vải',
         requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
       },
       COLORS: {
@@ -271,12 +286,12 @@ export const ROUTES = {
   // Profile (chung cho tất cả người dùng)
   PROFILE: {
     VIEW: {
-      path: '/profile',
+      path: '/auth/profile',
       name: 'Hồ sơ cá nhân',
       requiredPermission: PERMISSIONS.USERS.VIEW_OWN_PROFILE.key,
     },
     EDIT: {
-      path: '/profile/edit',
+      path: '/auth/profile/edit',
       name: 'Chỉnh sửa hồ sơ',
       requiredPermission: PERMISSIONS.USERS.UPDATE_OWN_PROFILE.key,
     },
