@@ -54,7 +54,7 @@ export const Sidebar: React.FC = () => {
     {
       label: 'Quản lý người dùng',
       icon: Users,
-      requiredPermission: PERMISSIONS.USERS.VIEW_LIST.key,
+      requiredPermission: null,
       submenu: [
         {
           label: 'Danh sách người dùng',
@@ -73,7 +73,7 @@ export const Sidebar: React.FC = () => {
     {
       label: 'Quản lý vải',
       icon: Package,
-      requiredPermission: PERMISSIONS.FABRICS.VIEW_LIST.key,
+      requiredPermission: null,
       submenu: [
         {
           label: 'Danh sách vải',
