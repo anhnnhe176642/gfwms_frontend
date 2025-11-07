@@ -125,6 +125,21 @@ export const ROUTES = {
         name: 'Màu sắc vải',
         requiredPermission: PERMISSIONS.FABRICS.MANAGE_COLORS.key,
       },
+      COLORS_CREATE: {
+        path: '/admin/fabrics/colors/create',
+        name: 'Tạo màu vải',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_COLORS.key,
+      },
+      COLORS_DETAIL: {
+        path: '/admin/fabrics/colors/:id',
+        name: 'Chi tiết màu vải',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_COLORS.key,
+      },
+      COLORS_EDIT: {
+        path: '/admin/fabrics/colors/:id/edit',
+        name: 'Chỉnh sửa màu vải',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_COLORS.key,
+      },
       SUPPLIERS: {
         path: '/admin/fabrics/suppliers',
         name: 'Nhà cung cấp',

@@ -46,5 +46,14 @@ export type {
   UpdateFabricCategoryPayload,
 } from './fabricCategory';
 
+// Fabric Color types
+export type {
+  FabricColorListItem,
+  FabricColorListResponse,
+  FabricColorListParams,
+  CreateFabricColorPayload,
+  UpdateFabricColorPayload,
+} from './fabricColor';
+
 // Auth types 
 export type * from './auth';
