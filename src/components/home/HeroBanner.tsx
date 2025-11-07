@@ -9,7 +9,7 @@ export default function HeroBanner() {
     <div className="relative w-full h-96 rounded-lg overflow-hidden group">
       {/* Background Image */}
       <img
-        src="https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=1200&h=500&fit=crop"
+        src="https://img.freepik.com/premium-photo/close-up-colorful-fabric_81048-38382.jpg?semt=ais_hybrid&w=740&q=80"
         alt="Hero Banner"
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
       />
