@@ -27,7 +27,7 @@ export function UnauthorizedPage({
   const router = useRouter();
 
   return (
-    <div className="fixed inset-0 w-full h-full flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 z-50">
+    <div className="fixed inset-0 w-full h-full flex items-center justify-center p-4 bg-linear-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 z-50">
       <Card className="max-w-2xl w-full shadow-2xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -44,7 +44,7 @@ export function UnauthorizedPage({
         <CardContent className="space-y-6">
           <div className="p-4 border border-destructive/50 bg-destructive/10 rounded-md">
             <div className="flex gap-3">
-              <ShieldAlert className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <ShieldAlert className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="font-semibold text-destructive mb-1">Truy cập bị từ chối</p>
                 <p className="text-sm text-destructive/90">
