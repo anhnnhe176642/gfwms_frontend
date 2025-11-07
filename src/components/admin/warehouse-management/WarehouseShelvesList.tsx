@@ -11,7 +11,7 @@ import { createShelfColumns } from './shelfColumns';
 import { warehouseService } from '@/services/warehouse.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import type { ShelfListItem, ShelfListParams } from '@/types/warehouse';
-import { Search, RefreshCw, Plus } from 'lucide-react';
+import { Search, ArrowLeft, Plus, Loader } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { useAuth } from '@/hooks/useAuth';
 import { PERMISSIONS } from '@/constants/permissions';
@@ -26,11 +26,11 @@ import {
 import { CreateShelfForm } from './CreateShelfForm';
 import { EditShelfForm } from './EditShelfForm';
 
-export interface ShelfManagementTableProps {
-  warehouseId: number;
+export interface WarehouseShelvesListProps {
+  warehouseId: string | number;
 }
 
-export function ShelfManagementTable({ warehouseId }: ShelfManagementTableProps) {
+export function WarehouseShelvesList({ warehouseId }: WarehouseShelvesListProps) {
   const router = useRouter();
   const { hasPermission } = useAuth();
   const [tempSearchQuery, setTempSearchQuery] = useState('');
@@ -59,7 +59,7 @@ export function ShelfManagementTable({ warehouseId }: ShelfManagementTableProps)
     fetchData: async (params: ShelfListParams) => {
       return await warehouseService.getShelves(params);
     },
-    initialParams: { warehouseId },
+    initialParams: { warehouseId: Number(warehouseId) },
     filterConfig: {
       // Define which filters are date ranges
       dateRangeFilters: {
@@ -145,6 +145,10 @@ export function ShelfManagementTable({ warehouseId }: ShelfManagementTableProps)
     router.push(`/admin/warehouses/${warehouseId}/shelves/${shelfId}`);
   };
 
+  const handleGoBack = () => {
+    router.push(`/admin/warehouses/${warehouseId}`);
+  };
+
   const columns = createShelfColumns({
     onDelete: hasPermission(PERMISSIONS.SHELVES.DELETE.key) ? handleDeleteClick : undefined,
     onEdit: hasPermission(PERMISSIONS.SHELVES.UPDATE.key) ? handleEditShelf : undefined,
@@ -153,105 +157,152 @@ export function ShelfManagementTable({ warehouseId }: ShelfManagementTableProps)
 
   if (loading && shelves.length === 0) {
     return (
-      <Card className="bg-card">
-        <CardHeader>
-          <CardTitle>Danh sách kệ</CardTitle>
-          <CardDescription>Quản lý các kệ trong kho</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center h-64">
-          <div className="flex flex-col items-center gap-2">
-            <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
-            <p className="text-gray-500">Đang tải...</p>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleGoBack}
+            className="h-9 w-9"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Danh sách kệ</h1>
+            <p className="text-muted-foreground mt-1">Quản lý các kệ trong kho</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <Card className="bg-card">
+          <CardContent className="flex justify-center items-center h-64">
+            <div className="flex flex-col items-center gap-2">
+              <Loader className="h-8 w-8 animate-spin text-muted-foreground" />
+              <p className="text-muted-foreground">Đang tải...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (error) {
     return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleGoBack}
+            className="h-9 w-9"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Danh sách kệ</h1>
+            <p className="text-muted-foreground mt-1">Quản lý các kệ trong kho</p>
+          </div>
+        </div>
+
+        <Card className="bg-card">
+          <CardContent className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <p className="text-red-500 mb-2">{error}</p>
+              <Button onClick={() => { reset(); refresh(); }} variant="outline">
+                Thử lại
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleGoBack}
+          className="h-9 w-9"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Danh sách kệ</h1>
+          <p className="text-muted-foreground mt-1">Quản lý các kệ trong kho</p>
+        </div>
+      </div>
+
+      {/* Table Card */}
       <Card className="bg-card">
         <CardHeader>
           <CardTitle>Danh sách kệ</CardTitle>
           <CardDescription>Quản lý các kệ trong kho</CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <p className="text-red-500 mb-2">{error}</p>
-            <Button onClick={() => { reset(); refresh(); }} variant="outline">
-              Thử lại
+        <CardContent className="space-y-4">
+          {/* Search bar */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Tìm kiếm theo mã kệ..."
+                value={tempSearchQuery}
+                onChange={(e) => setTempSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                className="pl-10"
+                disabled={loading}
+              />
+            </div>
+            <Button onClick={handleSearchClick} disabled={loading}>
+              <Search className="h-4 w-4 mr-2" />
+              Tìm kiếm
             </Button>
+            {tempSearchQuery && (
+              <Button onClick={handleClearSearch} disabled={loading} variant="outline">
+                Xóa
+              </Button>
+            )}
+            {hasPermission(PERMISSIONS.SHELVES.CREATE.key) && (
+              <Button onClick={() => setCreateShelfOpen(true)} className="ml-auto gap-2">
+                <Plus className="h-4 w-4" />
+                Tạo kệ
+              </Button>
+            )}
           </div>
+
+          {/* Info bar */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Tổng: <span className="font-medium">{pagination.total}</span> kệ
+            </p>
+          </div>
+
+          {/* DataTable */}
+          <DataTable
+            columns={columns}
+            data={shelves}
+            sorting={sorting}
+            onSortingChange={setSorting}
+            columnFilters={columnFilters}
+            onColumnFiltersChange={setColumnFilters}
+            manualSorting={true}
+            manualFiltering={true}
+            manualPagination={true}
+            pageCount={pagination.totalPages}
+            pageIndex={pagination.page - 1}
+            pageSize={pagination.limit}
+            onPaginationChange={handlePaginationChange}
+          />
         </CardContent>
       </Card>
-    );
-  }
-
-  return (
-    <Card className="bg-card">
-      <CardHeader>
-        <CardTitle>Danh sách kệ</CardTitle>
-        <CardDescription>Quản lý các kệ trong kho</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Search bar */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Tìm kiếm theo mã kệ..."
-              value={tempSearchQuery}
-              onChange={(e) => setTempSearchQuery(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              className="pl-10"
-              disabled={loading}
-            />
-          </div>
-          <Button onClick={handleSearchClick} disabled={loading}>
-            <Search className="h-4 w-4 mr-2" />
-            Tìm kiếm
-          </Button>
-          {tempSearchQuery && (
-            <Button onClick={handleClearSearch} disabled={loading} variant="outline">
-              Xóa
-            </Button>
-          )}
-          {hasPermission(PERMISSIONS.SHELVES.CREATE.key) && (
-            <Button onClick={() => setCreateShelfOpen(true)} className="ml-auto gap-2">
-              <Plus className="h-4 w-4" />
-              Tạo kệ
-            </Button>
-          )}
-        </div>
-
-        {/* Info bar */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Tổng: <span className="font-medium">{pagination.total}</span> kệ
-          </p>
-        </div>
-
-        {/* DataTable */}
-        <DataTable
-          columns={columns}
-          data={shelves}
-          sorting={sorting}
-          onSortingChange={setSorting}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-          manualSorting={true}
-          manualFiltering={true}
-          manualPagination={true}
-          pageCount={pagination.totalPages}
-          pageIndex={pagination.page - 1}
-          pageSize={pagination.limit}
-          onPaginationChange={handlePaginationChange}
-        />
-      </CardContent>
 
       {/* Create Shelf Form */}
       <CreateShelfForm
-        warehouseId={warehouseId}
+        warehouseId={Number(warehouseId)}
         open={createShelfOpen}
         onOpenChange={setCreateShelfOpen}
         onSuccess={refresh}
@@ -260,7 +311,7 @@ export function ShelfManagementTable({ warehouseId }: ShelfManagementTableProps)
       {/* Edit Shelf Form */}
       <EditShelfForm
         shelf={selectedShelf}
-        warehouseId={warehouseId}
+        warehouseId={Number(warehouseId)}
         open={editShelfOpen}
         onOpenChange={setEditShelfOpen}
         onSuccess={refresh}
@@ -293,8 +344,8 @@ export function ShelfManagementTable({ warehouseId }: ShelfManagementTableProps)
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }
 
-export default ShelfManagementTable;
+export default WarehouseShelvesList;

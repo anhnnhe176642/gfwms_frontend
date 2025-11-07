@@ -9,10 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { warehouseService } from '@/services/warehouse.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
-import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Edit, Loader } from 'lucide-react';
 import type { WarehouseListItem } from '@/types/warehouse';
 import { WAREHOUSE_STATUS_CONFIG } from '@/constants/warehouse';
-import { ShelfManagementTable } from './ShelfManagementTable';
 
 export interface WarehouseDetailViewProps {
   warehouseId: string | number;
@@ -59,10 +58,10 @@ export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailView
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
+      <div className="flex items-center justify-center h-96">
         <div className="flex flex-col items-center gap-2">
-          <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
-          <p className="text-gray-500">Đang tải...</p>
+          <Loader className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-muted-foreground">Đang tải dữ liệu...</p>
         </div>
       </div>
     );
@@ -70,102 +69,132 @@ export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailView
 
   if (error || !warehouse) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="text-center">
-          <p className="text-red-500 mb-2">{error || 'Không tìm thấy kho'}</p>
-          <Button onClick={handleGoBack} variant="outline">
-            Quay lại
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleGoBack}
+            className="h-9 w-9"
+          >
+            <ArrowLeft className="h-4 w-4" />
           </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Chi tiết kho</h1>
+          </div>
         </div>
+
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
+          {error || 'Không tìm thấy kho'}
+        </div>
+
+        <Button onClick={handleGoBack} variant="outline">
+          Quay lại
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleGoBack}
-          className="h-9 w-9"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Chi tiết kho</h1>
-          <p className="text-muted-foreground mt-1">Xem thông tin kho hàng</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleGoBack}
+            className="h-9 w-9"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{warehouse.name}</h1>
+            <p className="text-muted-foreground mt-1">Chi tiết kho hàng</p>
+          </div>
         </div>
+        <Button onClick={handleEdit} className="gap-2">
+          <Edit className="h-4 w-4" />
+          Chỉnh sửa
+        </Button>
       </div>
 
       {/* Main Information Card - Full Width - Compact */}
       <Card className="py-3">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl">Thông tin cơ bản</CardTitle>
-              <CardDescription className="text-xs">Thông tin chính của kho hàng</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleGoBack}
-                size="sm"
-              >
-                Quay lại
-              </Button>
-              <Button onClick={handleEdit} className="gap-2" size="sm">
-                <Edit className="h-4 w-4" />
-                Chỉnh sửa
-              </Button>
-            </div>
+          <div>
+            <CardTitle>Thông tin cơ bản</CardTitle>
+            <CardDescription>Thông tin chính của kho hàng</CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           {/* ID & Status - First Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs font-medium text-muted-foreground">ID Kho</p>
-              <p className="text-sm font-semibold">{warehouse.id}</p>
+              <p className="text-sm font-medium text-muted-foreground">ID Kho</p>
+              <p className="text-base font-semibold">{warehouse.id}</p>
             </div>
 
             <div>
-              <p className="text-xs font-medium text-muted-foreground">Trạng thái</p>
+              <p className="text-sm font-medium text-muted-foreground">Trạng thái</p>
               <div className="mt-1">
                 <Badge value={warehouse.status} config={WAREHOUSE_STATUS_CONFIG} />
               </div>
             </div>
-
-            <div className="md:col-span-2">
-              <p className="text-xs font-medium text-muted-foreground">Ngày tạo</p>
-              <p className="text-xs">{new Date(warehouse.createdAt).toLocaleString('vi-VN')}</p>
-            </div>
           </div>
 
-          {/* Name - Second Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Tên kho</p>
-              <p className="text-sm">{warehouse.name}</p>
-            </div>
-
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Ngày cập nhật</p>
-              <p className="text-xs">{new Date(warehouse.updatedAt).toLocaleString('vi-VN')}</p>
-            </div>
-          </div>
-
-          {/* Address - Third Row */}
+          {/* Name */}
+          <Separator />
           <div>
-            <p className="text-xs font-medium text-muted-foreground">Địa chỉ</p>
-            <p className="text-sm break-words">{warehouse.address}</p>
+            <p className="text-sm font-medium text-muted-foreground">Tên kho</p>
+            <p className="text-base font-semibold">{warehouse.name}</p>
+          </div>
+
+          {/* Address */}
+          <Separator />
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Địa chỉ</p>
+            <p className="text-base break-word">{warehouse.address}</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Shelf Table - Below information card */}
-      <ShelfManagementTable warehouseId={Number(warehouse.id)} />
+      {/* Timeline Information Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Thông tin thời gian</CardTitle>
+          <CardDescription>Ngày tạo và cập nhật</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Created At */}
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Ngày tạo</p>
+            <p className="text-base font-semibold">
+              {new Date(warehouse.createdAt).toLocaleString('vi-VN')}
+            </p>
+          </div>
+
+          {/* Updated At */}
+          <Separator />
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Ngày cập nhật lần cuối</p>
+            <p className="text-base font-semibold">
+              {new Date(warehouse.updatedAt).toLocaleString('vi-VN')}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Action Buttons */}
+      <div className="flex gap-4 justify-end pb-8">
+        <Button variant="outline" onClick={handleGoBack}>
+          Quay lại
+        </Button>
+        <Button onClick={handleEdit} className="gap-2">
+          <Edit className="h-4 w-4" />
+          Chỉnh sửa kho
+        </Button>
+      </div>
     </div>
   );
 }

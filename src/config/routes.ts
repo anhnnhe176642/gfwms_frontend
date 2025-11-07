@@ -155,6 +155,11 @@ export const ROUTES = {
         name: 'Chỉnh sửa kho',
         requiredPermission: PERMISSIONS.WAREHOUSES.UPDATE.key,
       },
+      SHELVES: {
+        path: '/admin/warehouses/:id/shelves',
+        name: 'Danh sách kệ',
+        requiredPermission: PERMISSIONS.SHELVES.VIEW_LIST.key,
+      },
     },
 
     // Shelf Management

@@ -3,7 +3,7 @@ export { createWarehouseColumns } from './warehouseColumns';
 export { CreateWarehouseForm } from './CreateWarehouseForm';
 export { EditWarehouseForm } from './EditWarehouseForm';
 export { WarehouseDetailView } from './WarehouseDetailView';
-export { ShelfManagementTable } from './ShelfManagementTable';
+export { WarehouseShelvesList } from './WarehouseShelvesList';
 export { createShelfColumns } from './shelfColumns';
 export { CreateShelfForm } from './CreateShelfForm';
 export { EditShelfForm } from './EditShelfForm';
