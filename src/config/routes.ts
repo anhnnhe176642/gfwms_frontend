@@ -160,6 +160,26 @@ export const ROUTES = {
         name: 'Chỉnh sửa nhà cung cấp',
         requiredPermission: PERMISSIONS.FABRICS.MANAGE_SUPPLIER.key,
       },
+      GLOSS: {
+        path: '/admin/fabrics/gloss',
+        name: 'Độ bóng',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_GLOSS.key,
+      },
+      GLOSS_CREATE: {
+        path: '/admin/fabrics/gloss/create',
+        name: 'Tạo độ bóng',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_GLOSS.key,
+      },
+      GLOSS_DETAIL: {
+        path: '/admin/fabrics/gloss/:id',
+        name: 'Chi tiết độ bóng',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_GLOSS.key,
+      },
+      GLOSS_EDIT: {
+        path: '/admin/fabrics/gloss/:id/edit',
+        name: 'Chỉnh sửa độ bóng',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_GLOSS.key,
+      },
     },
 
     // Warehouse Management

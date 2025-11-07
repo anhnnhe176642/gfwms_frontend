@@ -94,6 +94,12 @@ export const Sidebar: React.FC = () => {
           requiredPermission: PERMISSIONS.FABRICS.MANAGE_COLORS.key,
         },
         {
+          label: 'Độ bóng',
+          href: ROUTES.ADMIN.FABRICS.GLOSS.path,
+          icon: Package,
+          requiredPermission: PERMISSIONS.FABRICS.MANAGE_GLOSS.key,
+        },
+        {
           label: 'Nhà cung cấp',
           href: ROUTES.ADMIN.FABRICS.SUPPLIERS.path,
           icon: Package,
