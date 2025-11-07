@@ -79,7 +79,12 @@ export const createSupplierColumns = (
   },
   {
     accessorKey: "isActive",
-    header: "Trạng thái",
+    header: ({ column }) => (
+      <div className="flex items-center gap-1">
+        <span className="font-medium">Trạng thái</span>
+        <SortButton column={column} label="Sắp xếp theo trạng thái" />
+      </div>
+    ),
     cell: ({ row }) => {
       const isActive = row.getValue("isActive") as boolean
       return (
@@ -101,10 +106,7 @@ export const createSupplierColumns = (
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <SortButton column={column} label="Sắp xếp theo ngày tạo" />
-        <DateRangeFilterHeader column={column} title="Ngày tạo" />
-      </div>
+      <DateRangeFilterHeader column={column} title="Ngày tạo" />
     ),
     cell: ({ row }) => {
       const date = row.getValue("createdAt") as string

@@ -65,14 +65,14 @@ export const createFabricCategoryColumns = (
   {
     accessorKey: "sellingPricePerMeter",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-end gap-1 pr-2">
         <span className="font-medium">Giá bán/mét</span>
         <SortButton column={column} label="Sắp xếp theo giá bán/mét" />
       </div>
     ),
     cell: ({ row }) => {
       const price = row.getValue("sellingPricePerMeter") as number | undefined
-      return price ? `${price.toLocaleString('vi-VN')} ₫` : "-"
+      return <div className="text-right pr-5">{price ? `${price.toLocaleString('vi-VN')} ₫` : "-"}</div>
     },
     meta: {
       title: "Giá bán/mét"
@@ -81,14 +81,14 @@ export const createFabricCategoryColumns = (
   {
     accessorKey: "sellingPricePerRoll",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-end gap-1 pr-2">
         <span className="font-medium">Giá bán/cuộn</span>
         <SortButton column={column} label="Sắp xếp theo giá bán/cuộn" />
       </div>
     ),
     cell: ({ row }) => {
       const price = row.getValue("sellingPricePerRoll") as number | undefined
-      return price ? `${price.toLocaleString('vi-VN')} ₫` : "-"
+      return <div className="text-right pr-5">{price ? `${price.toLocaleString('vi-VN')} ₫` : "-"}</div>
     },
     meta: {
       title: "Giá bán/cuộn"
