@@ -14,21 +14,54 @@ import {
   CreditCard,
   FileText,
   TruckIcon,
-  ShieldCheck
+  ShieldCheck,
+  ChevronDown
 } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { PERMISSIONS } from '@/constants/permissions';
 import { ROUTES } from '@/config/routes';
 
+type MenuItem = {
+  label: string;
+  href?: string;
+  icon: React.ElementType;
+  requiredPermission?: string | null;
+  submenu?: MenuItem[];
+};
+
 export const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const pathname = usePathname();
   const { isAuthenticated, hasPermission } = useAuth();
 
   if (!isAuthenticated) return null;
 
-  const menuItems = [
+  // Auto-expand parent menus when a submenu item is active
+  React.useEffect(() => {
+    const findParentMenus = (items: MenuItem[], targetPath: string, parents: string[] = []): string[] => {
+      for (const item of items) {
+        if (item.href === targetPath) {
+          return parents;
+        }
+        if (item.submenu && item.submenu.length > 0) {
+          const result = findParentMenus(item.submenu, targetPath, [...parents, item.label]);
+          if (result.length > 0) {
+            return result;
+          }
+        }
+      }
+      return [];
+    };
+
+    const parentMenus = findParentMenus(menuItems, pathname);
+    if (parentMenus.length > 0) {
+      setExpandedMenus(parentMenus);
+    }
+  }, [pathname]);
+
+  const menuItems: MenuItem[] = [
     {
       label: 'Dashboard',
       href: ROUTES.ADMIN.DASHBOARD.path,
@@ -43,21 +76,53 @@ export const Sidebar: React.FC = () => {
     },
     {
       label: 'Quản lý người dùng',
-      href: ROUTES.ADMIN.USERS.LIST.path,
       icon: Users,
       requiredPermission: PERMISSIONS.USERS.VIEW_LIST.key,
+      submenu: [
+        {
+          label: 'Danh sách người dùng',
+          href: ROUTES.ADMIN.USERS.LIST.path,
+          icon: Users,
+          requiredPermission: PERMISSIONS.USERS.VIEW_LIST.key,
+        },
+        {
+          label: 'Quản lý vai trò',
+          href: ROUTES.ADMIN.ROLES.LIST.path,
+          icon: ShieldCheck,
+          requiredPermission: PERMISSIONS.ROLES.VIEW_LIST.key,
+        },
+      ],
     },
     {
       label: 'Quản lý vải',
-      href: ROUTES.ADMIN.FABRICS.LIST.path,
       icon: Package,
       requiredPermission: PERMISSIONS.FABRICS.VIEW_LIST.key,
-    },
-    {
-      label: 'Quản lý loại vải',
-      href: ROUTES.ADMIN.FABRICS.CATEGORIES.path,
-      icon: Package,
-      requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
+      submenu: [
+        {
+          label: 'Danh sách vải',
+          href: ROUTES.ADMIN.FABRICS.LIST.path,
+          icon: Package,
+          requiredPermission: PERMISSIONS.FABRICS.VIEW_LIST.key,
+        },
+        {
+          label: 'Loại vải',
+          href: ROUTES.ADMIN.FABRICS.CATEGORIES.path,
+          icon: Package,
+          requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
+        },
+        {
+          label: 'Màu vải',
+          href: ROUTES.ADMIN.FABRICS.COLORS.path,
+          icon: Package,
+          requiredPermission: PERMISSIONS.FABRICS.MANAGE_COLORS.key,
+        },
+        {
+          label: 'Nhà cung cấp',
+          href: ROUTES.ADMIN.FABRICS.SUPPLIERS.path,
+          icon: Package,
+          requiredPermission: PERMISSIONS.FABRICS.MANAGE_SUPPLIER.key,
+        },
+      ],
     },
     {
       label: 'Quản lý kho',
@@ -84,12 +149,6 @@ export const Sidebar: React.FC = () => {
       requiredPermission: PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key,
     },
     {
-      label: 'Quản lý vai trò',
-      href: ROUTES.ADMIN.ROLES.LIST.path,
-      icon: ShieldCheck,
-      requiredPermission: PERMISSIONS.ROLES.VIEW_LIST.key,
-    },
-    {
       label: 'Cài đặt',
       href: ROUTES.ADMIN.SYSTEM.CONFIG.path,
       icon: Settings,
@@ -97,11 +156,84 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
-  const visibleItems = menuItems.filter(
-    (item) => !item.requiredPermission || hasPermission(item.requiredPermission)
-  );
+  const isActive = (href?: string) => href && pathname === href;
 
-  const isActive = (href: string) => pathname === href;
+  const isMenuExpanded = (label: string) => expandedMenus.includes(label);
+
+  const toggleMenu = (label: string) => {
+    setExpandedMenus((prev) =>
+      prev.includes(label)
+        ? prev.filter((item) => item !== label)
+        : [...prev, label]
+    );
+  };
+
+  const filterMenuItems = (items: MenuItem[]): MenuItem[] => {
+    return items
+      .filter((item) => !item.requiredPermission || hasPermission(item.requiredPermission))
+      .map((item) => ({
+        ...item,
+        submenu: item.submenu ? filterMenuItems(item.submenu) : undefined,
+      }))
+      .filter((item) => item.submenu ? item.submenu.length > 0 : true);
+  };
+
+  const visibleItems = filterMenuItems(menuItems);
+
+  const renderMenuItem = (item: MenuItem, level: number = 0): React.ReactNode => {
+    const Icon = item.icon;
+    const expanded = isMenuExpanded(item.label);
+    const active = isActive(item.href);
+    const hasSubmenu = item.submenu && item.submenu.length > 0;
+    const isSubmenu = level > 0;
+    const textSize = isSubmenu ? 'text-sm' : 'text-base';
+
+    return (
+      <div key={item.label}>
+        {item.href ? (
+          <Link
+            href={item.href}
+            onClick={() => setIsOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${textSize} ${
+              active
+                ? 'bg-primary text-primary-foreground font-semibold'
+                : isSubmenu
+                  ? 'text-foreground hover:bg-muted/60'
+                  : 'text-foreground hover:bg-accent'
+            } ${isSubmenu ? 'border-l-2 border-muted-foreground/30 bg-muted/20' : ''}`}
+            style={{ marginLeft: `${level * 8}px` }}
+          >
+            <Icon className="h-5 w-5 shrink-0" />
+            <span className="flex-1">{item.label}</span>
+          </Link>
+        ) : (
+          <button
+            onClick={() => toggleMenu(item.label)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${textSize} text-foreground hover:bg-accent ${
+              isSubmenu ? 'border-l-2 border-muted-foreground/30 bg-muted/20' : ''
+            }`}
+            style={{ marginLeft: `${level * 8}px` }}
+          >
+            <Icon className="h-5 w-5 shrink-0" />
+            <span className="flex-1 text-left">{item.label}</span>
+            {hasSubmenu && (
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 transition-transform ${
+                  expanded ? 'rotate-180' : ''
+                }`}
+              />
+            )}
+          </button>
+        )}
+
+        {hasSubmenu && expanded && (
+          <div className="space-y-1 mt-1 border-l-2 border-muted-foreground/20 ml-3 pl-2">
+            {item.submenu!.map((subitem) => renderMenuItem(subitem, level + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -119,27 +251,9 @@ export const Sidebar: React.FC = () => {
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         } lg:static lg:h-auto lg:translate-x-0 z-30`}
       >
-        <nav className="flex flex-col h-full p-4 space-y-2">
+        <nav className="flex flex-col h-full p-4 space-y-2 overflow-y-auto">
           {visibleItems.length > 0 ? (
-            visibleItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    active
-                      ? 'bg-primary text-primary-foreground font-semibold'
-                      : 'text-foreground hover:bg-accent'
-                  }`}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })
+            visibleItems.map((item) => renderMenuItem(item))
           ) : (
             <div className="text-center text-muted-foreground py-8">
               <p className="text-sm">Không có menu khả dụng</p>
