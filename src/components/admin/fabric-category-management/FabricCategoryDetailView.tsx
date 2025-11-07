@@ -81,20 +81,22 @@ export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryD
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleGoBack}
-          className="h-9 w-9"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">{category.name}</h1>
-          <p className="text-muted-foreground mt-1">
-            Chi tiết loại vải
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleGoBack}
+            className="h-9 w-9"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{category.name}</h1>
+            <p className="text-muted-foreground mt-1">
+              Chi tiết loại vải
+            </p>
+          </div>
         </div>
         <Button onClick={handleEdit} className="gap-2">
           <Edit className="h-4 w-4" />
@@ -191,6 +193,17 @@ export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryD
           </div>
         </CardContent>
       </Card>
+
+      {/* Action Buttons */}
+      <div className="flex gap-4 justify-end pb-8">
+        <Button variant="outline" onClick={handleGoBack}>
+          Quay lại
+        </Button>
+        <Button onClick={handleEdit} className="gap-2">
+          <Edit className="h-4 w-4" />
+          Chỉnh sửa loại vải
+        </Button>
+      </div>
     </div>
   );
 }
