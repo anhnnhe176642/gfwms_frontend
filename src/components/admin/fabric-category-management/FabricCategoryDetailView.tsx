@@ -31,7 +31,7 @@ export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryD
         const data = await fabricCategoryService.getFabricCategoryById(categoryId);
         setCategory(data);
       } catch (err) {
-        const message = getServerErrorMessage(err) || 'Không thể tải dữ liệu danh mục';
+        const message = getServerErrorMessage(err) || 'Không thể tải dữ liệu loại vải';
         setError(message);
         toast.error(message);
       } finally {
@@ -69,7 +69,7 @@ export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryD
     return (
       <div className="flex justify-center items-center h-96">
         <div className="text-center">
-          <p className="text-red-500 mb-2">{error || 'Không tìm thấy danh mục'}</p>
+          <p className="text-red-500 mb-2">{error || 'Không tìm thấy loại vải'}</p>
           <Button onClick={handleGoBack} variant="outline">
             Quay lại
           </Button>
@@ -93,7 +93,7 @@ export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryD
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{category.name}</h1>
           <p className="text-muted-foreground mt-1">
-            Chi tiết danh mục vải
+            Chi tiết loại vải
           </p>
         </div>
         <Button onClick={handleEdit} className="gap-2">
@@ -106,12 +106,12 @@ export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryD
       <Card>
         <CardHeader>
           <CardTitle>Thông tin cơ bản</CardTitle>
-          <CardDescription>Thông tin chung của danh mục vải</CardDescription>
+          <CardDescription>Thông tin chung của loại vải</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Name */}
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Tên danh mục</p>
+            <p className="text-sm font-medium text-muted-foreground">Tên loại vải</p>
             <p className="text-base font-semibold">{category.name}</p>
           </div>
 

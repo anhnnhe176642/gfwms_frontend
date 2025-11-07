@@ -102,22 +102,22 @@ export const ROUTES = {
       },
       CATEGORIES: {
         path: '/admin/fabrics/categories',
-        name: 'Danh mục vải',
+        name: 'loại vải',
         requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
       },
       CATEGORIES_CREATE: {
         path: '/admin/fabrics/categories/create',
-        name: 'Tạo danh mục vải',
+        name: 'Tạo loại vải',
         requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
       },
       CATEGORIES_DETAIL: {
         path: '/admin/fabrics/categories/:id',
-        name: 'Chi tiết danh mục vải',
+        name: 'Chi tiết loại vải',
         requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
       },
       CATEGORIES_EDIT: {
         path: '/admin/fabrics/categories/:id/edit',
-        name: 'Chỉnh sửa danh mục vải',
+        name: 'Chỉnh sửa loại vải',
         requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
       },
       COLORS: {

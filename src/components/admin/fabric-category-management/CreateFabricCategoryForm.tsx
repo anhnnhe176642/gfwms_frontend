@@ -27,7 +27,7 @@ export function CreateFabricCategoryForm() {
 
       try {
         await fabricCategoryService.createFabricCategory(data);
-        toast.success('Tạo danh mục vải thành công');
+        toast.success('Tạo loại vải thành công');
         router.push('/admin/fabrics/categories');
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
@@ -60,9 +60,9 @@ export function CreateFabricCategoryForm() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tạo danh mục vải</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Tạo loại vải</h1>
           <p className="text-muted-foreground mt-1">
-            Điền thông tin để tạo một danh mục vải mới
+            Điền thông tin để tạo một loại vải mới
           </p>
         </div>
       </div>
@@ -79,14 +79,14 @@ export function CreateFabricCategoryForm() {
         {/* Category Information Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Thông tin danh mục</CardTitle>
-            <CardDescription>Nhập thông tin cơ bản của danh mục vải</CardDescription>
+            <CardTitle>Thông tin loại vải</CardTitle>
+            <CardDescription>Nhập thông tin cơ bản của loại vải</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Category Name */}
             <div className="space-y-2">
               <Label htmlFor="name">
-                Tên danh mục <span className="text-destructive">*</span>
+                Tên loại vải <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
@@ -109,7 +109,7 @@ export function CreateFabricCategoryForm() {
               <Textarea
                 id="description"
                 name="description"
-                placeholder="Mô tả chi tiết về danh mục vải..."
+                placeholder="Mô tả chi tiết về loại vải..."
                 value={values.description ?? ''}
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -187,7 +187,7 @@ export function CreateFabricCategoryForm() {
           </Button>
           <Button type="submit" disabled={isLoading}>
             {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Đang tạo...' : 'Tạo danh mục'}
+            {isLoading ? 'Đang tạo...' : 'Tạo loại vải'}
           </Button>
         </div>
       </form>

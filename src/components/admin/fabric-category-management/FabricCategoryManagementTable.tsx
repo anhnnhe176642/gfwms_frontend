@@ -101,12 +101,12 @@ export function FabricCategoryManagementTable({ initialParams }: FabricCategoryM
     setActionLoading(true);
     try {
       await fabricCategoryService.deleteFabricCategory(categoryToDelete);
-      toast.success('Xóa danh mục vải thành công');
+      toast.success('Xóa loại vải thành công');
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
       await refresh();
     } catch (err) {
-      const message = getServerErrorMessage(err) || 'Không thể xóa danh mục vải';
+      const message = getServerErrorMessage(err) || 'Không thể xóa loại vải';
       toast.error(message);
     } finally {
       setActionLoading(false);
@@ -166,7 +166,7 @@ export function FabricCategoryManagementTable({ initialParams }: FabricCategoryM
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Tìm kiếm theo tên danh mục..."
+            placeholder="Tìm kiếm theo tên loại vải..."
             value={tempSearchQuery}
             onChange={(e) => setTempSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
@@ -183,7 +183,7 @@ export function FabricCategoryManagementTable({ initialParams }: FabricCategoryM
       {/* Info bar */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Tổng: <span className="font-medium">{pagination.total}</span> danh mục
+          Tổng: <span className="font-medium">{pagination.total}</span> loại vải
         </p>
       </div>
 
@@ -210,9 +210,9 @@ export function FabricCategoryManagementTable({ initialParams }: FabricCategoryM
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Xóa danh mục vải</DialogTitle>
+            <DialogTitle>Xóa loại vải</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa danh mục vải này? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa loại vải này? Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

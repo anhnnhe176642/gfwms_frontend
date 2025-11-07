@@ -34,7 +34,7 @@ export function EditFabricCategoryForm({ categoryId }: EditFabricCategoryFormPro
         const data = await fabricCategoryService.getFabricCategoryById(categoryId);
         setCategory(data);
       } catch (err) {
-        const message = getServerErrorMessage(err) || 'Không thể tải dữ liệu danh mục';
+        const message = getServerErrorMessage(err) || 'Không thể tải dữ liệu loại vải';
         setServerError(message);
         toast.error(message);
       } finally {
@@ -53,7 +53,7 @@ export function EditFabricCategoryForm({ categoryId }: EditFabricCategoryFormPro
 
       try {
         await fabricCategoryService.updateFabricCategory(categoryId, data);
-        toast.success('Cập nhật danh mục vải thành công');
+        toast.success('Cập nhật loại vải thành công');
         router.push('/admin/fabrics/categories');
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
@@ -120,9 +120,9 @@ export function EditFabricCategoryForm({ categoryId }: EditFabricCategoryFormPro
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Chỉnh sửa danh mục vải</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Chỉnh sửa loại vải</h1>
           <p className="text-muted-foreground mt-1">
-            Cập nhật thông tin danh mục vải
+            Cập nhật thông tin loại vải
           </p>
         </div>
       </div>
@@ -139,14 +139,14 @@ export function EditFabricCategoryForm({ categoryId }: EditFabricCategoryFormPro
         {/* Category Information Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Thông tin danh mục</CardTitle>
-            <CardDescription>Cập nhật thông tin cơ bản của danh mục vải</CardDescription>
+            <CardTitle>Thông tin loại vải</CardTitle>
+            <CardDescription>Cập nhật thông tin cơ bản của loại vải</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Category Name */}
             <div className="space-y-2">
               <Label htmlFor="name">
-                Tên danh mục <span className="text-destructive">*</span>
+                Tên loại vải <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
@@ -169,7 +169,7 @@ export function EditFabricCategoryForm({ categoryId }: EditFabricCategoryFormPro
               <Textarea
                 id="description"
                 name="description"
-                placeholder="Mô tả chi tiết về danh mục vải..."
+                placeholder="Mô tả chi tiết về loại vải..."
                 value={values.description ?? ''}
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -247,7 +247,7 @@ export function EditFabricCategoryForm({ categoryId }: EditFabricCategoryFormPro
           </Button>
           <Button type="submit" disabled={isLoading}>
             {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Đang cập nhật...' : 'Cập nhật danh mục'}
+            {isLoading ? 'Đang cập nhật...' : 'Cập nhật loại vải'}
           </Button>
         </div>
       </form>

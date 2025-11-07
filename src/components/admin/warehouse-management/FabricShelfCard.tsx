@@ -43,7 +43,7 @@ export function FabricShelfCard({ fabricItem, shelfCapacity }: FabricShelfCardPr
           {/* Category */}
           {fabric.category && (
             <div className="flex flex-col">
-              <p className="text-xs font-medium text-muted-foreground">Danh mục</p>
+              <p className="text-xs font-medium text-muted-foreground">loại vải</p>
               <p className="text-xs font-medium truncate">
                 {fabric.category.name}
               </p>

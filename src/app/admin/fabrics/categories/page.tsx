@@ -23,15 +23,15 @@ export default function FabricCategoriesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div className="space-y-1">
-              <CardTitle>Quản lý danh mục vải</CardTitle>
+              <CardTitle>Quản lý loại vải</CardTitle>
               <CardDescription>
-                Quản lý danh mục và thông tin giá bán vải
+                Quản lý loại vải và thông tin giá bán vải
               </CardDescription>
             </div>
             {canAccess(ROUTES.ADMIN.FABRICS.CATEGORIES_CREATE) && (
               <Button onClick={handleCreateCategory} className="gap-2">
                 <Plus className="h-4 w-4" />
-                Tạo danh mục mới
+                Tạo loại vải mới
               </Button>
             )}
           </CardHeader>
