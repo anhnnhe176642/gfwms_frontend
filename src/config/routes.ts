@@ -145,6 +145,21 @@ export const ROUTES = {
         name: 'Nhà cung cấp',
         requiredPermission: PERMISSIONS.FABRICS.MANAGE_SUPPLIER.key,
       },
+      SUPPLIERS_CREATE: {
+        path: '/admin/fabrics/suppliers/create',
+        name: 'Tạo nhà cung cấp',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_SUPPLIER.key,
+      },
+      SUPPLIERS_DETAIL: {
+        path: '/admin/fabrics/suppliers/:id',
+        name: 'Chi tiết nhà cung cấp',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_SUPPLIER.key,
+      },
+      SUPPLIERS_EDIT: {
+        path: '/admin/fabrics/suppliers/:id/edit',
+        name: 'Chỉnh sửa nhà cung cấp',
+        requiredPermission: PERMISSIONS.FABRICS.MANAGE_SUPPLIER.key,
+      },
     },
 
     // Warehouse Management
