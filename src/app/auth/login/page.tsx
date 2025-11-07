@@ -11,9 +11,7 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Sau khi đăng nhập, chuyển về dashboard
-      // Từng page sẽ tự kiểm tra quyền riêng
-      router.replace('/admin/dashboard');
+      router.replace('/');
     }
   }, [isAuthenticated, router]);
 

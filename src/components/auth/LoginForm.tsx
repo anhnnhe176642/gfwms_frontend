@@ -214,7 +214,7 @@ export const LoginForm: React.FC<Props> = ({ className, onSuccess, ...props }) =
           </form>
           <div className="bg-muted relative hidden md:block">
             <img
-              src="fabric.jpg"
+              src="/fabric.jpg"
               alt="Login background"
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />

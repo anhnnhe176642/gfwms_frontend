@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, LayoutDashboard } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,14 @@ export const Header: React.FC = () => {
           
           {isAuthenticated && user ? (
             <>
+              {user?.permissionKeys?.includes('system:config') && (
+                <Button asChild variant="default" size="sm">
+                  <Link href={ROUTES.ADMIN.DASHBOARD.path} className="flex items-center gap-2">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Admin
+                  </Link>
+                </Button>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-3 h-auto py-2">
