@@ -210,6 +210,16 @@ export const ROUTES = {
         name: 'Danh sách kệ',
         requiredPermission: PERMISSIONS.SHELVES.VIEW_LIST.key,
       },
+      IMPORT_FABRICS: {
+        path: '/admin/warehouses/:id/import-fabrics',
+        name: 'Danh sách phiếu nhập',
+        requiredPermission: PERMISSIONS.IMPORT_FABRICS.VIEW_LIST.key,
+      },
+      IMPORT_FABRICS_DETAIL: {
+        path: '/admin/warehouses/:id/import-fabrics/:importId',
+        name: 'Chi tiết phiếu nhập',
+        requiredPermission: PERMISSIONS.IMPORT_FABRICS.VIEW_DETAIL.key,
+      },
     },
 
     // Shelf Management
