@@ -56,8 +56,7 @@ export const VerifyEmailForm: React.FC<Props> = ({ className, defaultEmail, ...p
           setAuthData(response.user, response.token);
         }
         
-        // Redirect về trang dashboard hoặc home
-        router.push('/admin/dashboard');
+        router.push('/');
       } catch (err: unknown) {
         const message = getServerErrorMessage(err);
         const fieldErrors = extractFieldErrors(err);
