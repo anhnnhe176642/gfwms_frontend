@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { fabricCategoryService } from '@/services/fabricCategory.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { FabricCategoryListItem } from '@/types/fabricCategory';
 
 export interface FabricCategoryDetailViewProps {
@@ -18,6 +19,7 @@ export interface FabricCategoryDetailViewProps {
 
 export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryDetailViewProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
   const [category, setCategory] = useState<FabricCategoryListItem | null>(null);
   const [error, setError] = useState('');
@@ -42,9 +44,6 @@ export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryD
     fetchCategory();
   }, [categoryId]);
 
-  const handleGoBack = () => {
-    router.back();
-  };
 
   const handleEdit = () => {
     if (onEdit && category) {

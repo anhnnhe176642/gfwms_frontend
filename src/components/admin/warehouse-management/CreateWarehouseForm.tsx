@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { createWarehouseSchema, type CreateWarehouseFormData } from '@/schemas/warehouse.schema';
 import { warehouseService } from '@/services/warehouse.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -15,6 +16,7 @@ import { ArrowLeft, Loader } from 'lucide-react';
 
 export function CreateWarehouseForm() {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -27,7 +29,7 @@ export function CreateWarehouseForm() {
       try {
         await warehouseService.createWarehouse(data);
         toast.success('Tạo kho thành công');
-        router.push('/admin/warehouses');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -40,10 +42,6 @@ export function CreateWarehouseForm() {
         setIsLoading(false);
       }
     });
-
-  const handleGoBack = () => {
-    router.push('/admin/warehouses');
-  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

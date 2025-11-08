@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { fabricGlossService } from '@/services/fabricGloss.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { FabricGlossListItem } from '@/types/fabricGloss';
 
 export interface FabricGlossDetailViewProps {
@@ -18,6 +19,7 @@ export interface FabricGlossDetailViewProps {
 
 export function FabricGlossDetailView({ glossId, onEdit }: FabricGlossDetailViewProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
   const [gloss, setGloss] = useState<FabricGlossListItem | null>(null);
   const [error, setError] = useState('');
@@ -42,9 +44,6 @@ export function FabricGlossDetailView({ glossId, onEdit }: FabricGlossDetailView
     fetchGloss();
   }, [glossId]);
 
-  const handleGoBack = () => {
-    router.back();
-  };
 
   const handleEdit = () => {
     if (onEdit && gloss) {

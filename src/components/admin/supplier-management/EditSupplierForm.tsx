@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { updateSupplierSchema, type UpdateSupplierFormData } from '@/schemas/supplier.schema';
 import { supplierService } from '@/services/supplier.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -33,6 +34,7 @@ export interface EditSupplierFormProps {
 
 export function EditSupplierForm({ supplierId }: EditSupplierFormProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [serverError, setServerError] = useState('');
@@ -66,7 +68,7 @@ export function EditSupplierForm({ supplierId }: EditSupplierFormProps) {
       try {
         await supplierService.updateSupplier(supplierId, data);
         toast.success('Cập nhật nhà cung cấp thành công');
-        router.push('/admin/fabrics/suppliers');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -89,10 +91,6 @@ export function EditSupplierForm({ supplierId }: EditSupplierFormProps) {
       setFieldValue('isActive', supplier.isActive);
     }
   }, [supplier, setFieldValue]);
-
-  const handleGoBack = () => {
-    router.push('/admin/fabrics/suppliers');
-  };
 
   if (isLoadingData) {
     return (

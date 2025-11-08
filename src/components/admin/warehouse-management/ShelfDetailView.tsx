@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { warehouseService } from '@/services/warehouse.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { ShelfDetail, WarehouseListItem } from '@/types/warehouse';
 import { FabricShelfCard } from '@/components/admin/warehouse-management/FabricShelfCard';
 import { EditShelfForm } from '@/components/admin/warehouse-management/EditShelfForm';
@@ -21,6 +22,7 @@ export interface ShelfDetailViewProps {
 
 export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailViewProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
   const [shelf, setShelf] = useState<ShelfDetail | null>(null);
   const [warehouse, setWarehouse] = useState<WarehouseListItem | null>(null);
@@ -56,10 +58,6 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
 
     fetchShelf();
   }, [shelfId]);
-
-  const handleGoBack = () => {
-    router.back();
-  };
 
   const handleEdit = () => {
     if (onEdit && shelf) {

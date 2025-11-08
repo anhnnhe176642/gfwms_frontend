@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { fabricColorService } from '@/services/fabricColor.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { FabricColorListItem } from '@/types/fabricColor';
 
 export interface FabricColorDetailViewProps {
@@ -18,6 +19,7 @@ export interface FabricColorDetailViewProps {
 
 export function FabricColorDetailView({ colorId, onEdit }: FabricColorDetailViewProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
   const [color, setColor] = useState<FabricColorListItem | null>(null);
   const [error, setError] = useState('');
@@ -42,9 +44,6 @@ export function FabricColorDetailView({ colorId, onEdit }: FabricColorDetailView
     fetchColor();
   }, [colorId]);
 
-  const handleGoBack = () => {
-    router.back();
-  };
 
   const handleEdit = () => {
     if (onEdit) {

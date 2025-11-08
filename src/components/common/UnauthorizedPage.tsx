@@ -1,10 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldAlert, Home, ArrowLeft } from 'lucide-react';
+import { useNavigation } from '@/hooks/useNavigation';
 
 export type UnauthorizedPageProps = {
   title?: string;
@@ -24,7 +23,7 @@ export function UnauthorizedPage({
   showHomeButton = true,
   requiredPermission,
 }: UnauthorizedPageProps) {
-  const router = useRouter();
+  const { handleGoBack, navigateTo } = useNavigation();
 
   return (
     <div className="fixed inset-0 w-full h-full flex items-center justify-center p-4 bg-linear-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 z-50">
@@ -58,7 +57,7 @@ export function UnauthorizedPage({
             {showBackButton && (
               <Button
                 variant="outline"
-                onClick={() => router.back()}
+                onClick={handleGoBack}
                 className="flex-1"
                 size="lg"
               >
@@ -68,7 +67,7 @@ export function UnauthorizedPage({
             )}
             {showHomeButton && (
               <Button
-                onClick={() => router.push('/admin/dashboard')}
+                onClick={() => navigateTo('/admin/dashboard')}
                 className="flex-1"
                 size="lg"
               >

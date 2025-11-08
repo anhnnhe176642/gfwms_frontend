@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useServerTable } from '@/hooks/useServerTable';
+import { useNavigation } from '@/hooks/useNavigation';
 import { createImportFabricColumns } from './importFabricColumns';
 import { importFabricService } from '@/services/importFabric.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
@@ -23,6 +24,7 @@ export interface WarehouseImportFabricsListProps {
 export function WarehouseImportFabricsList({ warehouseId }: WarehouseImportFabricsListProps) {
   const router = useRouter();
   const { hasPermission } = useAuth();
+  const { handleGoBack } = useNavigation();
   const [tempSearchQuery, setTempSearchQuery] = useState('');
 
   // Use custom hook for table state and data fetching
@@ -88,10 +90,6 @@ export function WarehouseImportFabricsList({ warehouseId }: WarehouseImportFabri
     setTempSearchQuery('');
     handleSearch('');
   }, [handleSearch]);
-
-  const handleGoBack = () => {
-    router.push(`/admin/warehouses/${warehouseId}`);
-  };
 
   /**
    * Handle view import fabric detail

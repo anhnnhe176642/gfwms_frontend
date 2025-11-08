@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { supplierService } from '@/services/supplier.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { SupplierListItem } from '@/types/supplier';
 
 export interface SupplierDetailViewProps {
@@ -18,6 +19,7 @@ export interface SupplierDetailViewProps {
 
 export function SupplierDetailView({ supplierId, onEdit }: SupplierDetailViewProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
   const [supplier, setSupplier] = useState<SupplierListItem | null>(null);
   const [error, setError] = useState('');
@@ -42,9 +44,6 @@ export function SupplierDetailView({ supplierId, onEdit }: SupplierDetailViewPro
     fetchSupplier();
   }, [supplierId]);
 
-  const handleGoBack = () => {
-    router.back();
-  };
 
   const handleEdit = () => {
     const numId = typeof supplierId === 'string' ? parseInt(supplierId, 10) : supplierId;

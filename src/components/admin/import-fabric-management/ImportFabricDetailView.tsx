@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { importFabricService } from '@/services/importFabric.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { exportInvoiceToPDF } from '@/lib/pdf';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { ImportFabricFullDetail } from '@/types/importFabric';
 import { ArrowLeft, Loader, FileText, Printer } from 'lucide-react';
 import { IsLoading } from '@/components/common/IsLoading';
@@ -19,6 +20,7 @@ interface ImportFabricDetailViewProps {
 
 export function ImportFabricDetailView({ warehouseId, importId }: ImportFabricDetailViewProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [importFabric, setImportFabric] = useState<ImportFabricFullDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,9 +46,6 @@ export function ImportFabricDetailView({ warehouseId, importId }: ImportFabricDe
     fetchImportFabricDetail();
   }, [importId]);
 
-  const handleGoBack = () => {
-    router.push(`/admin/warehouses/${warehouseId}/import-fabrics`);
-  };
 
   const handlePrintInvoice = () => {
     window.print();

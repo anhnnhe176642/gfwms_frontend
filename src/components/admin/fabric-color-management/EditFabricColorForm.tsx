@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { updateFabricColorSchema, type UpdateFabricColorFormData } from '@/schemas/fabricColor.schema';
 import { fabricColorService } from '@/services/fabricColor.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -20,6 +21,7 @@ export interface EditFabricColorFormProps {
 
 export function EditFabricColorForm({ colorId }: EditFabricColorFormProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [serverError, setServerError] = useState('');
@@ -53,7 +55,7 @@ export function EditFabricColorForm({ colorId }: EditFabricColorFormProps) {
       try {
         await fabricColorService.updateFabricColor(colorId, data);
         toast.success('Cập nhật màu vải thành công');
-        router.push('/admin/fabrics/colors');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -73,10 +75,6 @@ export function EditFabricColorForm({ colorId }: EditFabricColorFormProps) {
       setFieldValue('name', color.name);
     }
   }, [color, setFieldValue]);
-
-  const handleGoBack = () => {
-    router.push('/admin/fabrics/colors');
-  };
 
   if (isLoadingData) {
     return (

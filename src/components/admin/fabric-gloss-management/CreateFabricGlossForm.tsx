@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { createFabricGlossSchema, type CreateFabricGlossFormData } from '@/schemas/fabricGloss.schema';
 import { fabricGlossService } from '@/services/fabricGloss.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -16,6 +17,7 @@ import { ArrowLeft, Loader } from 'lucide-react';
 
 export function CreateFabricGlossForm() {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -27,8 +29,8 @@ export function CreateFabricGlossForm() {
 
       try {
         await fabricGlossService.createFabricGloss(data);
-        toast.success('Tạo độ bóng thành công');
-        router.push('/admin/fabrics/gloss');
+        toast.success('Tạo độ bóng vải thành công');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -41,10 +43,6 @@ export function CreateFabricGlossForm() {
         setIsLoading(false);
       }
     });
-
-  const handleGoBack = () => {
-    router.push('/admin/fabrics/gloss');
-  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

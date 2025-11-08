@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { createRoleSchema, type CreateRoleFormData } from '@/schemas/role.schema';
 import { roleService } from '@/services/role.service';
 import { geminiService } from '@/services/gemini.service';
@@ -24,6 +25,7 @@ type PermissionGroup = {
 
 export function CreateRoleForm() {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingPermissions, setIsFetchingPermissions] = useState(true);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
@@ -41,7 +43,7 @@ export function CreateRoleForm() {
         try {
           await roleService.createRole(data);
           toast.success('Tạo vai trò thành công');
-          router.push('/admin/roles');
+          handleGoBack();
         } catch (err) {
           const fieldErrors = extractFieldErrors(err);
           if (Object.keys(fieldErrors).length > 0) {
@@ -103,10 +105,6 @@ export function CreateRoleForm() {
     fetchPermissions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleGoBack = () => {
-    router.push('/admin/roles');
-  };
 
   const togglePermission = (permissionId: number) => {
     const current = values.permissions || [];

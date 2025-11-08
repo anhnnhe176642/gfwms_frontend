@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { createSupplierSchema, type CreateSupplierFormData } from '@/schemas/supplier.schema';
 import { supplierService } from '@/services/supplier.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -16,6 +17,7 @@ import { ArrowLeft, Loader } from 'lucide-react';
 
 export function CreateSupplierForm() {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -28,7 +30,7 @@ export function CreateSupplierForm() {
       try {
         await supplierService.createSupplier(data);
         toast.success('Tạo nhà cung cấp thành công');
-        router.push('/admin/fabrics/suppliers');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -41,10 +43,6 @@ export function CreateSupplierForm() {
         setIsLoading(false);
       }
     });
-
-  const handleGoBack = () => {
-    router.push('/admin/fabrics/suppliers');
-  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { updateWarehouseSchema, type UpdateWarehouseFormData } from '@/schemas/warehouse.schema';
 import { warehouseService } from '@/services/warehouse.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -33,6 +34,7 @@ export interface EditWarehouseFormProps {
 
 export function EditWarehouseForm({ warehouseId }: EditWarehouseFormProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [serverError, setServerError] = useState('');
@@ -66,7 +68,7 @@ export function EditWarehouseForm({ warehouseId }: EditWarehouseFormProps) {
       try {
         await warehouseService.updateWarehouse(warehouseId, data);
         toast.success('Cập nhật kho thành công');
-        router.push('/admin/warehouses');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -88,10 +90,6 @@ export function EditWarehouseForm({ warehouseId }: EditWarehouseFormProps) {
       setFieldValue('status', warehouse.status);
     }
   }, [warehouse, setFieldValue]);
-
-  const handleGoBack = () => {
-    router.push('/admin/warehouses');
-  };
 
   if (isLoadingData) {
     return (

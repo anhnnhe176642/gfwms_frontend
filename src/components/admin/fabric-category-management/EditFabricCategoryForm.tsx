@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { updateFabricCategorySchema, type UpdateFabricCategoryFormData } from '@/schemas/fabricCategory.schema';
 import { fabricCategoryService } from '@/services/fabricCategory.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -21,6 +22,7 @@ export interface EditFabricCategoryFormProps {
 
 export function EditFabricCategoryForm({ categoryId }: EditFabricCategoryFormProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [serverError, setServerError] = useState('');
@@ -54,7 +56,7 @@ export function EditFabricCategoryForm({ categoryId }: EditFabricCategoryFormPro
       try {
         await fabricCategoryService.updateFabricCategory(categoryId, data);
         toast.success('Cập nhật loại vải thành công');
-        router.push('/admin/fabrics/categories');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -77,10 +79,6 @@ export function EditFabricCategoryForm({ categoryId }: EditFabricCategoryFormPro
       setFieldValue('sellingPricePerRoll', category.sellingPricePerRoll || '');
     }
   }, [category, setFieldValue]);
-
-  const handleGoBack = () => {
-    router.push('/admin/fabrics/categories');
-  };
 
   if (isLoadingData) {
     return (

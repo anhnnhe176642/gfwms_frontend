@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { useRoles } from '@/hooks/useRoles';
 import { createUserSchema, type CreateUserFormData } from '@/schemas/user.schema';
 import { userService } from '@/services/user.service';
@@ -34,6 +35,7 @@ const USER_STATUSES = [
 
 export function CreateUserForm() {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -49,7 +51,7 @@ export function CreateUserForm() {
       try {
         await userService.createUser(data);
         toast.success('Tạo người dùng thành công');
-        router.push('/admin/users');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -62,10 +64,6 @@ export function CreateUserForm() {
         setIsLoading(false);
       }
     });
-
-  const handleGoBack = () => {
-    router.push('/admin/users');
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

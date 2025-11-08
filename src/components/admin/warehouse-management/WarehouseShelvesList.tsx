@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useServerTable } from '@/hooks/useServerTable';
+import { useNavigation } from '@/hooks/useNavigation';
 import { createShelfColumns } from './shelfColumns';
 import { warehouseService } from '@/services/warehouse.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
@@ -33,6 +34,7 @@ export interface WarehouseShelvesListProps {
 export function WarehouseShelvesList({ warehouseId }: WarehouseShelvesListProps) {
   const router = useRouter();
   const { hasPermission } = useAuth();
+  const { handleGoBack } = useNavigation();
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [createShelfOpen, setCreateShelfOpen] = useState(false);
   const [editShelfOpen, setEditShelfOpen] = useState(false);
@@ -145,9 +147,6 @@ export function WarehouseShelvesList({ warehouseId }: WarehouseShelvesListProps)
     router.push(`/admin/warehouses/${warehouseId}/shelves/${shelfId}`);
   };
 
-  const handleGoBack = () => {
-    router.push(`/admin/warehouses/${warehouseId}`);
-  };
 
   const columns = createShelfColumns({
     onDelete: hasPermission(PERMISSIONS.SHELVES.DELETE.key) ? handleDeleteClick : undefined,

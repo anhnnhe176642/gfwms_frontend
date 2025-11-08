@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { warehouseService } from '@/services/warehouse.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit, Loader } from 'lucide-react';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { WarehouseListItem } from '@/types/warehouse';
 import { WAREHOUSE_STATUS_CONFIG } from '@/constants/warehouse';
 
@@ -20,6 +21,7 @@ export interface WarehouseDetailViewProps {
 
 export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailViewProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
   const [warehouse, setWarehouse] = useState<WarehouseListItem | null>(null);
   const [error, setError] = useState('');
@@ -44,9 +46,6 @@ export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailView
     fetchWarehouse();
   }, [warehouseId]);
 
-  const handleGoBack = () => {
-    router.back();
-  };
 
   const handleEdit = () => {
     if (onEdit && warehouse) {

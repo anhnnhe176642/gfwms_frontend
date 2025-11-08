@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { createFabricCategorySchema, type CreateFabricCategoryFormData } from '@/schemas/fabricCategory.schema';
 import { fabricCategoryService } from '@/services/fabricCategory.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -16,6 +17,7 @@ import { ArrowLeft, Loader } from 'lucide-react';
 
 export function CreateFabricCategoryForm() {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -28,7 +30,7 @@ export function CreateFabricCategoryForm() {
       try {
         await fabricCategoryService.createFabricCategory(data);
         toast.success('Tạo loại vải thành công');
-        router.push('/admin/fabrics/categories');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -41,10 +43,6 @@ export function CreateFabricCategoryForm() {
         setIsLoading(false);
       }
     });
-
-  const handleGoBack = () => {
-    router.push('/admin/fabrics/categories');
-  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

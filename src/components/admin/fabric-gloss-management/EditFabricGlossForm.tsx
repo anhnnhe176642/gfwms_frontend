@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { updateFabricGlossSchema, type UpdateFabricGlossFormData } from '@/schemas/fabricGloss.schema';
 import { fabricGlossService } from '@/services/fabricGloss.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -21,6 +22,7 @@ export interface EditFabricGlossFormProps {
 
 export function EditFabricGlossForm({ glossId }: EditFabricGlossFormProps) {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [serverError, setServerError] = useState('');
@@ -54,7 +56,7 @@ export function EditFabricGlossForm({ glossId }: EditFabricGlossFormProps) {
       try {
         await fabricGlossService.updateFabricGloss(glossId, data);
         toast.success('Cập nhật độ bóng thành công');
-        router.push('/admin/fabrics/gloss');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -74,10 +76,6 @@ export function EditFabricGlossForm({ glossId }: EditFabricGlossFormProps) {
       setFieldValue('description', gloss.description || '');
     }
   }, [gloss, setFieldValue]);
-
-  const handleGoBack = () => {
-    router.push('/admin/fabrics/gloss');
-  };
 
   if (isLoadingData) {
     return (

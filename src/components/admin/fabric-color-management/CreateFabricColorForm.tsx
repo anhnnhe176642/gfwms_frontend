@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { useNavigation } from '@/hooks/useNavigation';
 import { createFabricColorSchema, type CreateFabricColorFormData } from '@/schemas/fabricColor.schema';
 import { fabricColorService } from '@/services/fabricColor.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
@@ -15,6 +16,7 @@ import { ArrowLeft, Loader } from 'lucide-react';
 
 export function CreateFabricColorForm() {
   const router = useRouter();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -27,7 +29,7 @@ export function CreateFabricColorForm() {
       try {
         await fabricColorService.createFabricColor(data);
         toast.success('Tạo màu vải thành công');
-        router.push('/admin/fabrics/colors');
+        handleGoBack();
       } catch (err) {
         const fieldErrors = extractFieldErrors(err);
         if (Object.keys(fieldErrors).length > 0) {
@@ -40,10 +42,6 @@ export function CreateFabricColorForm() {
         setIsLoading(false);
       }
     });
-
-  const handleGoBack = () => {
-    router.push('/admin/fabrics/colors');
-  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

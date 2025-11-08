@@ -7,6 +7,7 @@ import { ArrowLeft, Loader, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouteAccess } from '@/hooks/useRouteAccess';
+import { useNavigation } from '@/hooks/useNavigation';
 import { roleService } from '@/services/role.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ROUTES } from '@/config/routes';
@@ -28,6 +29,7 @@ export type RoleDetailViewProps = {
 export function RoleDetailView({ roleName }: RoleDetailViewProps) {
   const router = useRouter();
   const { canAccess } = useRouteAccess();
+  const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
   const [serverError, setServerError] = useState('');
   const [roleDetail, setRoleDetail] = useState<RoleDetail | null>(null);
@@ -79,9 +81,6 @@ export function RoleDetailView({ roleName }: RoleDetailViewProps) {
     fetchData();
   }, [roleName]);
 
-  const handleGoBack = () => {
-    router.push('/admin/roles');
-  };
 
   const handleEdit = () => {
     router.push(`/admin/roles/${roleName}/edit`);
