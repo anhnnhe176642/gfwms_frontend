@@ -15,6 +15,7 @@ import type { UserListItem, UserStatus } from "@/types/user"
 import type { RoleOption } from "@/types/role"
 import { SortButton } from "@/components/admin/table/SortButton"
 import { CheckboxFilterHeader } from "@/components/admin/table/CheckboxFilterHeader"
+import { InfiniteScrollRoleFilter } from "@/components/admin/table/InfiniteScrollRoleFilter"
 import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterHeader"
 import { StatusBadge, RoleBadge } from "@/components/admin/table/Badges"
 import { USER_STATUS_OPTIONS } from "@/constants/user"
@@ -101,11 +102,9 @@ export const createUserColumns = (
   {
     accessorKey: "role",
     header: ({ column }) => (
-      <CheckboxFilterHeader 
+      <InfiniteScrollRoleFilter 
         column={column} 
-        title="Vai trò" 
-        options={options.roleOptions}
-        loading={options.roleOptionsLoading}
+        title="Vai trò"
       />
     ),
     cell: ({ row }) => <RoleBadge role={row.getValue("role")} roleOptions={options.roleOptions} />,
