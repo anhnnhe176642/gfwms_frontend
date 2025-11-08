@@ -64,5 +64,12 @@ export type {
   UpdateFabricGlossPayload,
 } from './fabricGloss';
 
+// Fabric types
+export type {
+  FabricListItem,
+  FabricListResponse,
+  FabricListParams,
+} from './fabric';
+
 // Auth types 
 export type * from './auth';

@@ -30,6 +30,12 @@ export type FilterConfig = {
   dateRangeFilters?: Record<string, { from: string; to: string }>;
   
   /**
+   * Maps sort column ID to API sortBy field name
+   * Example: { categoryName: 'category.name', colorName: 'color.name' }
+   */
+  sortingFieldMap?: Record<string, string>;
+  
+  /**
    * Custom filter transformer for special cases
    * Receives filter and returns API params
    */
@@ -83,11 +89,20 @@ export function useServerTable<TData, TParams extends ServerTableParams = Server
   const getSortParams = useCallback(() => {
     if (sorting.length === 0) return {};
 
-    const sortBy = sorting.map((s) => s.id).join(',');
+    const sortBy = sorting
+      .map((s) => {
+        // Check if there's a custom mapping for this sort ID
+        if (filterConfig?.sortingFieldMap?.[s.id]) {
+          return filterConfig.sortingFieldMap[s.id];
+        }
+        // Otherwise use the sort ID as-is
+        return s.id;
+      })
+      .join(',');
     const order = sorting.map((s) => (s.desc ? 'desc' : 'asc')).join(',');
 
     return { sortBy, order };
-  }, [sorting]);
+  }, [sorting, filterConfig?.sortingFieldMap]);
 
   /**
    * Convert TanStack column filters to API params
