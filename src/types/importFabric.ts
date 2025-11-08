@@ -1,9 +1,16 @@
 import type { PaginationState } from './common';
 
+export enum ImportFabricStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
 export type ImportFabricListItem = {
   id: number;
   importDate: string;
   totalPrice: number;
+  status: ImportFabricStatus;
   warehouse: {
     id: number;
     name: string;
@@ -27,6 +34,7 @@ export type ImportFabricListParams = {
   order?: string; // e.g., "asc,desc"
   warehouseId?: number;
   importer?: string; // UUID của người nhập
+  status?: string; // e.g., "PENDING,COMPLETED" for multiple statuses
   importDateFrom?: string; // ISO 8601 date string
   importDateTo?: string; // ISO 8601 date string
 };
@@ -102,6 +110,7 @@ export type ImportFabricFullDetail = {
   importer: string;
   importDate: string;
   totalPrice: number;
+  status: ImportFabricStatus;
   warehouse: ImportFabricWarehouse;
   importUser: ImportFabricUser;
   importItems: ImportFabricItem[];

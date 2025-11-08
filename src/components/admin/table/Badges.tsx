@@ -2,9 +2,10 @@ import type { UserStatus } from '@/types/user';
 import type { RoleOption } from '@/types/role';
 import { Badge } from '@/components/ui/badge';
 import { USER_STATUS_CONFIG } from '@/constants/user';
+import { IMPORT_FABRIC_STATUS_CONFIG } from '@/constants/importFabric';
 
 type StatusBadgeProps = {
-  status: UserStatus;
+  status: UserStatus | string;
 };
 
 /**
@@ -12,7 +13,12 @@ type StatusBadgeProps = {
  * Uses generic Badge component with user status config
  */
 export function StatusBadge({ status }: StatusBadgeProps) {
-  return <Badge value={status} config={USER_STATUS_CONFIG} />;
+  // Try to use IMPORT_FABRIC_STATUS_CONFIG first, fallback to USER_STATUS_CONFIG
+  const config = (IMPORT_FABRIC_STATUS_CONFIG as any)[status] 
+    ? IMPORT_FABRIC_STATUS_CONFIG
+    : USER_STATUS_CONFIG;
+  
+  return <Badge value={status} config={config as any} />;
 }
 
 type RoleBadgeProps = {

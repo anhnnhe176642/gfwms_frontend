@@ -14,6 +14,9 @@ import {
 import type { ImportFabricListItem } from "@/types/importFabric"
 import { SortButton } from "@/components/admin/table/SortButton"
 import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterHeader"
+import { CheckboxFilterHeader } from "@/components/admin/table/CheckboxFilterHeader"
+import { StatusBadge } from "@/components/admin/table/Badges"
+import { IMPORT_FABRIC_STATUS_OPTIONS } from "@/constants/importFabric"
 
 export type ImportFabricColumnActions = {
   onView?: (importId: number) => void
@@ -80,6 +83,20 @@ export const createImportFabricColumns = (
     },
     meta: {
       title: "Tổng giá trị"
+    }
+  },
+  {
+    accessorKey: "status",
+    header: ({ column }) => (
+      <CheckboxFilterHeader column={column} title="Trạng thái" options={IMPORT_FABRIC_STATUS_OPTIONS} />
+    ),
+    cell: ({ row }) => <StatusBadge status={row.getValue("status")} />,
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true
+      return value.includes(row.getValue(id))
+    },
+    meta: {
+      title: "Trạng thái"
     }
   },
   {

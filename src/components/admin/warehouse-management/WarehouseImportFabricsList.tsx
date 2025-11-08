@@ -47,6 +47,9 @@ export function WarehouseImportFabricsList({ warehouseId }: WarehouseImportFabri
     },
     initialParams: { warehouseId: Number(warehouseId) },
     filterConfig: {
+      arrayFilters: {
+        status: 'status',
+      },
       dateRangeFilters: {
         importDate: {
           from: 'importDateFrom',
