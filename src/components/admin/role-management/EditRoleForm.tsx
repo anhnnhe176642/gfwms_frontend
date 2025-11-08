@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, Loader, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { updateRoleSchema, type UpdateRoleFormData } from '@/schemas/role.schema';
 import { roleService } from '@/services/role.service';
+import { geminiService } from '@/services/gemini.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
 import { PermissionsSection } from './PermissionsSection';
 import type { Permission, RoleDetail } from '@/types/role';
@@ -29,6 +30,7 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [serverError, setServerError] = useState('');
   const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
   const [roleDetail, setRoleDetail] = useState<RoleDetail | null>(null);
@@ -144,6 +146,42 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
     }
   };
 
+  const handleGenerateSummary = async () => {
+    const selectedPermissionIds = values.permissions || [];
+    if (selectedPermissionIds.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một quyền để tóm tắt');
+      return;
+    }
+
+    // Lấy các permission descriptions từ các permissions được chọn
+    const permissionDescriptions = permissionGroups
+      .flatMap(group => group.permissions)
+      .filter(p => selectedPermissionIds.includes(p.id))
+      .map(p => p.description);
+
+    const permissionsText = permissionDescriptions.join(', ');
+
+    const prompt = `Vai trò có các quyền: ${permissionsText}. Hãy giải thích vai trò này có thể làm được những gì, dựa trên các quyền được liệt kê ở trên. Tóm tắt dưới 255 kí tự.`;
+
+    try {
+      setIsGeneratingSummary(true);
+      const response = await geminiService.prompt({
+        prompt,
+        model: 'gemini-2.5-flash',
+        temperature: 0.7,
+        maxTokens: 2000,
+      });
+
+      setFieldValue('description', response.data.text);
+      toast.success('Tóm tắt mô tả thành công');
+    } catch (err) {
+      const message = getServerErrorMessage(err);
+      toast.error(message || 'Không thể tóm tắt mô tả');
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
   if (isFetchingData) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -224,9 +262,31 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">
-                Mô tả <span className="text-destructive">*</span>
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">
+                  Mô tả <span className="text-destructive">*</span>
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateSummary}
+                  disabled={isLoading || isFetchingData || isGeneratingSummary || (values.permissions?.length ?? 0) === 0}
+                  className="gap-2"
+                >
+                  {isGeneratingSummary ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      Đang tóm tắt...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4" />
+                      Tóm tắt với AI
+                    </>
+                  )}
+                </Button>
+              </div>
               <Textarea
                 id="description"
                 name="description"
