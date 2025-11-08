@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,8 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { importFabricService } from '@/services/importFabric.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import type { ImportFabricFullDetail } from '@/types/importFabric';
+import { ImportFabricItemCard } from './ImportFabricItemCard';
+import type { ImportFabricFullDetail, ImportFabricStatus } from '@/types/importFabric';
 
 export interface ArrangeImportFabricToShelfPageProps {
   warehouseId: string | number;
@@ -19,31 +19,28 @@ export interface ArrangeImportFabricToShelfPageProps {
 /**
  * Page xếp vải vào kệ
  * 
- * Template layout - chưa implement logic
- * TODO:
- * - Lấy dữ liệu phiếu nhập
- * - Hiển thị danh sách mục vải từ phiếu nhập
- * - Cho phép chọn kệ cho từng mục
- * - Gửi request để lưu
+ * Cho phép phân bổ các mục vải từ phiếu nhập vào các kệ trong kho
+ * - Chỉ cho phép xếp khi trạng thái là PENDING
+ * - Mỗi item vải được xử lý độc lập với fabricId làm unique key
  */
 export function ArrangeImportFabricToShelfPage({
   warehouseId,
   importId,
 }: ArrangeImportFabricToShelfPageProps) {
-  const router = useRouter();
   const { handleGoBack } = useNavigation();
   const [importFabric, setImportFabric] = useState<ImportFabricFullDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load import fabric detail
   useEffect(() => {
     const loadImportFabric = async () => {
       try {
         setLoading(true);
-        const data = await importFabricService.getImportFabricDetail(Number(importId));
-        setImportFabric(data.data);
+        setError('');
+
+        const importData = await importFabricService.getImportFabricDetail(Number(importId));
+        setImportFabric(importData.data);
       } catch (err) {
         const message = getServerErrorMessage(err);
         setError(message || 'Có lỗi khi tải dữ liệu');
@@ -56,20 +53,72 @@ export function ArrangeImportFabricToShelfPage({
     loadImportFabric();
   }, [importId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // TODO: Implement arrange shelf logic
-      toast.success('Xếp vải vào kệ thành công');
-      router.push(`/admin/warehouses/${warehouseId}/import-fabrics`);
-    } catch (err) {
-      const message = getServerErrorMessage(err);
-      toast.error(message || 'Có lỗi xảy ra');
-    } finally {
-      setIsSubmitting(false);
+  // Kiểm tra khi phiếu nhập được load lần đầu hoặc thay đổi
+  useEffect(() => {
+    if (!importFabric || importFabric.status !== 'PENDING') {
+      return;
     }
+
+    // Kiểm tra xem tất cả items đã được phân bổ hay chưa
+    const allItemsAllocated = importFabric.importItems.every((item) => item.status === 'STORED');
+
+    if (allItemsAllocated) {
+      // Tất cả items đã được phân bổ, tự động cập nhật status phiếu nhập
+      const updateStatus = async () => {
+        try {
+          await importFabricService.updateImportFabricStatus(Number(importId), {
+            status: 'COMPLETED',
+          });
+
+          toast.success('Tất cả vải đã được xếp lên kệ. Phiếu nhập đã hoàn thành!');
+
+          // Reload lại data để hiển thị status mới
+          const updatedData = await importFabricService.getImportFabricDetail(Number(importId));
+          setImportFabric(updatedData.data);
+        } catch (err) {
+          console.error('Error updating import fabric status:', err);
+        }
+      };
+
+      updateStatus();
+    }
+  }, [importFabric, importId]);
+
+  // Kiểm tra xem có thể xếp vải hay không (chỉ khi trạng thái là PENDING)
+  const canAllocate = (status: ImportFabricStatus) => {
+    return status === 'PENDING';
+  };
+
+  // Callback khi xếp một item thành công
+  const handleItemSuccess = () => {
+    // Reload data để cập nhật trạng thái
+    const loadImportFabric = async () => {
+      try {
+        const importData = await importFabricService.getImportFabricDetail(Number(importId));
+        setImportFabric(importData.data);
+
+        // Kiểm tra xem tất cả items đã được phân bổ hay chưa
+        const allItemsAllocated = importData.data.importItems.every(
+          (item) => item.status === 'STORED'
+        );
+
+        if (allItemsAllocated) {
+          // Tất cả items đã được phân bổ, tự động cập nhật status phiếu nhập
+          await importFabricService.updateImportFabricStatus(Number(importId), {
+            status: 'COMPLETED',
+          });
+
+          toast.success('Tất cả vải đã được xếp lên kệ. Phiếu nhập đã hoàn thành!');
+
+          // Reload lại data để hiển thị status mới
+          const updatedData = await importFabricService.getImportFabricDetail(Number(importId));
+          setImportFabric(updatedData.data);
+        }
+      } catch (err) {
+        console.error('Error reloading import fabric:', err);
+      }
+    };
+    loadImportFabric();
   };
 
   if (loading) {
@@ -77,17 +126,12 @@ export function ArrangeImportFabricToShelfPage({
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={true}
-            className="h-9 w-9"
-          >
+          <Button variant="ghost" size="icon" disabled className="h-9 w-9">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Xếp vải vào kệ</h1>
-            <p className="text-muted-foreground mt-1">Phân bổ các mục vải vào kệ trong kho</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground dark:text-slate-100">Xếp vải vào kệ</h1>
+            <p className="text-muted-foreground dark:text-slate-400 mt-1">Phân bổ các mục vải vào kệ trong kho</p>
           </div>
         </div>
 
@@ -95,7 +139,7 @@ export function ArrangeImportFabricToShelfPage({
           <CardContent className="flex justify-center items-center h-64">
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="text-muted-foreground">Đang tải...</p>
+              <p className="text-muted-foreground dark:text-slate-400">Đang tải...</p>
             </div>
           </CardContent>
         </Card>
@@ -108,24 +152,19 @@ export function ArrangeImportFabricToShelfPage({
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleGoBack}
-            className="h-9 w-9"
-          >
+          <Button variant="ghost" size="icon" onClick={handleGoBack} className="h-9 w-9">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Xếp vải vào kệ</h1>
-            <p className="text-muted-foreground mt-1">Phân bổ các mục vải vào kệ trong kho</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground dark:text-slate-100">Xếp vải vào kệ</h1>
+            <p className="text-muted-foreground dark:text-slate-400 mt-1">Phân bổ các mục vải vào kệ trong kho</p>
           </div>
         </div>
 
         <Card>
           <CardContent className="flex justify-center items-center h-64">
             <div className="text-center">
-              <p className="text-red-500 mb-2">{error || 'Không tìm thấy dữ liệu'}</p>
+              <p className="text-red-500 dark:text-red-400 mb-2">{error || 'Không tìm thấy dữ liệu'}</p>
               <Button onClick={handleGoBack} variant="outline">
                 Quay lại
               </Button>
@@ -136,27 +175,34 @@ export function ArrangeImportFabricToShelfPage({
     );
   }
 
+  const isNotPending = !canAllocate(importFabric.status);
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleGoBack}
-          disabled={isSubmitting}
-          className="h-9 w-9"
-        >
+        <Button variant="ghost" size="icon" onClick={handleGoBack} className="h-9 w-9">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Xếp vải vào kệ</h1>
-          <p className="text-muted-foreground mt-1">Phân bổ các mục vải vào kệ trong kho</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground dark:text-slate-100">Xếp vải vào kệ</h1>
+          <p className="text-muted-foreground dark:text-slate-400 mt-1">Phân bổ các mục vải vào kệ trong kho</p>
         </div>
       </div>
 
+      {/* Status warning */}
+      {isNotPending && (
+        <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+          <CardContent className="pt-6">
+            <p className="text-sm text-green-800 dark:text-green-300">
+               Phiếu nhập này đã được xếp lên kệ!
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-6">
         {/* Import Info Card */}
         <Card>
           <CardHeader>
@@ -166,27 +212,37 @@ export function ArrangeImportFabricToShelfPage({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Mã phiếu nhập</p>
-                <p className="text-lg font-medium">#{importFabric.id}</p>
+                <p className="text-sm text-muted-foreground dark:text-slate-400">Mã phiếu nhập</p>
+                <p className="text-lg font-medium text-foreground dark:text-slate-100">#{importFabric.id}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Kho</p>
-                <p className="text-lg font-medium">{importFabric.warehouse.name}</p>
+                <p className="text-sm text-muted-foreground dark:text-slate-400">Kho</p>
+                <p className="text-lg font-medium text-foreground dark:text-slate-100">{importFabric.warehouse.name}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Ngày nhập</p>
-                <p className="text-lg font-medium">
+                <p className="text-sm text-muted-foreground dark:text-slate-400">Ngày nhập</p>
+                <p className="text-lg font-medium text-foreground dark:text-slate-100">
                   {new Date(importFabric.importDate).toLocaleDateString('vi-VN')}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Người nhập</p>
-                <p className="text-lg font-medium">{importFabric.importUser.fullname}</p>
+                <p className="text-sm text-muted-foreground dark:text-slate-400">Người nhập</p>
+                <p className="text-lg font-medium text-foreground dark:text-slate-100">{importFabric.importUser.fullname}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Tổng giá trị</p>
-                <p className="text-lg font-medium">
+                <p className="text-sm text-muted-foreground dark:text-slate-400">Tổng giá trị</p>
+                <p className="text-lg font-medium text-foreground dark:text-slate-100">
                   {importFabric.totalPrice.toLocaleString('vi-VN')} ₫
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground dark:text-slate-400">Trạng thái</p>
+                <p className="text-lg font-medium text-foreground dark:text-slate-100">
+                  {importFabric.status === 'PENDING'
+                    ? 'Chờ xử lý'
+                    : importFabric.status === 'COMPLETED'
+                      ? 'Hoàn thành'
+                      : 'Đã hủy'}
                 </p>
               </div>
             </div>
@@ -194,75 +250,37 @@ export function ArrangeImportFabricToShelfPage({
         </Card>
 
         {/* Import Items Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Danh sách vải</CardTitle>
-            <CardDescription>Các mục vải cần xếp vào kệ ({importFabric.importItems.length} mục)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              {importFabric.importItems.map((item, index) => (
-                <div key={item.importFabricId} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-medium">Mục {index + 1}</h3>
-                    <span className="text-sm text-muted-foreground">ID: {item.importFabricId}</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Loại vải</p>
-                      <p className="font-medium">{item.fabric.category.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Màu sắc</p>
-                      <p className="font-medium">{item.fabric.color.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Độ bóng</p>
-                      <p className="font-medium">{item.fabric.gloss.description}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Nhà cung cấp</p>
-                      <p className="font-medium">{item.fabric.supplier.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Số lượng</p>
-                      <p className="font-medium">{item.quantity}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Giá</p>
-                      <p className="font-medium">{item.price.toLocaleString('vi-VN')} ₫</p>
-                    </div>
-                  </div>
-
-                  {/* Shelf selection - TODO */}
-                  <div className="mt-4 p-3 bg-muted rounded border border-dashed">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Chọn kệ để xếp mục này (TODO)
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {!isNotPending && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Danh sách vải</CardTitle>
+              <CardDescription>
+                Các mục vải cần xếp vào kệ ({importFabric.importItems.length} mục)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-6">
+                {importFabric.importItems.map((item, itemIndex) => (
+                  <ImportFabricItemCard
+                    key={item.fabricId}
+                    item={item}
+                    itemIndex={itemIndex}
+                    warehouseId={Number(warehouseId)}
+                    onSuccess={handleItemSuccess}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4 justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGoBack}
-            disabled={isSubmitting}
-          >
-            Hủy
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Xếp vào kệ
+          <Button type="button" variant="outline" onClick={handleGoBack}>
+            Quay lại
           </Button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

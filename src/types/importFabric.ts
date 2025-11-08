@@ -6,6 +6,12 @@ export enum ImportFabricStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum ImportFabricItemStatus {
+  PENDING = 'PENDING',
+  STORED = 'STORED',
+  CANCELLED = 'CANCELLED',
+}
+
 export type ImportFabricListItem = {
   id: number;
   importDate: string;
@@ -86,6 +92,7 @@ export type ImportFabricItem = {
   fabricId: number;
   quantity: number;
   price: number;
+  status: ImportFabricItemStatus;
   createdAt: string;
   updatedAt: string;
   fabric: ImportFabricDetail;

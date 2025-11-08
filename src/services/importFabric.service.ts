@@ -30,6 +30,40 @@ export type CreateImportFabricResponse = {
   };
 };
 
+export type AllocateToShelfRequest = {
+  importFabricId: number;
+  shelves: Array<{
+    shelfId: number;
+    quantity: number;
+  }>;
+};
+
+export type AllocatedShelf = {
+  shelfId: number;
+  quantity: number;
+};
+
+export type AllocateToShelfResponse = {
+  message: string;
+  data: {
+    importFabricId: number;
+    fabricId: number;
+    allocatedShelves: AllocatedShelf[];
+  };
+};
+
+export type UpdateImportFabricStatusRequest = {
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED';
+};
+
+export type UpdateImportFabricStatusResponse = {
+  message: string;
+  data: {
+    id: number;
+    status: string;
+  };
+};
+
 export const importFabricService = {
   /**
    * Lấy danh sách phiếu nhập kho với phân trang và filter
@@ -52,6 +86,25 @@ export const importFabricService = {
    */
   createImportFabric: async (data: CreateImportFabricRequest): Promise<CreateImportFabricResponse> => {
     const response = await api.post<CreateImportFabricResponse>(BASE_PATH, data);
+    return response.data;
+  },
+
+  /**
+   * Phân bổ vải vào kệ
+   */
+  allocateToShelves: async (fabricId: number, data: AllocateToShelfRequest): Promise<AllocateToShelfResponse> => {
+    const response = await api.post<AllocateToShelfResponse>(`/v1/fabric-shelf/${fabricId}/allocate-to-shelves`, data);
+    return response.data;
+  },
+
+  /**
+   * Cập nhật status phiếu nhập
+   */
+  updateImportFabricStatus: async (
+    id: number,
+    data: UpdateImportFabricStatusRequest
+  ): Promise<UpdateImportFabricStatusResponse> => {
+    const response = await api.put<UpdateImportFabricStatusResponse>(`${BASE_PATH}/${id}/status`, data);
     return response.data;
   },
 };
