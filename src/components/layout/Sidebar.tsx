@@ -120,16 +120,10 @@ export const Sidebar: React.FC = () => {
           requiredPermission: PERMISSIONS.WAREHOUSES.VIEW_DETAIL.key,
         },
         {
-          label: 'Danh sách phiếu nhập',
+          label: 'Nhập kho',
           href: `/admin/warehouses/${id}/import-fabrics`,
           icon: Package,
           requiredPermission: PERMISSIONS.IMPORT_FABRICS.VIEW_LIST.key,
-        },
-        {
-          label: 'Nhập kho',
-          href: `/admin/warehouses/${id}/import`,
-          icon: Package,
-          requiredPermission: PERMISSIONS.IMPORT_FABRICS.CREATE.key,
         },
         {
           label: 'Xuất kho',

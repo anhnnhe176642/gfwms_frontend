@@ -11,7 +11,7 @@ import { createImportFabricColumns } from './importFabricColumns';
 import { importFabricService } from '@/services/importFabric.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import type { ImportFabricListItem, ImportFabricListParams } from '@/types/importFabric';
-import { Search, ArrowLeft, Loader } from 'lucide-react';
+import { Search, ArrowLeft, Loader, Plus } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { useAuth } from '@/hooks/useAuth';
 import { PERMISSIONS } from '@/constants/permissions';
@@ -100,6 +100,13 @@ export function WarehouseImportFabricsList({ warehouseId }: WarehouseImportFabri
     router.push(`/admin/warehouses/${warehouseId}/import-fabrics/${importId}`);
   };
 
+  /**
+   * Handle create new import fabric
+   */
+  const handleCreateImportFabric = () => {
+    router.push(`/admin/warehouses/${warehouseId}/import`);
+  };
+
   const columns = createImportFabricColumns({
     onView: hasPermission(PERMISSIONS.IMPORT_FABRICS.VIEW_DETAIL.key) ? handleViewImportFabric : undefined,
   });
@@ -171,19 +178,27 @@ export function WarehouseImportFabricsList({ warehouseId }: WarehouseImportFabri
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleGoBack}
-          className="h-9 w-9"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Danh sách phiếu nhập kho</h1>
-          <p className="text-muted-foreground mt-1">Danh sách các phiếu nhập vải vào kho</p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleGoBack}
+            className="h-9 w-9"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Danh sách phiếu nhập kho</h1>
+            <p className="text-muted-foreground mt-1">Danh sách các phiếu nhập vải vào kho</p>
+          </div>
         </div>
+        {hasPermission(PERMISSIONS.IMPORT_FABRICS.CREATE.key) && (
+          <Button onClick={handleCreateImportFabric} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Tạo đơn nhập mới
+          </Button>
+        )}
       </div>
 
       {/* Table Card */}

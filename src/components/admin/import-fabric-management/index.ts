@@ -1,0 +1,1 @@
+export { ImportFabricDetailView } from './ImportFabricDetailView';
