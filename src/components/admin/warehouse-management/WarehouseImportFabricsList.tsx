@@ -102,6 +102,13 @@ export function WarehouseImportFabricsList({ warehouseId }: WarehouseImportFabri
   };
 
   /**
+   * Handle arrange to shelf
+   */
+  const handleArrangeShelf = (importId: number) => {
+    router.push(`/admin/warehouses/${warehouseId}/import-fabrics/${importId}/arrange-shelf`);
+  };
+
+  /**
    * Handle create new import fabric
    */
   const handleCreateImportFabric = () => {
@@ -110,6 +117,7 @@ export function WarehouseImportFabricsList({ warehouseId }: WarehouseImportFabri
 
   const columns = createImportFabricColumns({
     onView: hasPermission(PERMISSIONS.IMPORT_FABRICS.VIEW_DETAIL.key) ? handleViewImportFabric : undefined,
+    onArrangeShelf: hasPermission(PERMISSIONS.IMPORT_FABRICS.VIEW_DETAIL.key) ? handleArrangeShelf : undefined,
   });
 
   if (loading && importFabrics.length === 0) {

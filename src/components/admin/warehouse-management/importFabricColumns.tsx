@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { ImportFabricListItem } from "@/types/importFabric"
+import { ImportFabricStatus } from "@/types/importFabric"
 import { SortButton } from "@/components/admin/table/SortButton"
 import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterHeader"
 import { CheckboxFilterHeader } from "@/components/admin/table/CheckboxFilterHeader"
@@ -20,6 +21,7 @@ import { IMPORT_FABRIC_STATUS_OPTIONS } from "@/constants/importFabric"
 
 export type ImportFabricColumnActions = {
   onView?: (importId: number) => void
+  onArrangeShelf?: (importId: number) => void
 }
 
 export const createImportFabricColumns = (
@@ -90,7 +92,26 @@ export const createImportFabricColumns = (
     header: ({ column }) => (
       <CheckboxFilterHeader column={column} title="Trạng thái" options={IMPORT_FABRIC_STATUS_OPTIONS} />
     ),
-    cell: ({ row }) => <StatusBadge status={row.getValue("status")} />,
+    cell: ({ row }) => {
+      const importFabric = row.original
+      const isPending = importFabric.status === ImportFabricStatus.PENDING
+
+      return (
+        <div className="flex items-center justify-between gap-2">
+          <StatusBadge status={row.getValue("status")} />
+          {actions.onArrangeShelf && isPending && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => actions.onArrangeShelf?.(importFabric.id)}
+              className="text-xs whitespace-nowrap"
+            >
+              Xếp vào kệ
+            </Button>
+          )}
+        </div>
+      )
+    },
     filterFn: (row, id, value) => {
       if (!value || value.length === 0) return true
       return value.includes(row.getValue(id))
