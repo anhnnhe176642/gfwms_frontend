@@ -14,6 +14,10 @@ import {
 import type { FabricListItem } from "@/types/fabric"
 import { SortButton } from "@/components/admin/table/SortButton"
 import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterHeader"
+import { InfiniteScrollCategoryFilter } from "@/components/admin/table/InfiniteScrollCategoryFilter"
+import { InfiniteScrollColorFilter } from "@/components/admin/table/InfiniteScrollColorFilter"
+import { InfiniteScrollGlossFilter } from "@/components/admin/table/InfiniteScrollGlossFilter"
+import { InfiniteScrollSupplierFilter } from "@/components/admin/table/InfiniteScrollSupplierFilter"
 
 export type FabricColumnActions = {
   onDelete?: (fabricId: number) => void
@@ -36,57 +40,69 @@ export const createFabricColumns = (
     }
   },
   {
-    id: "categoryName",
-    accessorKey: "category.name",
+    id: "categoryId",
+    accessorKey: "category.id",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Loại vải</span>
-        <SortButton column={column} label="Sắp xếp theo loại vải" />
-      </div>
+      <InfiniteScrollCategoryFilter column={column} title="Loại vải" />
     ),
     cell: ({ row }) => row.original.category.name,
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true
+      const categoryId = row.original.category.id
+      return value.includes(String(categoryId))
+    },
+    sortingFn: "text",
     meta: {
       title: "Loại vải"
     }
   },
   {
-    id: "colorName",
-    accessorKey: "color.name",
+    id: "colorId",
+    accessorKey: "color.id",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Màu sắc</span>
-        <SortButton column={column} label="Sắp xếp theo màu sắc" />
-      </div>
+      <InfiniteScrollColorFilter column={column} title="Màu sắc" />
     ),
     cell: ({ row }) => row.original.color.name,
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true
+      const colorId = row.original.color.id
+      return value.includes(colorId)
+    },
+    sortingFn: "text",
     meta: {
       title: "Màu sắc"
     }
   },
   {
-    id: "glossDescription",
-    accessorKey: "gloss.description",
+    id: "glossId",
+    accessorKey: "gloss.id",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Độ bóng</span>
-        <SortButton column={column} label="Sắp xếp theo độ bóng" />
-      </div>
+      <InfiniteScrollGlossFilter column={column} title="Độ bóng" />
     ),
     cell: ({ row }) => row.original.gloss.description,
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true
+      const glossId = row.original.gloss.id
+      return value.includes(String(glossId))
+    },
+    sortingFn: "text",
     meta: {
       title: "Độ bóng"
     }
   },
   {
-    id: "supplierName",
-    accessorKey: "supplier.name",
+    id: "supplierId",
+    accessorKey: "supplier.id",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Nhà cung cấp</span>
-        <SortButton column={column} label="Sắp xếp theo nhà cung cấp" />
-      </div>
+      <InfiniteScrollSupplierFilter column={column} title="Nhà cung cấp" />
     ),
     cell: ({ row }) => row.original.supplier.name,
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true
+      const supplierId = row.original.supplier.id
+      return value.includes(String(supplierId))
+    },
+    sortingFn: "text",
     meta: {
       title: "Nhà cung cấp"
     }

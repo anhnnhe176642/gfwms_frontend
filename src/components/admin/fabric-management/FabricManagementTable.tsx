@@ -35,7 +35,7 @@ export function FabricManagementTable({ initialParams }: FabricManagementTablePr
     weight: false,
     thickness: false,
     width: false,
-    glossDescription: false,
+    glossId: false,
   });
 
   // Use custom hook for table state and data fetching
@@ -57,9 +57,9 @@ export function FabricManagementTable({ initialParams }: FabricManagementTablePr
     initialParams,
     filterConfig: {
       arrayFilters: {
-        glossId: 'glossId',
         categoryId: 'categoryId',
         colorId: 'colorId',
+        glossId: 'glossId',
         supplierId: 'supplierId',
       },
       dateRangeFilters: {
@@ -70,10 +70,10 @@ export function FabricManagementTable({ initialParams }: FabricManagementTablePr
       },
       // Map custom sort IDs to API field names
       sortingFieldMap: {
-        categoryName: 'category.name',
-        colorName: 'color.name',
-        glossDescription: 'gloss.description',
-        supplierName: 'supplier.name',
+        categoryId: 'category.name',
+        colorId: 'color.name',
+        glossId: 'gloss.description',
+        supplierId: 'supplier.name',
       },
     },
     onError: (err) => {
