@@ -99,7 +99,7 @@ export function FabricManagementTable({ initialParams }: FabricManagementTablePr
     try {
       // Note: Implement delete endpoint if available
       // await fabricService.deleteFabric(fabricToDelete);
-      toast.success('Xóa vải thành công');
+      toast.warning('Chức năng xóa vải chưa được triển khai');
       setDeleteDialogOpen(false);
       setFabricToDelete(null);
       await refresh();
