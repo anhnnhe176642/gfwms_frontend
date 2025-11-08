@@ -168,10 +168,10 @@ export function InfiniteScrollFilter<TData, TParams extends Record<string, any>>
             </div>
 
             {/* Items list with infinite scroll */}
-            <div className="flex-1 overflow-y-auto px-4 pt-2">
-              <div className="flex flex-col gap-2">
+            <div className="flex-1 overflow-y-auto px-4 pt-2 min-h-40">
+              <div className="flex flex-col gap-2 h-full">
                 {data.length === 0 && !loading ? (
-                  <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center justify-center h-full">
                     <div className="text-sm text-gray-500">Không có dữ liệu</div>
                   </div>
                 ) : (
@@ -212,16 +212,21 @@ export function InfiniteScrollFilter<TData, TParams extends Record<string, any>>
                   threshold={0.5}
                 >
                   {hasMore && (
-                    <div className="flex justify-center py-2">
-                      <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                    <div className="flex items-center justify-center h-12">
+                      <div className="flex items-center gap-1">
+                        {/* Modern gradient spinner - fixed height to avoid jumps */}
+                        <div className="w-1.5 h-1.5 rounded-full bg-linear-to-r from-blue-400 to-blue-600 animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-linear-to-r from-blue-400 to-blue-600 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-linear-to-r from-blue-400 to-blue-600 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
                     </div>
                   )}
                 </InfiniteScroll>
 
                 {/* End of list */}
                 {!hasMore && data.length > 0 && (
-                  <div className="flex items-center justify-center py-2">
-                    <p className="text-xs text-gray-500">Hết dữ liệu</p>
+                  <div className="flex items-center justify-center h-12">
+                    <p className="text-xs text-gray-400 font-medium">✓ Hết dữ liệu</p>
                   </div>
                 )}
               </div>

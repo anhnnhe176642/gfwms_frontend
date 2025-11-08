@@ -59,6 +59,7 @@ export function useInfiniteScroll<TData, TParams extends Record<string, any> = a
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestCounterRef = useRef(0);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
    * Load more data
@@ -110,24 +111,40 @@ export function useInfiniteScroll<TData, TParams extends Record<string, any> = a
         setLoading(false);
       }
     }
-  }, [loading, hasMore, page, pageSize, searchQuery, initialParams, fetchData, onError, transform]);
+  }, [loading, hasMore, page, pageSize, initialParams, fetchData, onError, transform]);
 
   /**
-   * Reset khi search thay đổi
+   * Debounced reset khi search thay đổi
    */
   useEffect(() => {
-    setData([]);
-    setPage(1);
-    setHasMore(true);
-    setError(null);
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer - chỉ reset khi người dùng dừng nhập 300ms
+    debounceTimerRef.current = setTimeout(() => {
+      setData([]);
+      setPage(1);
+      setHasMore(true);
+      setError(null);
+    }, 300);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [searchQuery]);
 
   /**
    * Initial load
    */
   useEffect(() => {
-    loadMore();
-  }, []);
+    if (data.length === 0 && page === 1) {
+      loadMore();
+    }
+  }, [page]);
 
   /**
    * Handle search
