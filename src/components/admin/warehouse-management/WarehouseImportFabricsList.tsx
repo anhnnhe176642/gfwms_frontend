@@ -105,7 +105,7 @@ export function WarehouseImportFabricsList({ warehouseId }: WarehouseImportFabri
    * Handle create new import fabric
    */
   const handleCreateImportFabric = () => {
-    router.push(`/admin/warehouses/${warehouseId}/import`);
+    router.push(`/admin/warehouses/${warehouseId}/create-import-fabric`);
   };
 
   const columns = createImportFabricColumns({
