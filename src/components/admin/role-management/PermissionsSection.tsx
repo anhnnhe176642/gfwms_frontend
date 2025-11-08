@@ -126,9 +126,9 @@ export function PermissionsSection({
                             >
                               <div className="mt-1">
                                 {isSelected ? (
-                                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+                                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                                 ) : (
-                                  <Circle className="h-4 w-4 text-border flex-shrink-0" />
+                                  <Circle className="h-4 w-4 text-border shrink-0" />
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
