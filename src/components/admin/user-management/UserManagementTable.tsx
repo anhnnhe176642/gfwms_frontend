@@ -17,6 +17,7 @@ import {
 import { createUserColumns } from './columns';
 import { userService } from '@/services/user.service';
 import { useServerTable } from '@/hooks/useServerTable';
+import { useRoles } from '@/hooks/useRoles';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import type { UserListItem, UserListParams, UserStatus } from '@/types/user';
 import { Search, RefreshCw } from 'lucide-react';
@@ -33,6 +34,9 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     email: false, // Hide email column by default
   });
+
+  // Fetch roles for the role change dropdown
+  const { roles: roleOptions, loading: roleOptionsLoading } = useRoles();
 
   // Use custom hook for table state and data fetching
   const {
@@ -157,8 +161,8 @@ export function UserManagementTable({ initialParams }: UserManagementTableProps)
       onDelete: handleDeleteClick,
     },
     {
-      roleOptions: [],
-      roleOptionsLoading: false,
+      roleOptions,
+      roleOptionsLoading,
     }
   );
 
