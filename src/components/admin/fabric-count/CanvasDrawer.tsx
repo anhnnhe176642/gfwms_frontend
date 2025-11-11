@@ -32,6 +32,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   const [history, setHistory] = useState<Detection[][]>([detections]);
   const [objectSize, setObjectSize] = useState(50);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+  const [maxObjectSize, setMaxObjectSize] = useState(500);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -49,6 +50,12 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
     return Math.min(widthRatio, heightRatio, 1);
   }, [containerWidth, imageInfo.width, imageInfo.height]);
+
+  const calculateMaxObjectSize = useCallback(() => {
+    // Kích thước tối đa là 80% của kích thước ảnh nhỏ nhất (width hoặc height)
+    const minDimension = Math.min(imageInfo.width, imageInfo.height);
+    return Math.floor(minDimension * 0.8);
+  }, [imageInfo.width, imageInfo.height]);
 
   const drawDetections = useCallback(() => {
     const canvas = canvasRef.current;
@@ -167,8 +174,12 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
     if (imageUrl) {
       setIsLoading(true);
       drawDetections();
+      const newMaxSize = calculateMaxObjectSize();
+      setMaxObjectSize(newMaxSize);
+      // Reset objectSize nếu vượt quá maxObjectSize mới
+      setObjectSize((prev) => Math.min(prev, newMaxSize));
     }
-  }, [imageUrl, drawDetections]);
+  }, [imageUrl, drawDetections, calculateMaxObjectSize]);
 
   React.useEffect(() => {
     setCurrentDetections(detections);
@@ -179,8 +190,12 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    
+    // Tính toán tọa độ click chính xác với device pixel ratio
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     // Kiểm tra xem click có nằm trong vòng tròn nào không
     for (let i = 0; i < currentDetections.length; i++) {
@@ -301,7 +316,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
               <input
                 type="range"
                 min="20"
-                max="500"
+                max={maxObjectSize}
                 value={objectSize}
                 onChange={(e) => setObjectSize(Number(e.target.value))}
                 onMouseDown={() => setIsDraggingSlider(true)}
@@ -310,7 +325,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
                 onTouchEnd={() => setIsDraggingSlider(false)}
                 className="w-48 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
-              <span className="text-sm font-medium">{objectSize}px</span>
+              <span className="text-sm font-medium">{Math.round((objectSize / maxObjectSize) * 100)}%</span>
             </div>
           </div>
           <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { yoloDetectSchema, YoloDetectFormData } from '@/schemas/yolo.schema';
 import { yoloService } from '@/services/yolo.service';
 import { YoloDetectionResponse, Detection } from '@/types/yolo';
@@ -28,6 +28,21 @@ export const FabricCountForm: React.FC = () => {
   );
   const [isDetecting, setIsDetecting] = useState(false);
   const [editedDetections, setEditedDetections] = useState<Detection[] | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(800);
+
+  // Tính toán containerWidth responsive
+  useEffect(() => {
+    const updateWidth = () => {
+      if (typeof window !== 'undefined') {
+        const width = Math.min(window.innerWidth - 32, 800);
+        setContainerWidth(width);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -122,7 +137,7 @@ export const FabricCountForm: React.FC = () => {
                   imageUrl={preview}
                   detections={editedDetections || detectionResult.data.detections}
                   imageInfo={detectionResult.data.image_info}
-                  containerWidth={800}
+                  containerWidth={containerWidth}
                   onDetectionsChange={setEditedDetections}
                   enableEdit={true}
                 />
