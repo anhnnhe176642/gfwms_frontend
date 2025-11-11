@@ -182,6 +182,15 @@ export const ROUTES = {
       },
     },
 
+    // Fabric Count (YOLO Detection)
+    FABRIC_COUNT: {
+      LIST: {
+        path: '/admin/fabric-count',
+        name: 'Đếm vải',
+        description: 'Phát hiện và đếm vải từ hình ảnh',
+      },
+    },
+
     // Warehouse Management
     WAREHOUSES: {
       LIST: {

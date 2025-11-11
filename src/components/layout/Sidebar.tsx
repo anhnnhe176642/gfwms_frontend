@@ -16,7 +16,8 @@ import {
   TruckIcon,
   ShieldCheck,
   ChevronDown,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -104,6 +105,12 @@ export const Sidebar: React.FC = () => {
           href: ROUTES.ADMIN.FABRICS.SUPPLIERS.path,
           icon: Package,
           requiredPermission: PERMISSIONS.FABRICS.MANAGE_SUPPLIER.key,
+        },
+        {
+          label: 'Đếm vải',
+          href: ROUTES.ADMIN.FABRIC_COUNT.LIST.path,
+          icon: Eye,
+          requiredPermission: null,
         },
       ],
     },
