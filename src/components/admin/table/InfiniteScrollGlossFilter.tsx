@@ -23,7 +23,10 @@ export function InfiniteScrollGlossFilter<TData>({
       title={title}
       hookOptions={{
         fetchData: fabricGlossService.getFabricGlosses,
-        pageSize: 5,
+        initialParams: {
+          sortBy: 'description',
+          order: 'asc',
+        },
       }}
       getLabel={(gloss) => gloss.description}
       getValue={(gloss) => String(gloss.id)}

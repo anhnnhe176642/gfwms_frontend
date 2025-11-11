@@ -23,7 +23,6 @@ export function InfiniteScrollRoleFilter<TData>({
       title={title}
       hookOptions={{
         fetchData: roleService.getRoles,
-        pageSize: 5,
       }}
       getLabel={(role) => role.fullName || role.name}
       getValue={(role) => role.name}

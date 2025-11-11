@@ -23,7 +23,10 @@ export function InfiniteScrollCategoryFilter<TData>({
       title={title}
       hookOptions={{
         fetchData: fabricCategoryService.getFabricCategories,
-        pageSize: 5,
+        initialParams: {
+          sortBy: 'name',
+          order: 'asc',
+        },
       }}
       getLabel={(category) => category.name}
       getValue={(category) => String(category.id)}

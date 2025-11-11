@@ -23,7 +23,10 @@ export function InfiniteScrollColorFilter<TData>({
       title={title}
       hookOptions={{
         fetchData: fabricColorService.getFabricColors,
-        pageSize: 5,
+        initialParams: {
+          sortBy: 'name',
+          order: 'asc',
+        },
       }}
       getLabel={(color) => color.name}
       getValue={(color) => color.id}

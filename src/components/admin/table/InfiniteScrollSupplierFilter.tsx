@@ -23,7 +23,10 @@ export function InfiniteScrollSupplierFilter<TData>({
       title={title}
       hookOptions={{
         fetchData: supplierService.getSuppliers,
-        pageSize: 5,
+        initialParams: {
+          sortBy: 'name',
+          order: 'asc',
+        },
       }}
       getLabel={(supplier) => supplier.name}
       getValue={(supplier) => String(supplier.id)}
