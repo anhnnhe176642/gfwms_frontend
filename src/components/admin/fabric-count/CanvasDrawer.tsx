@@ -30,9 +30,9 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   const [scale, setScale] = useState(1);
   const [currentDetections, setCurrentDetections] = useState<Detection[]>(detections);
   const [history, setHistory] = useState<Detection[][]>([detections]);
-  const [objectSize, setObjectSize] = useState(50);
-  const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const [maxObjectSize, setMaxObjectSize] = useState(500);
+  const [objectSize, setObjectSize] = useState(0);
+  const [isDraggingSlider, setIsDraggingSlider] = useState(false);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -102,7 +102,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         const y2 = bbox.y2 * calculatedScale;
         const width = x2 - x1;
         const height = y2 - y1;
-        const radius = Math.max(width, height) / 2 + 10;
+        const radius = Math.min(width, height) / 2;
 
         const centerX = center.x * calculatedScale;
         const centerY = center.y * calculatedScale;
@@ -139,7 +139,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
       if (isEditMode && isDraggingSlider) {
         const centerX = displayWidth / 2;
         const centerY = displayHeight / 2;
-        const radius = (objectSize * calculatedScale) / 2 + 10;
+        const radius = (objectSize * calculatedScale) / 2;
 
         // Vẽ vòng tròn xem trước
         ctx.fillStyle = '#4ECDC4' + '40';
@@ -176,8 +176,8 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
       drawDetections();
       const newMaxSize = calculateMaxObjectSize();
       setMaxObjectSize(newMaxSize);
-      // Reset objectSize nếu vượt quá maxObjectSize mới
-      setObjectSize((prev) => Math.min(prev, newMaxSize));
+      // Đặt objectSize mặc định là 20% của maxObjectSize
+      setObjectSize(Math.floor(newMaxSize * 0.2));
     }
   }, [imageUrl, drawDetections, calculateMaxObjectSize]);
 
@@ -208,7 +208,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
       const y2 = detection.bbox.y2 * scale;
       const width = x2 - x1;
       const height = y2 - y1;
-      const radius = Math.max(width, height) / 2 + 10;
+      const radius = Math.min(width, height) / 2;
 
       const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
 
