@@ -31,8 +31,9 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   const [currentDetections, setCurrentDetections] = useState<Detection[]>(detections);
   const [history, setHistory] = useState<Detection[][]>([detections]);
   const [maxObjectSize, setMaxObjectSize] = useState(500);
-  const [objectSize, setObjectSize] = useState(0);
+  const [objectSize, setObjectSize] = useState(100);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+  const [hasUserSetSize, setHasUserSetSize] = useState(false);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -120,7 +121,17 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
         // Vẽ số thứ tự ở tâm hình tròn
         const orderNumber = index + 1;
-        ctx.font = 'bold 24px Arial';
+        const fontSize = Math.max(Math.floor(radius * 1.5), 14); // Font size ~ 1.5x bán kính, tối thiểu 14px
+        ctx.font = `bold ${fontSize}px Arial`;
+        
+        // Vẽ viền đen cho chữ
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = Math.max(fontSize * 0.05, 1); // Độ dày viền ~3% font size, tối thiểu 1px
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeText(String(orderNumber), centerX, centerY);
+        
+        // Vẽ chữ trắng
         ctx.fillStyle = '#FFFFFF';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -176,10 +187,12 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
       drawDetections();
       const newMaxSize = calculateMaxObjectSize();
       setMaxObjectSize(newMaxSize);
-      // Đặt objectSize mặc định là 20% của maxObjectSize
-      setObjectSize(Math.floor(newMaxSize * 0.2));
+      // Chỉ set objectSize mặc định nếu người dùng chưa từng thay đổi
+      if (!hasUserSetSize) {
+        setObjectSize(Math.floor(newMaxSize * 0.2));
+      }
     }
-  }, [imageUrl, drawDetections, calculateMaxObjectSize]);
+  }, [imageUrl, drawDetections, calculateMaxObjectSize, hasUserSetSize]);
 
   React.useEffect(() => {
     setCurrentDetections(detections);
@@ -318,7 +331,10 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
                 min="20"
                 max={maxObjectSize}
                 value={objectSize}
-                onChange={(e) => setObjectSize(Number(e.target.value))}
+                onChange={(e) => {
+                  setObjectSize(Number(e.target.value));
+                  setHasUserSetSize(true);
+                }}
                 onMouseDown={() => setIsDraggingSlider(true)}
                 onMouseUp={() => setIsDraggingSlider(false)}
                 onTouchStart={() => setIsDraggingSlider(true)}
