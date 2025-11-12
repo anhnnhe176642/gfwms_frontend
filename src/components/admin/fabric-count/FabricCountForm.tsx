@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { CanvasDrawer } from '@/components/admin/fabric-count/CanvasDrawer';
+import { ImageCropper } from '@/components/admin/fabric-count/ImageCropper';
 
 export const FabricCountForm: React.FC = () => {
   const [formData, setFormData] = useState<Partial<YoloDetectFormData>>({
@@ -29,6 +30,8 @@ export const FabricCountForm: React.FC = () => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [editedDetections, setEditedDetections] = useState<Detection[] | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(800);
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [tempImageSrc, setTempImageSrc] = useState<string>('');
 
   // Tính toán containerWidth responsive
   useEffect(() => {
@@ -51,20 +54,44 @@ export const FabricCountForm: React.FC = () => {
         // Create preview
         const reader = new FileReader();
         reader.onload = (event) => {
-          setPreview(event.target?.result as string);
+          const dataUrl = event.target?.result as string;
+          setTempImageSrc(dataUrl);
+          setShowImageCropper(true);
         };
         reader.readAsDataURL(file);
 
-        // Update form data
-        setFormData({ ...formData, image: file });
         setErrors({ ...errors, image: '' });
-
-        // Tự động phát hiện
-        detectObjects(file);
       } catch (error) {
         toast.error('Lỗi khi tải ảnh');
       }
     }
+  };
+
+  const handleCropConfirm = async (croppedFile: File) => {
+    try {
+      setShowImageCropper(false);
+      setTempImageSrc('');
+
+      // Tạo preview từ cropped file
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(croppedFile);
+
+      // Update form data
+      setFormData({ ...formData, image: croppedFile });
+
+      // Tự động phát hiện
+      detectObjects(croppedFile);
+    } catch (error) {
+      toast.error('Lỗi khi xử lý ảnh');
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowImageCropper(false);
+    setTempImageSrc('');
   };
 
   const detectObjects = async (file: File) => {
@@ -95,6 +122,15 @@ export const FabricCountForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Image Cropper Modal */}
+      {showImageCropper && tempImageSrc && (
+        <ImageCropper
+          imageSrc={tempImageSrc}
+          onCropConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Đếm vải</CardTitle>
@@ -109,12 +145,12 @@ export const FabricCountForm: React.FC = () => {
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  disabled={isDetecting}
+                  disabled={isDetecting || showImageCropper}
                   className="hidden"
                 />
                 <Button
                   type="button"
-                  disabled={isDetecting}
+                  disabled={isDetecting || showImageCropper}
                   className="w-full"
                   onClick={() => document.getElementById('image')?.click()}
                 >
