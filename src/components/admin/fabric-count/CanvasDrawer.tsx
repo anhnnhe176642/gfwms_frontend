@@ -45,13 +45,11 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
   const calculateScale = useCallback(() => {
     const maxWidth = containerWidth;
-    const maxHeight = 600;
 
     const widthRatio = maxWidth / imageInfo.width;
-    const heightRatio = maxHeight / imageInfo.height;
 
-    return Math.min(widthRatio, heightRatio, 1);
-  }, [containerWidth, imageInfo.width, imageInfo.height]);
+    return Math.min(widthRatio, 1);
+  }, [containerWidth, imageInfo.width]);
 
   const calculateMaxObjectSize = useCallback(() => {
     // Kích thước tối đa là 80% của kích thước ảnh nhỏ nhất (width hoặc height)
