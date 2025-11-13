@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 interface ImageCropperProps {
   imageSrc: string;
   onCropConfirm: (croppedImage: File) => void;
+  onSkipCrop?: (originalFile: File) => void;
   onCancel: () => void;
 }
 
@@ -22,6 +23,7 @@ interface CropBox {
 export const ImageCropper: React.FC<ImageCropperProps> = ({
   imageSrc,
   onCropConfirm,
+  onSkipCrop,
   onCancel,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -403,6 +405,38 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     setResizingEdge(null);
   };
 
+  const handleSkipCrop = async () => {
+    if (!originalImage) return;
+
+    try {
+      // Chuyển ảnh gốc thành File
+      const canvas = document.createElement('canvas');
+      canvas.width = originalImage.width;
+      canvas.height = originalImage.height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        toast.error('Không thể xử lý ảnh');
+        return;
+      }
+
+      ctx.drawImage(originalImage, 0, 0);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          toast.error('Không thể chuyển đổi ảnh');
+          return;
+        }
+
+        const file = new File([blob], 'original-image.png', { type: 'image/png' });
+        onSkipCrop?.(file);
+        toast.success('Gửi ảnh thành công');
+      }, 'image/png');
+    } catch (error) {
+      toast.error('Lỗi khi gửi ảnh');
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -440,6 +474,14 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
               onClick={handleReset}
             >
               ↻ Chọn lại
+            </Button>
+          )}
+          {onSkipCrop && (
+            <Button
+              variant="outline"
+              onClick={handleSkipCrop}
+            >
+              ➜ Gửi không cắt
             </Button>
           )}
           <Button

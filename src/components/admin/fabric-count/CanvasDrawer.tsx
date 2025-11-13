@@ -34,6 +34,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   const [objectSize, setObjectSize] = useState(100);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const [hasUserSetSize, setHasUserSetSize] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -143,7 +144,9 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         ctx.fillStyle = circleColor;
         ctx.textAlign = 'center';
         const labelY = centerY + radius + 15;
-        ctx.fillText(label, centerX, labelY);
+        if (showLabels) {
+          ctx.fillText(label, centerX, labelY);
+        }
       });
 
       // Vẽ hình tròn xem trước ở tâm ảnh khi đang kéo slider
@@ -179,7 +182,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
     };
 
     img.src = imageUrl;
-  }, [currentDetections, calculateScale, imageUrl, isEditMode, objectSize, isDraggingSlider]);
+  }, [currentDetections, calculateScale, imageUrl, isEditMode, objectSize, isDraggingSlider, showLabels]);
 
   React.useEffect(() => {
     if (imageUrl) {
@@ -301,25 +304,33 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
   return (
     <div ref={containerRef} className="w-full space-y-4">
-      {enableEdit && (
-        <div className="flex gap-2">
-          <Button
-            variant={isEditMode ? 'default' : 'outline'}
-            onClick={() => setIsEditMode(!isEditMode)}
-          >
-            {isEditMode ? '✓ Chế độ chỉnh sửa (bật)' : '○ Chế độ chỉnh sửa (tắt)'}
-          </Button>
-          {isEditMode && (
-            <Button 
-              variant="outline" 
-              onClick={handleUndo}
-              disabled={history.length <= 1}
+      <div className="flex gap-2 flex-wrap">
+        {enableEdit && (
+          <>
+            <Button
+              variant={isEditMode ? 'default' : 'outline'}
+              onClick={() => setIsEditMode(!isEditMode)}
             >
-              ↶ Hoàn tác
+              {isEditMode ? '✓ Chế độ chỉnh sửa (bật)' : '○ Chế độ chỉnh sửa (tắt)'}
             </Button>
-          )}
-        </div>
-      )}
+            {isEditMode && (
+              <Button 
+                variant="outline" 
+                onClick={handleUndo}
+                disabled={history.length <= 1}
+              >
+                ↶ Hoàn tác
+              </Button>
+            )}
+          </>
+        )}
+        <Button
+          variant={showLabels ? 'default' : 'outline'}
+          onClick={() => setShowLabels(!showLabels)}
+        >
+          {showLabels ? '👁️ Ẩn tên & độ chính xác' : '👁️‍🗨️ Hiện tên & độ chính xác'}
+        </Button>
+      </div>
 
       {isEditMode && (
         <div className="space-y-3">

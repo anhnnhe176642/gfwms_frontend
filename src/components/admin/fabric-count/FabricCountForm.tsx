@@ -94,6 +94,28 @@ export const FabricCountForm: React.FC = () => {
     setTempImageSrc('');
   };
 
+  const handleSkipCrop = async (originalFile: File) => {
+    try {
+      setShowImageCropper(false);
+      setTempImageSrc('');
+
+      // Tạo preview từ original file
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(originalFile);
+
+      // Update form data
+      setFormData({ ...formData, image: originalFile });
+
+      // Tự động phát hiện
+      detectObjects(originalFile);
+    } catch (error) {
+      toast.error('Lỗi khi xử lý ảnh');
+    }
+  };
+
   const detectObjects = async (file: File) => {
     try {
       setIsDetecting(true);
@@ -127,6 +149,7 @@ export const FabricCountForm: React.FC = () => {
         <ImageCropper
           imageSrc={tempImageSrc}
           onCropConfirm={handleCropConfirm}
+          onSkipCrop={handleSkipCrop}
           onCancel={handleCropCancel}
         />
       )}
