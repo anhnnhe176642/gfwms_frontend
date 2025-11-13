@@ -140,30 +140,6 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         }
       });
 
-      // Vẽ hình tròn xem trước ở tâm ảnh khi đang kéo slider
-      if (isEditMode && isDraggingSlider) {
-        const centerX = displayWidth / 2;
-        const centerY = displayHeight / 2;
-        const radius = (objectSize * calculatedScale) / 2;
-
-        // Vẽ vòng tròn xem trước
-        ctx.fillStyle = '#4ECDC4' + '40';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.fill();
-
-        ctx.strokeStyle = '#4ECDC4';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Vẽ chữ "Preview"
-        ctx.font = 'bold 16px Arial';
-        ctx.fillStyle = '#FFFFFF';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Preview', centerX, centerY);
-      }
-
       setIsLoading(false);
     };
 
@@ -337,6 +313,22 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
           <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
             💡 <strong>Hướng dẫn:</strong> Click vào vòng tròn để xóa, click vào vị trí khác để thêm vật thể mới
           </div>
+          
+          {isDraggingSlider && (
+            <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
+              <div className="flex flex-col items-center gap-4">
+                <div 
+                  className="bg-blue-500 bg-opacity-40 border-2 border-blue-500 rounded-full flex items-center justify-center"
+                  style={{
+                    width: `${objectSize * scale}px`,
+                    height: `${objectSize * scale}px`,
+                  }}
+                >
+                  <span className="text-white font-bold text-2xl">{Math.round((objectSize / maxObjectSize) * 100)}%</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
