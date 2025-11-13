@@ -94,20 +94,13 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
       // Vẽ bounding boxes với hình tròn
       currentDetections.forEach((detection, index) => {
-        const { bbox, class_name, confidence, center } = detection;
+        const { class_name, confidence, center, dimensions } = detection;
 
         const circleColor = circleColors[index % circleColors.length];
 
-        const x1 = bbox.x1 * calculatedScale;
-        const y1 = bbox.y1 * calculatedScale;
-        const x2 = bbox.x2 * calculatedScale;
-        const y2 = bbox.y2 * calculatedScale;
-        const width = x2 - x1;
-        const height = y2 - y1;
-        const radius = Math.min(width, height) / 2;
-
         const centerX = center.x * calculatedScale;
         const centerY = center.y * calculatedScale;
+        const radius = (Math.min(dimensions.width, dimensions.height) * calculatedScale) / 2;
 
         // Vẽ vòng tròn với tô màu và độ trong suốt
         ctx.fillStyle = circleColor + '40';
@@ -218,13 +211,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
       const detection = currentDetections[i];
       const centerX = detection.center.x * scale;
       const centerY = detection.center.y * scale;
-      const x1 = detection.bbox.x1 * scale;
-      const y1 = detection.bbox.y1 * scale;
-      const x2 = detection.bbox.x2 * scale;
-      const y2 = detection.bbox.y2 * scale;
-      const width = x2 - x1;
-      const height = y2 - y1;
-      const radius = Math.min(width, height) / 2;
+      const radius = (Math.min(detection.dimensions.width, detection.dimensions.height) * scale) / 2;
 
       const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
 
@@ -260,12 +247,6 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
       class_id: 0,
       class_name: 'custom',
       confidence: 0.95,
-      bbox: {
-        x1: Math.max(0, originalX - objectSize / 2),
-        y1: Math.max(0, originalY - objectSize / 2),
-        x2: Math.min(imageInfo.width, originalX + objectSize / 2),
-        y2: Math.min(imageInfo.height, originalY + objectSize / 2),
-      },
       center: {
         x: originalX,
         y: originalY,
@@ -274,7 +255,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         width: objectSize,
         height: objectSize,
       },
-    };
+    } as Detection;
 
     const newDetections = [...currentDetections, newDetection];
     setCurrentDetections(newDetections);
