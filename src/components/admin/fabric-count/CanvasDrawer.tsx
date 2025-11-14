@@ -15,6 +15,7 @@ interface CanvasDrawerProps {
   containerWidth?: number;
   onDetectionsChange?: (detections: Detection[]) => void;
   enableEdit?: boolean;
+  confidenceFilter?: React.ReactNode;
 }
 
 export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
@@ -24,6 +25,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   containerWidth = 800,
   onDetectionsChange,
   enableEdit = false,
+  confidenceFilter,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -259,7 +261,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
   return (
     <div ref={containerRef} className="w-full space-y-4">
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         {enableEdit && (
           <>
             <Button
@@ -283,8 +285,13 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
           variant={showLabels ? 'default' : 'outline'}
           onClick={() => setShowLabels(!showLabels)}
         >
-          {showLabels ? '👁️ Ẩn tên & độ chính xác' : '👁️‍🗨️ Hiện tên & độ chính xác'}
+          {showLabels ? '👁️ Ẩn tên & độ tin cậy' : '👁️‍🗨️ Hiện tên & độ tin cậy'}
         </Button>
+        {confidenceFilter && (
+          <div>
+            {confidenceFilter}
+          </div>
+        )}
       </div>
 
       {isEditMode && (

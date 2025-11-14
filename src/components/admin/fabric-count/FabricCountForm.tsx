@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/card';
 import { CanvasDrawer } from '@/components/admin/fabric-count/CanvasDrawer';
 import { ImageCropper } from '@/components/admin/fabric-count/ImageCropper';
+import { ConfidenceFilter } from '@/components/admin/fabric-count/ConfidenceFilter';
 
 export const FabricCountForm: React.FC = () => {
   const [formData, setFormData] = useState<Partial<YoloDetectFormData>>({
@@ -32,6 +33,14 @@ export const FabricCountForm: React.FC = () => {
   const [containerWidth, setContainerWidth] = useState<number>(800);
   const [showImageCropper, setShowImageCropper] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string>('');
+  const [confidenceThreshold, setConfidenceThreshold] = useState<number>(0.5);
+
+  // Lọc detections dựa trên confidence threshold
+  const filteredDetections = React.useMemo(() => {
+    if (!detectionResult?.data.detections) return [];
+    const allDetections = editedDetections || detectionResult.data.detections;
+    return allDetections.filter((d) => d.confidence >= confidenceThreshold);
+  }, [detectionResult, editedDetections, confidenceThreshold]);
 
   // Tính toán containerWidth responsive
   useEffect(() => {
@@ -121,7 +130,7 @@ export const FabricCountForm: React.FC = () => {
       setIsDetecting(true);
       const response = await yoloService.detect({
         image: file,
-        confidence: 0.5,
+        confidence: 0.1,
       });
 
       if (response.success) {
@@ -188,17 +197,27 @@ export const FabricCountForm: React.FC = () => {
 
             {/* Canvas Section */}
             {detectionResult && detectionResult.success && preview && (
-              <div>
-                <p className="text-sm font-medium mb-3">
-                  Kết quả phát hiện ({(editedDetections || detectionResult.data.detections).length} vật thể)
-                </p>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium mb-3">
+                    Kết quả phát hiện ({filteredDetections.length} vật thể)
+                  </p>
+                </div>
                 <CanvasDrawer
                   imageUrl={preview}
-                  detections={editedDetections || detectionResult.data.detections}
+                  detections={filteredDetections}
                   imageInfo={detectionResult.data.image_info}
                   containerWidth={containerWidth}
                   onDetectionsChange={setEditedDetections}
                   enableEdit={true}
+                  confidenceFilter={
+                    <ConfidenceFilter
+                      value={confidenceThreshold}
+                      onChange={setConfidenceThreshold}
+                      detectionCount={editedDetections?.length || detectionResult.data.detections.length}
+                      filteredCount={filteredDetections.length}
+                    />
+                  }
                 />
               </div>
             )}
