@@ -34,6 +34,8 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [resizingEdge, setResizingEdge] = useState<string | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
+  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
 
   const MAX_DISPLAY_WIDTH = 800;
   const MAX_DISPLAY_HEIGHT = 600;
@@ -154,6 +156,128 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     drawCanvas();
   }, [imageLoaded, cropBox]);
 
+  // Handle mouse move outside canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleDocumentMouseMove = (e: MouseEvent) => {
+      // Chỉ xử lý khi đang vẽ, resize hoặc di chuyển
+      if (!isDrawing && !isMoving) return;
+
+      const rect = canvas.getBoundingClientRect();
+      let x = e.clientX - rect.left;
+      let y = e.clientY - rect.top;
+
+      // Giới hạn tọa độ trong phạm vi canvas
+      x = Math.max(0, Math.min(x, canvas.width));
+      y = Math.max(0, Math.min(y, canvas.height));
+
+      // Cập nhật crop box dựa trên loại tương tác
+      if (isMoving && hasDrawn && cropBox) {
+        const deltaX = x - lastMousePos.x;
+        const deltaY = y - lastMousePos.y;
+
+        const x1 = Math.min(cropBox.startX, cropBox.endX);
+        const y1 = Math.min(cropBox.startY, cropBox.endY);
+        const x2 = Math.max(cropBox.startX, cropBox.endX);
+        const y2 = Math.max(cropBox.startY, cropBox.endY);
+        const width = x2 - x1;
+        const height = y2 - y1;
+
+        const newX1 = Math.max(0, Math.min(x1 + deltaX, canvas.width - width));
+        const newY1 = Math.max(0, Math.min(y1 + deltaY, canvas.height - height));
+
+        setCropBox({
+          startX: newX1,
+          startY: newY1,
+          endX: newX1 + width,
+          endY: newY1 + height,
+        });
+
+        setLastMousePos({ x, y });
+      } else if (isDrawing) {
+        if (resizingEdge && cropBox) {
+          // Resize logic
+          let newCropBox = { ...cropBox };
+
+          switch (resizingEdge) {
+            case 'tl':
+              newCropBox.startX = x;
+              newCropBox.startY = y;
+              break;
+            case 'tr':
+              newCropBox.endX = x;
+              newCropBox.startY = y;
+              break;
+            case 'bl':
+              newCropBox.startX = x;
+              newCropBox.endY = y;
+              break;
+            case 'br':
+              newCropBox.endX = x;
+              newCropBox.endY = y;
+              break;
+            case 'n':
+              newCropBox.startY = y;
+              break;
+            case 's':
+              newCropBox.endY = y;
+              break;
+            case 'w':
+              newCropBox.startX = x;
+              break;
+            case 'e':
+              newCropBox.endX = x;
+              break;
+          }
+
+          setCropBox(newCropBox);
+        } else if (cropBox) {
+          // Drawing logic
+          setCropBox({
+            ...cropBox,
+            endX: x,
+            endY: y,
+          });
+        }
+      }
+    };
+
+    if (isDrawing || isMoving) {
+      document.addEventListener('mousemove', handleDocumentMouseMove);
+      return () => {
+        document.removeEventListener('mousemove', handleDocumentMouseMove);
+      };
+    }
+  }, [isDrawing, isMoving, cropBox, resizingEdge, hasDrawn, lastMousePos]);
+
+  // Handle mouse up outside canvas
+  useEffect(() => {
+    const handleDocumentMouseUp = () => {
+      setIsDrawing(false);
+      setResizingEdge(null);
+      setIsMoving(false);
+
+      // Sau khi kéo lần đầu, đánh dấu đã vẽ
+      if (cropBox && !hasDrawn) {
+        const width = Math.abs(cropBox.endX - cropBox.startX) / scale;
+        const height = Math.abs(cropBox.endY - cropBox.startY) / scale;
+
+        if (width > 0 && height > 0) {
+          setHasDrawn(true);
+        }
+      }
+    };
+
+    if (isDrawing || isMoving) {
+      document.addEventListener('mouseup', handleDocumentMouseUp);
+      return () => {
+        document.removeEventListener('mouseup', handleDocumentMouseUp);
+      };
+    }
+  }, [isDrawing, isMoving, cropBox, hasDrawn, scale]);
+
   useEffect(() => {
     const handleCanvasMouseMove = (e: MouseEvent) => {
       const canvas = canvasRef.current;
@@ -166,7 +290,12 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
       const detectedEdge = detectEdgeAtPoint(x, y, cropBox);
       
       if (!detectedEdge) {
-        canvas.style.cursor = 'crosshair';
+        // Kiểm tra nếu con trỏ ở bên trong crop box
+        if (isPointInsideCropBox(x, y, cropBox)) {
+          canvas.style.cursor = 'move';
+        } else {
+          canvas.style.cursor = 'crosshair';
+        }
         return;
       }
 
@@ -207,10 +336,18 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
         setIsDrawing(true);
         return;
       }
+
+      // Kiểm tra xem có đang nhấn vào bên trong crop box để di chuyển không
+      if (isPointInsideCropBox(x, y, cropBox)) {
+        setIsMoving(true);
+        setLastMousePos({ x, y });
+        return;
+      }
     }
 
-    // Nếu không phải resize, bắt đầu vẽ crop box mới
+    // Nếu không phải resize hoặc move, bắt đầu vẽ crop box mới
     setResizingEdge(null);
+    setIsMoving(false);
     setIsDrawing(true);
     setCropBox({
       startX: x,
@@ -227,6 +364,33 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    // Nếu đang di chuyển crop box
+    if (isMoving && hasDrawn) {
+      const deltaX = x - lastMousePos.x;
+      const deltaY = y - lastMousePos.y;
+
+      const x1 = Math.min(cropBox.startX, cropBox.endX);
+      const y1 = Math.min(cropBox.startY, cropBox.endY);
+      const x2 = Math.max(cropBox.startX, cropBox.endX);
+      const y2 = Math.max(cropBox.startY, cropBox.endY);
+      const width = x2 - x1;
+      const height = y2 - y1;
+
+      // Tính vị trí mới với giới hạn canvas
+      const newX1 = Math.max(0, Math.min(x1 + deltaX, canvas.width - width));
+      const newY1 = Math.max(0, Math.min(y1 + deltaY, canvas.height - height));
+
+      setCropBox({
+        startX: newX1,
+        startY: newY1,
+        endX: newX1 + width,
+        endY: newY1 + height,
+      });
+
+      setLastMousePos({ x, y });
+      return;
+    }
 
     // Nếu đang resize từ cạnh, cập nhật crop box theo edge
     if (isDrawing && resizingEdge) {
@@ -317,9 +481,24 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     return null;
   };
 
+  // Hàm kiểm tra xem điểm (x, y) có nằm bên trong crop box không (không phải trên cạnh)
+  const isPointInsideCropBox = (x: number, y: number, crop: CropBox | null): boolean => {
+    if (!crop) return false;
+
+    const x1 = Math.min(crop.startX, crop.endX);
+    const y1 = Math.min(crop.startY, crop.endY);
+    const x2 = Math.max(crop.startX, crop.endX);
+    const y2 = Math.max(crop.startY, crop.endY);
+
+    // Kiểm tra nếu điểm nằm trong hộp (có khoảng trống từ cạnh)
+    return x > x1 + EDGE_THRESHOLD && x < x2 - EDGE_THRESHOLD &&
+           y > y1 + EDGE_THRESHOLD && y < y2 - EDGE_THRESHOLD;
+  };
+
   const handleMouseUp = () => {
     setIsDrawing(false);
     setResizingEdge(null);
+    setIsMoving(false);
     
     // Sau khi kéo lần đầu, đánh dấu đã vẽ
     if (cropBox && !hasDrawn) {
@@ -452,13 +631,12 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
             className="max-w-full h-auto border-2 border-dashed border-primary rounded-md cursor-crosshair"
           />
         </div>
 
         <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-          💡 <strong>Hướng dẫn:</strong> Kéo chuột để vẽ hộp cắt. Sau khi vẽ xong, kéo các cạnh/góc để điều chỉnh kích thước. Vùng được làm sáng là phần sẽ được gửi.
+          💡 <strong>Hướng dẫn:</strong> Kéo chuột để vẽ hộp cắt. Sau khi vẽ xong, kéo các cạnh/góc để điều chỉnh kích thước hoặc kéo bên trong hộp để di chuyển. Vùng được làm sáng là phần sẽ được gửi.
         </div>
 
         <div className="flex gap-2 justify-end">
