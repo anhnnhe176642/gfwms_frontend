@@ -85,18 +85,26 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
       // Vẽ ảnh
       ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
 
-      // Mảng màu cho các số thứ tự khác nhau
-      const circleColors = [
-        '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
-        '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#F5A962',
-        '#D7BEE8', '#A9DFBF',
+      // Mảng màu cho các rows khác nhau
+      const rowColors = [
+        "#FF6B6B", // đỏ
+        "#45B7D1", // xanh dương
+        "#F7DC6F", // vàng
+        "#BB8FCE", // tím
+        "#F5A962", // cam gold
+        "#98D8C8", // xanh mint
+        "#D7BEE8", // tím nhạt
+        "#FFA07A", // cam nhạt
       ];
+
 
       // Vẽ bounding boxes với hình tròn
       currentDetections.forEach((detection, index) => {
-        const { class_name, confidence, center, dimensions } = detection;
+        const { class_name, confidence, center, dimensions, row } = detection;
 
-        const circleColor = circleColors[index % circleColors.length];
+        // Nếu có row, sử dụng màu theo row; nếu không có, sử dụng màu theo index
+        const colorIndex = row !== undefined ? (row - 1) % rowColors.length : index % rowColors.length;
+        const circleColor = rowColors[colorIndex];
 
         const centerX = center.x * calculatedScale;
         const centerY = center.y * calculatedScale;
@@ -132,7 +140,8 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         ctx.fillText(String(orderNumber), centerX, centerY);
 
         // Vẽ label ở dưới vòng tròn
-        const label = `${class_name} ${(confidence * 100).toFixed(1)}%`;
+        const rowLabel = detection.row ? ` (Row ${detection.row})` : '';
+        const label = `${class_name} ${(confidence * 100).toFixed(1)}%${rowLabel}`;
         ctx.font = '12px Arial';
         ctx.fillStyle = circleColor;
         ctx.textAlign = 'center';

@@ -26,6 +26,7 @@ export type Detection = {
   bbox: BoundingBox;
   center: Point;
   dimensions: Dimensions;
+  row?: number;
 };
 
 export type Summary = {
