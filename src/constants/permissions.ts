@@ -112,6 +112,22 @@ export const PERMISSIONS = {
     CREATE:     { key: 'shelf:create',      description: 'Tạo kệ mới' },
     UPDATE:     { key: 'shelf:update',      description: 'Cập nhật thông tin kệ' },
     DELETE:     { key: 'shelf:delete',      description: 'Xóa kệ (soft delete)' }
+  },
+
+  // YOLO Detection & Model Management
+  YOLO: {
+    DETECT:         { key: 'yolo:detect',            description: 'Phát hiện đối tượng trong hình ảnh' },
+    VIEW_MODELS:    { key: 'yolo:view_models',       description: 'Xem danh sách các model YOLO' },
+    VIEW_MODEL:     { key: 'yolo:view_model',        description: 'Xem chi tiết model YOLO' },
+    UPLOAD_MODEL:   { key: 'yolo:upload_model',      description: 'Tải lên model YOLO mới' },
+    ACTIVATE_MODEL: { key: 'yolo:activate_model',    description: 'Kích hoạt model YOLO' },
+    UPDATE_MODEL:   { key: 'yolo:update_model',      description: 'Cập nhật thông tin model YOLO' },
+    DELETE_MODEL:   { key: 'yolo:delete_model',      description: 'Xóa model YOLO' },
+    VIEW_LOGS:      { key: 'yolo:view_logs',         description: 'Xem logs phát hiện của model' },
+    VIEW_STATS:     { key: 'yolo:view_stats',        description: 'Xem thống kê model YOLO' },
+    VIEW_DATASET:   { key: 'yolo:view_dataset',      description: 'Xem dataset YOLO' },
+    MANAGE_DATASET: { key: 'yolo:manage_dataset',    description: 'Quản lý dataset YOLO (tạo, cập nhật, xóa, thêm ảnh)' },
+    EXPORT_DATASET: { key: 'yolo:export_dataset',    description: 'Xuất dataset YOLO dưới dạng ZIP' }
   }
 } as const;
 

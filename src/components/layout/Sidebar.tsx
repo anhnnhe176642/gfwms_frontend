@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   ChevronDown,
   Loader2,
-  Eye
+  Eye,
+  Tag
 } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -110,7 +111,13 @@ export const Sidebar: React.FC = () => {
           label: 'Đếm vải',
           href: ROUTES.ADMIN.FABRIC_COUNT.LIST.path,
           icon: Eye,
-          requiredPermission: null,
+          requiredPermission: PERMISSIONS.YOLO.DETECT.key,
+        },
+        {
+          label: 'Gán nhãn dataset YOLO',
+          href: ROUTES.ADMIN.YOLO_DATASET_LABELING.LIST.path,
+          icon: Tag,
+          requiredPermission: PERMISSIONS.YOLO.MANAGE_DATASET.key,
         },
       ],
     },

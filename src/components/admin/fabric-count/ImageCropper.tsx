@@ -3,21 +3,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { useBoundingBox } from '@/hooks/useBoundingBox';
+import { drawBoundingBox, drawDimOverlay } from '@/lib/canvasHelpers';
 
 interface ImageCropperProps {
   imageSrc: string;
   onCropConfirm: (croppedImage: File) => void;
   onSkipCrop?: (originalFile: File) => void;
   onCancel: () => void;
-}
-
-interface CropBox {
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
 }
 
 export const ImageCropper: React.FC<ImageCropperProps> = ({
@@ -27,30 +21,39 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   onCancel,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [cropBox, setCropBox] = useState<CropBox | null>(null);
   const [scale, setScale] = useState(1);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
-  const [hasDrawn, setHasDrawn] = useState(false);
-  const [resizingEdge, setResizingEdge] = useState<string | null>(null);
-  const [isMoving, setIsMoving] = useState(false);
-  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
 
   const MAX_DISPLAY_WIDTH = 800;
   const MAX_DISPLAY_HEIGHT = 600;
-  const HANDLE_SIZE = 10;
-  const EDGE_THRESHOLD = 15;
 
-  // Vẽ canvas
-  const drawCanvas = (crop: CropBox | null = cropBox) => {
+  // Sử dụng hook useBoundingBox để quản lý crop box
+  const {
+    boxes,
+    activeBox,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    clearBoxes,
+  } = useBoundingBox({
+    canvasRef,
+    enabled: imageLoaded,
+    multipleBoxes: false, // Chỉ cho phép 1 crop box
+  });
+
+  // Lấy crop box hiện tại (box đầu tiên hoặc box đang vẽ)
+  const cropBox = boxes.length > 0 ? boxes[0] : activeBox;
+
+  // Vẽ canvas với ảnh và crop box
+  const drawCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas || !originalImage) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Tính toán scale
+    // Tính toán scale để fit vào kích thước max
     const widthRatio = MAX_DISPLAY_WIDTH / originalImage.width;
     const heightRatio = MAX_DISPLAY_HEIGHT / originalImage.height;
     const calculatedScale = Math.min(widthRatio, heightRatio, 1);
@@ -66,20 +69,16 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
 
     // Vẽ crop box nếu có
-    let finalCropBox = crop;
-
-    if (finalCropBox && finalCropBox.startX !== finalCropBox.endX && finalCropBox.startY !== finalCropBox.endY) {
-      const x1 = Math.min(finalCropBox.startX, finalCropBox.endX);
-      const y1 = Math.min(finalCropBox.startY, finalCropBox.endY);
-      const width = Math.abs(finalCropBox.endX - finalCropBox.startX);
-      const height = Math.abs(finalCropBox.endY - finalCropBox.startY);
-
+    if (cropBox && cropBox.startX !== cropBox.endX && cropBox.startY !== cropBox.endY) {
       // Vẽ overlay tối
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctx.fillRect(0, 0, displayWidth, displayHeight);
+      drawDimOverlay(ctx, displayWidth, displayHeight, cropBox, 0.5);
 
-      // Vẽ vùng sáng (vùng sẽ được cắt)
-      ctx.clearRect(x1, y1, width, height);
+      // Vẽ lại vùng sáng (vùng sẽ được cắt)
+      const x1 = Math.min(cropBox.startX, cropBox.endX);
+      const y1 = Math.min(cropBox.startY, cropBox.endY);
+      const width = Math.abs(cropBox.endX - cropBox.startX);
+      const height = Math.abs(cropBox.endY - cropBox.startY);
+
       ctx.drawImage(
         originalImage,
         x1 / calculatedScale,
@@ -92,49 +91,18 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
         height
       );
 
-      // Vẽ border của crop box
-      ctx.strokeStyle = '#4ECDC4';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x1, y1, width, height);
-
-      // Vẽ corner handles
-      const handleSize = 10;
-      const corners = [
-        { x: x1, y: y1 }, // top-left
-        { x: x1 + width, y: y1 }, // top-right
-        { x: x1, y: y1 + height }, // bottom-left
-        { x: x1 + width, y: y1 + height }, // bottom-right
-      ];
-
-      corners.forEach((corner) => {
-        ctx.fillStyle = '#4ECDC4';
-        ctx.fillRect(corner.x - handleSize / 2, corner.y - handleSize / 2, handleSize, handleSize);
+      // Vẽ border và handles sử dụng helper
+      drawBoundingBox(ctx, cropBox, {
+        strokeColor: '#4ECDC4',
+        lineWidth: 2,
+        showHandles: true,
+        handleColor: '#4ECDC4',
+        handleSize: 10,
+        edgeHandleColor: '#95E1D3',
+        edgeHandleSize: 8,
+        showDimensions: true,
+        scale: calculatedScale,
       });
-
-      // Vẽ edge handles (trung điểm các cạnh)
-      const midSize = 8;
-      const edges = [
-        { x: x1 + width / 2, y: y1 }, // top
-        { x: x1 + width / 2, y: y1 + height }, // bottom
-        { x: x1, y: y1 + height / 2 }, // left
-        { x: x1 + width, y: y1 + height / 2 }, // right
-      ];
-
-      edges.forEach((edge) => {
-        ctx.fillStyle = '#95E1D3';
-        ctx.fillRect(edge.x - midSize / 2, edge.y - midSize / 2, midSize, midSize);
-      });
-
-      // Hiển thị kích thước
-      const displayCropWidth = Math.round(width / calculatedScale);
-      const displayCropHeight = Math.round(height / calculatedScale);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 14px Arial';
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 3;
-      const infoText = `${displayCropWidth}x${displayCropHeight}px`;
-      ctx.strokeText(infoText, x1 + 10, y1 + 30);
-      ctx.fillText(infoText, x1 + 10, y1 + 30);
     }
   };
 
@@ -152,370 +120,17 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     img.src = imageSrc;
   }, [imageSrc]);
 
+  // Vẽ lại canvas khi có thay đổi
   useEffect(() => {
-    drawCanvas();
-  }, [imageLoaded, cropBox]);
-
-  // Handle mouse move outside canvas
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const handleDocumentMouseMove = (e: MouseEvent) => {
-      // Chỉ xử lý khi đang vẽ, resize hoặc di chuyển
-      if (!isDrawing && !isMoving) return;
-
-      const rect = canvas.getBoundingClientRect();
-      let x = e.clientX - rect.left;
-      let y = e.clientY - rect.top;
-
-      // Giới hạn tọa độ trong phạm vi canvas
-      x = Math.max(0, Math.min(x, canvas.width));
-      y = Math.max(0, Math.min(y, canvas.height));
-
-      // Cập nhật crop box dựa trên loại tương tác
-      if (isMoving && hasDrawn && cropBox) {
-        const deltaX = x - lastMousePos.x;
-        const deltaY = y - lastMousePos.y;
-
-        const x1 = Math.min(cropBox.startX, cropBox.endX);
-        const y1 = Math.min(cropBox.startY, cropBox.endY);
-        const x2 = Math.max(cropBox.startX, cropBox.endX);
-        const y2 = Math.max(cropBox.startY, cropBox.endY);
-        const width = x2 - x1;
-        const height = y2 - y1;
-
-        const newX1 = Math.max(0, Math.min(x1 + deltaX, canvas.width - width));
-        const newY1 = Math.max(0, Math.min(y1 + deltaY, canvas.height - height));
-
-        setCropBox({
-          startX: newX1,
-          startY: newY1,
-          endX: newX1 + width,
-          endY: newY1 + height,
-        });
-
-        setLastMousePos({ x, y });
-      } else if (isDrawing) {
-        if (resizingEdge && cropBox) {
-          // Resize logic
-          let newCropBox = { ...cropBox };
-
-          switch (resizingEdge) {
-            case 'tl':
-              newCropBox.startX = x;
-              newCropBox.startY = y;
-              break;
-            case 'tr':
-              newCropBox.endX = x;
-              newCropBox.startY = y;
-              break;
-            case 'bl':
-              newCropBox.startX = x;
-              newCropBox.endY = y;
-              break;
-            case 'br':
-              newCropBox.endX = x;
-              newCropBox.endY = y;
-              break;
-            case 'n':
-              newCropBox.startY = y;
-              break;
-            case 's':
-              newCropBox.endY = y;
-              break;
-            case 'w':
-              newCropBox.startX = x;
-              break;
-            case 'e':
-              newCropBox.endX = x;
-              break;
-          }
-
-          setCropBox(newCropBox);
-        } else if (cropBox) {
-          // Drawing logic
-          setCropBox({
-            ...cropBox,
-            endX: x,
-            endY: y,
-          });
-        }
-      }
-    };
-
-    if (isDrawing || isMoving) {
-      document.addEventListener('mousemove', handleDocumentMouseMove);
-      return () => {
-        document.removeEventListener('mousemove', handleDocumentMouseMove);
-      };
+    if (imageLoaded) {
+      drawCanvas();
     }
-  }, [isDrawing, isMoving, cropBox, resizingEdge, hasDrawn, lastMousePos]);
-
-  // Handle mouse up outside canvas
-  useEffect(() => {
-    const handleDocumentMouseUp = () => {
-      setIsDrawing(false);
-      setResizingEdge(null);
-      setIsMoving(false);
-
-      // Sau khi kéo lần đầu, đánh dấu đã vẽ
-      if (cropBox && !hasDrawn) {
-        const width = Math.abs(cropBox.endX - cropBox.startX) / scale;
-        const height = Math.abs(cropBox.endY - cropBox.startY) / scale;
-
-        if (width > 0 && height > 0) {
-          setHasDrawn(true);
-        }
-      }
-    };
-
-    if (isDrawing || isMoving) {
-      document.addEventListener('mouseup', handleDocumentMouseUp);
-      return () => {
-        document.removeEventListener('mouseup', handleDocumentMouseUp);
-      };
-    }
-  }, [isDrawing, isMoving, cropBox, hasDrawn, scale]);
-
-  useEffect(() => {
-    const handleCanvasMouseMove = (e: MouseEvent) => {
-      const canvas = canvasRef.current;
-      if (!canvas || !hasDrawn || !cropBox) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const detectedEdge = detectEdgeAtPoint(x, y, cropBox);
-      
-      if (!detectedEdge) {
-        // Kiểm tra nếu con trỏ ở bên trong crop box
-        if (isPointInsideCropBox(x, y, cropBox)) {
-          canvas.style.cursor = 'move';
-        } else {
-          canvas.style.cursor = 'crosshair';
-        }
-        return;
-      }
-
-      // Cập nhật cursor dựa trên cạnh/góc
-      if (detectedEdge === 'tl' || detectedEdge === 'br') {
-        canvas.style.cursor = 'nwse-resize';
-      } else if (detectedEdge === 'tr' || detectedEdge === 'bl') {
-        canvas.style.cursor = 'nesw-resize';
-      } else if (detectedEdge === 'n' || detectedEdge === 's') {
-        canvas.style.cursor = 'ns-resize';
-      } else if (detectedEdge === 'w' || detectedEdge === 'e') {
-        canvas.style.cursor = 'ew-resize';
-      }
-    };
-
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.addEventListener('mousemove', handleCanvasMouseMove);
-      return () => {
-        canvas.removeEventListener('mousemove', handleCanvasMouseMove);
-      };
-    }
-  }, [hasDrawn, cropBox]);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !imageLoaded) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // Nếu đã vẽ crop box, kiểm tra xem có đang nhấn vào cạnh/góc không
-    if (hasDrawn && cropBox) {
-      const detectedEdge = detectEdgeAtPoint(x, y, cropBox);
-      if (detectedEdge) {
-        setResizingEdge(detectedEdge);
-        setIsDrawing(true);
-        return;
-      }
-
-      // Kiểm tra xem có đang nhấn vào bên trong crop box để di chuyển không
-      if (isPointInsideCropBox(x, y, cropBox)) {
-        setIsMoving(true);
-        setLastMousePos({ x, y });
-        return;
-      }
-    }
-
-    // Nếu không phải resize hoặc move, bắt đầu vẽ crop box mới
-    setResizingEdge(null);
-    setIsMoving(false);
-    setIsDrawing(true);
-    setCropBox({
-      startX: x,
-      startY: y,
-      endX: x,
-      endY: y,
-    });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !cropBox) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // Nếu đang di chuyển crop box
-    if (isMoving && hasDrawn) {
-      const deltaX = x - lastMousePos.x;
-      const deltaY = y - lastMousePos.y;
-
-      const x1 = Math.min(cropBox.startX, cropBox.endX);
-      const y1 = Math.min(cropBox.startY, cropBox.endY);
-      const x2 = Math.max(cropBox.startX, cropBox.endX);
-      const y2 = Math.max(cropBox.startY, cropBox.endY);
-      const width = x2 - x1;
-      const height = y2 - y1;
-
-      // Tính vị trí mới với giới hạn canvas
-      const newX1 = Math.max(0, Math.min(x1 + deltaX, canvas.width - width));
-      const newY1 = Math.max(0, Math.min(y1 + deltaY, canvas.height - height));
-
-      setCropBox({
-        startX: newX1,
-        startY: newY1,
-        endX: newX1 + width,
-        endY: newY1 + height,
-      });
-
-      setLastMousePos({ x, y });
-      return;
-    }
-
-    // Nếu đang resize từ cạnh, cập nhật crop box theo edge
-    if (isDrawing && resizingEdge) {
-      let newCropBox = { ...cropBox };
-
-      switch (resizingEdge) {
-        case 'tl': // top-left
-          newCropBox.startX = x;
-          newCropBox.startY = y;
-          break;
-        case 'tr': // top-right
-          newCropBox.endX = x;
-          newCropBox.startY = y;
-          break;
-        case 'bl': // bottom-left
-          newCropBox.startX = x;
-          newCropBox.endY = y;
-          break;
-        case 'br': // bottom-right
-          newCropBox.endX = x;
-          newCropBox.endY = y;
-          break;
-        case 'n': // north (top)
-          newCropBox.startY = y;
-          break;
-        case 's': // south (bottom)
-          newCropBox.endY = y;
-          break;
-        case 'w': // west (left)
-          newCropBox.startX = x;
-          break;
-        case 'e': // east (right)
-          newCropBox.endX = x;
-          break;
-      }
-
-      setCropBox(newCropBox);
-      return;
-    }
-
-    // Vẽ crop box mới
-    if (!isDrawing) return;
-
-    setCropBox({
-      ...cropBox,
-      endX: x,
-      endY: y,
-    });
-  };
-
-  // Hàm kiểm tra xem điểm (x, y) có gần cạnh/góc không
-  const detectEdgeAtPoint = (x: number, y: number, crop: CropBox | null): string | null => {
-    if (!crop) return null;
-
-    const x1 = Math.min(crop.startX, crop.endX);
-    const y1 = Math.min(crop.startY, crop.endY);
-    const w = Math.abs(crop.endX - crop.startX);
-    const h = Math.abs(crop.endY - crop.startY);
-
-    // Kiểm tra góc
-    const corners = [
-      { id: 'tl', x: x1, y: y1 },
-      { id: 'tr', x: x1 + w, y: y1 },
-      { id: 'bl', x: x1, y: y1 + h },
-      { id: 'br', x: x1 + w, y: y1 + h },
-    ];
-
-    for (const corner of corners) {
-      if (Math.abs(x - corner.x) < EDGE_THRESHOLD && Math.abs(y - corner.y) < EDGE_THRESHOLD) {
-        return corner.id;
-      }
-    }
-
-    // Kiểm tra cạnh
-    const edges = [
-      { id: 'n', x: x1 + w / 2, y: y1 },
-      { id: 's', x: x1 + w / 2, y: y1 + h },
-      { id: 'w', x: x1, y: y1 + h / 2 },
-      { id: 'e', x: x1 + w, y: y1 + h / 2 },
-    ];
-
-    for (const edge of edges) {
-      if (Math.abs(x - edge.x) < EDGE_THRESHOLD && Math.abs(y - edge.y) < EDGE_THRESHOLD) {
-        return edge.id;
-      }
-    }
-
-    return null;
-  };
-
-  // Hàm kiểm tra xem điểm (x, y) có nằm bên trong crop box không (không phải trên cạnh)
-  const isPointInsideCropBox = (x: number, y: number, crop: CropBox | null): boolean => {
-    if (!crop) return false;
-
-    const x1 = Math.min(crop.startX, crop.endX);
-    const y1 = Math.min(crop.startY, crop.endY);
-    const x2 = Math.max(crop.startX, crop.endX);
-    const y2 = Math.max(crop.startY, crop.endY);
-
-    // Kiểm tra nếu điểm nằm trong hộp (có khoảng trống từ cạnh)
-    return x > x1 + EDGE_THRESHOLD && x < x2 - EDGE_THRESHOLD &&
-           y > y1 + EDGE_THRESHOLD && y < y2 - EDGE_THRESHOLD;
-  };
-
-  const handleMouseUp = () => {
-    setIsDrawing(false);
-    setResizingEdge(null);
-    setIsMoving(false);
-    
-    // Sau khi kéo lần đầu, đánh dấu đã vẽ
-    if (cropBox && !hasDrawn) {
-      const width = Math.abs(cropBox.endX - cropBox.startX) / scale;
-      const height = Math.abs(cropBox.endY - cropBox.startY) / scale;
-      
-      if (width > 0 && height > 0) {
-        setHasDrawn(true);
-      }
-    }
-  };
+  }, [imageLoaded, cropBox, originalImage]);
 
   const handleCrop = async () => {
     if (!cropBox || !originalImage) return;
 
     try {
-      // Sử dụng giá trị từ input nếu đã chỉnh sửa, nếu không dùng giá trị từ crop box
       let width = Math.abs(cropBox.endX - cropBox.startX) / scale;
       let height = Math.abs(cropBox.endY - cropBox.startY) / scale;
 
@@ -524,7 +139,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
         return;
       }
 
-      // Giữ nguyên tâm, lấy vị trí bắt đầu dựa trên kích thước mới
+      // Lấy vị trí và kích thước
       const centerX = (cropBox.startX + cropBox.endX) / 2 / scale;
       const centerY = (cropBox.startY + cropBox.endY) / 2 / scale;
       const x1 = Math.max(0, Math.round(centerX - width / 2));
@@ -535,7 +150,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
       const finalHeight = Math.min(Math.round(height), originalImage.height - y1);
 
       if (finalWidth < 50 || finalHeight < 50) {
-        toast.error('Vùng cắt quá nhỏ sau khi điều chỉnh, vui lòng thay đổi lại kích thước');
+        toast.error('Vùng cắt quá nhỏ sau khi điều chỉnh');
         return;
       }
 
@@ -579,16 +194,13 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   };
 
   const handleReset = () => {
-    setCropBox(null);
-    setHasDrawn(false);
-    setResizingEdge(null);
+    clearBoxes();
   };
 
   const handleSkipCrop = async () => {
     if (!originalImage) return;
 
     try {
-      // Chuyển ảnh gốc thành File
       const canvas = document.createElement('canvas');
       canvas.width = originalImage.width;
       canvas.height = originalImage.height;
@@ -636,29 +248,20 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
         </div>
 
         <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-          💡 <strong>Hướng dẫn:</strong> Kéo chuột để vẽ hộp cắt. Sau khi vẽ xong, kéo các cạnh/góc để điều chỉnh kích thước hoặc kéo bên trong hộp để di chuyển. Vùng được làm sáng là phần sẽ được gửi.
+          💡 <strong>Hướng dẫn:</strong> Kéo chuột để vẽ hộp cắt. Sau khi vẽ xong, kéo các cạnh/góc để điều chỉnh kích thước hoặc kéo bên trong hộp để di chuyển.
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-          >
+          <Button variant="outline" onClick={onCancel}>
             Hủy
           </Button>
-          {hasDrawn && (
-            <Button
-              variant="outline"
-              onClick={handleReset}
-            >
+          {cropBox && (
+            <Button variant="outline" onClick={handleReset}>
               ↻ Chọn lại
             </Button>
           )}
           {onSkipCrop && (
-            <Button
-              variant="outline"
-              onClick={handleSkipCrop}
-            >
+            <Button variant="outline" onClick={handleSkipCrop}>
               ➜ Gửi không cắt
             </Button>
           )}
