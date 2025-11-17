@@ -66,6 +66,10 @@ export const useBoundingBox = ({
   const [resizingEdge, setResizingEdge] = useState<string | null>(null);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
   
+  // Throttle cho cursor updates
+  const lastCursorUpdate = useRef<number>(0);
+  const CURSOR_THROTTLE_MS = 16; // ~60fps
+  
   // Undo/Redo history
   const [history, setHistory] = useState<BoundingBox[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -247,17 +251,15 @@ export const useBoundingBox = ({
   );
 
   /**
-   * Tìm box tại điểm click
+   * Tìm box tại điểm click - optimized
    */
   const findBoxAtPoint = useCallback(
     (x: number, y: number): BoundingBox | null => {
-      // Kết hợp boxes và activeBox
-      const allBoxes = [...boxes];
-      
-      // Duyệt ngược để ưu tiên box vẽ sau
-      for (let i = allBoxes.length - 1; i >= 0; i--) {
-        const box = allBoxes[i];
-        if (isPointInsideBox(x, y, box) || detectEdgeAtPoint(x, y, box)) {
+      // Duyệt ngược để ưu tiên box vẽ sau (trên cùng)
+      for (let i = boxes.length - 1; i >= 0; i--) {
+        const box = boxes[i];
+        // Kiểm tra edge trước (nhỏ hơn) rồi mới kiểm tra inside (lớn hơn)
+        if (detectEdgeAtPoint(x, y, box) || isPointInsideBox(x, y, box)) {
           return box;
         }
       }
@@ -437,13 +439,20 @@ export const useBoundingBox = ({
   }, [activeBox, isDrawing, boxes, multipleBoxes, onBoxComplete]);
 
   /**
-   * Cập nhật cursor dựa trên vị trí
+   * Cập nhật cursor dựa trên vị trí - throttled
    */
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !enabled) return;
 
     const handleCanvasMouseMove = (e: MouseEvent) => {
+      // Throttle cursor updates
+      const now = Date.now();
+      if (now - lastCursorUpdate.current < CURSOR_THROTTLE_MS) {
+        return;
+      }
+      lastCursorUpdate.current = now;
+
       if (boxes.length === 0) {
         canvas.style.cursor = 'crosshair';
         return;
@@ -638,18 +647,24 @@ export const useBoundingBox = ({
     }
   }, [activeBox, boxes, saveToHistory]);
 
-  // Lưu vào history mỗi khi boxes thay đổi (debounced)
+  // Lưu vào history mỗi khi boxes thay đổi (debounced & optimized)
   useEffect(() => {
-    if (boxes.length > 0 && !isDrawing && !isMoving) {
-      // Chỉ save khi không đang vẽ hoặc di chuyển
-      const timer = setTimeout(() => {
-        if (history.length === 0 || JSON.stringify(history[historyIndex]) !== JSON.stringify(boxes)) {
-          saveToHistory(boxes);
-        }
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [boxes, isDrawing, isMoving]);
+    // Không save khi đang drawing/moving (chỉ save khi hoàn thành)
+    if (isDrawing || isMoving || boxes.length === 0) return;
+    
+    const timer = setTimeout(() => {
+      // Chỉ save nếu thực sự khác với state cuối trong history
+      const lastHistoryState = history[historyIndex];
+      const currentState = JSON.stringify(boxes);
+      const lastState = lastHistoryState ? JSON.stringify(lastHistoryState) : null;
+      
+      if (currentState !== lastState) {
+        saveToHistory(boxes);
+      }
+    }, 500); // Tăng debounce lên 500ms để giảm số lần save
+    
+    return () => clearTimeout(timer);
+  }, [boxes]); // Chỉ depend vào boxes, không depend vào isDrawing/isMoving
 
   return {
     boxes,

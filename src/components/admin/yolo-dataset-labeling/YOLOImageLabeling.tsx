@@ -44,6 +44,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null); // Request Animation Frame reference
   const [baseScale, setBaseScale] = useState(1); // Scale từ fit to container
   const [zoomLevel, setZoomLevel] = useState(1); // Zoom factor (1 = 100%, 1.5 = 150%, etc)
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -54,16 +55,16 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   // Scale cuối cùng = baseScale * zoomLevel
   const scale = baseScale * zoomLevel;
 
-  // Màu sắc cho từng class
-  const classColors = [
+  // Màu sắc cho từng class - memoized
+  const classColors = React.useMemo(() => [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
     '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788',
-  ];
+  ], []);
 
-  const getColorForClass = (className: string) => {
+  const getColorForClass = useCallback((className: string) => {
     const index = classes.indexOf(className);
     return index >= 0 ? classColors[index % classColors.length] : '#4ECDC4';
-  };
+  }, [classes, classColors]);
 
   // Sử dụng hook useBoundingBox
   const {
@@ -96,119 +97,124 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const handleMouseMove = hookMouseMove;
   const handleMouseUp = hookMouseUp;
 
-  // Vẽ canvas
-  const drawCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas || !originalImage) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const maxDisplayWidth = containerSize.width > 0 ? containerSize.width : 700;
-    const maxDisplayHeight = containerSize.height > 0 ? containerSize.height : 700;
-
-    const widthRatio = maxDisplayWidth / originalImage.width;
-    const heightRatio = maxDisplayHeight / originalImage.height;
-    const newBaseScale = Math.min(widthRatio, heightRatio, 1);
-
-    // Update baseScale nếu thay đổi
-    if (newBaseScale !== baseScale) {
-      setBaseScale(newBaseScale);
+  // Vẽ canvas - optimized với RAF
+  const drawCanvas = useCallback(() => {
+    // Cancel any pending RAF
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
     }
 
-    // Canvas size sau zoom
-    const displayWidth = originalImage.width * newBaseScale * zoomLevel;
-    const displayHeight = originalImage.height * newBaseScale * zoomLevel;
+    rafRef.current = requestAnimationFrame(() => {
+      const canvas = canvasRef.current;
+      if (!canvas || !originalImage) return;
 
-    canvas.width = displayWidth;
-    canvas.height = displayHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    // Vẽ ảnh với zoom
-    ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
+      const maxDisplayWidth = containerSize.width > 0 ? containerSize.width : 700;
+      const maxDisplayHeight = containerSize.height > 0 ? containerSize.height : 700;
 
-    // Vẽ boxes
-    // Nếu activeBox là box đang chỉnh sửa từ boxes, loại bỏ nó khỏi list để không vẽ 2 lần
-    const boxesToDraw = activeBox && boxes.some(b => b.id === activeBox.id)
-      ? boxes.filter(b => b.id !== activeBox.id) // Loại bỏ box đang edit khỏi list
-      : boxes;
-    
-    const allBoxes = activeBox ? [...boxesToDraw, activeBox] : boxesToDraw;
-    
-    allBoxes.forEach((box) => {
-      const isActive = box.id === activeBox?.id;
-      const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
-      const fillColor = `${color}33`;
+      const widthRatio = maxDisplayWidth / originalImage.width;
+      const heightRatio = maxDisplayHeight / originalImage.height;
+      const newBaseScale = Math.min(widthRatio, heightRatio, 1);
+
+      // Update baseScale nếu thay đổi
+      if (newBaseScale !== baseScale) {
+        setBaseScale(newBaseScale);
+        return; // Exit early, will re-draw on next render
+      }
+
+      // Canvas size sau zoom
+      const displayWidth = originalImage.width * newBaseScale * zoomLevel;
+      const displayHeight = originalImage.height * newBaseScale * zoomLevel;
+
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+
+      // Vẽ ảnh với zoom
+      ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
+
+      // Tối ưu: Chỉ merge activeBox vào array một lần (không dùng useMemo trong RAF)
+      let allBoxes: typeof boxes;
+      if (!activeBox) {
+        allBoxes = boxes;
+      } else {
+        const existsInBoxes = boxes.some(b => b.id === activeBox.id);
+        if (existsInBoxes) {
+          // Replace existing box with activeBox
+          allBoxes = boxes.map(b => b.id === activeBox.id ? activeBox : b);
+        } else {
+          // Add new activeBox to the end
+          allBoxes = [...boxes, activeBox];
+        }
+      }
       
-      //  Scale box coordinates theo zoomLevel
-      const x1 = Math.min(box.startX, box.endX) * zoomLevel;
-      const y1 = Math.min(box.startY, box.endY) * zoomLevel;
-      const width = Math.abs(box.endX - box.startX) * zoomLevel;
-      const height = Math.abs(box.endY - box.startY) * zoomLevel;
+      // Batch drawing operations
+      ctx.save();
+      
+      allBoxes.forEach((box) => {
+        const isActive = box.id === activeBox?.id;
+        const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
+        
+        // Pre-calculate coordinates once
+        const x1 = Math.min(box.startX, box.endX) * zoomLevel;
+        const y1 = Math.min(box.startY, box.endY) * zoomLevel;
+        const width = Math.abs(box.endX - box.startX) * zoomLevel;
+        const height = Math.abs(box.endY - box.startY) * zoomLevel;
 
-      ctx.fillStyle = fillColor;
-      ctx.fillRect(x1, y1, width, height);
+        // Fill
+        ctx.fillStyle = `${color}33`;
+        ctx.fillRect(x1, y1, width, height);
 
-      ctx.strokeStyle = color;
-      ctx.lineWidth = isActive ? 3 : 2;
-      ctx.strokeRect(x1, y1, width, height);
+        // Stroke
+        ctx.strokeStyle = color;
+        ctx.lineWidth = isActive ? 3 : 2;
+        ctx.strokeRect(x1, y1, width, height);
 
-      if (box.label) {
-        ctx.fillStyle = color;
-        ctx.font = 'bold 14px Arial';
-        const labelMetrics = ctx.measureText(box.label);
-        const labelPadding = 6;
-        const labelHeight = 20;
-
-        ctx.fillRect(
-          x1,
-          y1 - labelHeight - labelPadding,
-          labelMetrics.width + labelPadding * 2,
-          labelHeight + labelPadding
-        );
-
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillText(box.label, x1 + labelPadding, y1 - labelPadding - 2);
-      }
-
-      if (isActive) {
-        const handleSize = 8;
-        const corners = [
-          { x: x1, y: y1 },
-          { x: x1 + width, y: y1 },
-          { x: x1, y: y1 + height },
-          { x: x1 + width, y: y1 + height },
-        ];
-
-        corners.forEach((corner) => {
+        // Label
+        if (box.label) {
           ctx.fillStyle = color;
+          ctx.font = 'bold 14px Arial';
+          const labelMetrics = ctx.measureText(box.label);
+          const labelPadding = 6;
+          const labelHeight = 20;
+
           ctx.fillRect(
-            corner.x - handleSize / 2,
-            corner.y - handleSize / 2,
-            handleSize,
-            handleSize
+            x1,
+            y1 - labelHeight - labelPadding,
+            labelMetrics.width + labelPadding * 2,
+            labelHeight + labelPadding
           );
-        });
 
-        const edgeSize = 6;
-        const edges = [
-          { x: x1 + width / 2, y: y1 },
-          { x: x1 + width / 2, y: y1 + height },
-          { x: x1, y: y1 + height / 2 },
-          { x: x1 + width, y: y1 + height / 2 },
-        ];
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText(box.label, x1 + labelPadding, y1 - labelPadding - 2);
+        }
 
-        edges.forEach((edge) => {
+        // Handles (only for active box)
+        if (isActive) {
           ctx.fillStyle = color;
-          ctx.fillRect(
-            edge.x - edgeSize / 2,
-            edge.y - edgeSize / 2,
-            edgeSize,
-            edgeSize
-          );
-        });
-      }
+          const handleSize = 8;
+          const edgeSize = 6;
+
+          // Draw corner handles
+          const halfHandle = handleSize / 2;
+          ctx.fillRect(x1 - halfHandle, y1 - halfHandle, handleSize, handleSize);
+          ctx.fillRect(x1 + width - halfHandle, y1 - halfHandle, handleSize, handleSize);
+          ctx.fillRect(x1 - halfHandle, y1 + height - halfHandle, handleSize, handleSize);
+          ctx.fillRect(x1 + width - halfHandle, y1 + height - halfHandle, handleSize, handleSize);
+
+          // Draw edge handles
+          const halfEdge = edgeSize / 2;
+          ctx.fillRect(x1 + width / 2 - halfEdge, y1 - halfEdge, edgeSize, edgeSize);
+          ctx.fillRect(x1 + width / 2 - halfEdge, y1 + height - halfEdge, edgeSize, edgeSize);
+          ctx.fillRect(x1 - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
+          ctx.fillRect(x1 + width - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
+        }
+      });
+
+      ctx.restore();
     });
-  };
+  }, [originalImage, containerSize, baseScale, zoomLevel, boxes, activeBox, getColorForClass]);
 
   // Zoom handlers
   const handleZoomIn = () => {
@@ -309,7 +315,13 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     if (imageLoaded) {
       drawCanvas();
     }
-  }, [imageLoaded, boxes, activeBox, originalImage, containerSize, zoomLevel]);
+    
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [imageLoaded, drawCanvas]);
 
   useEffect(() => {
     if (activeBox && !activeBox.label && selectedClass) {
