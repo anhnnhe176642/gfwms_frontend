@@ -17,6 +17,7 @@ import {
 import { CanvasDrawer } from '@/components/admin/fabric-count/CanvasDrawer';
 import { ImageCropper } from '@/components/admin/fabric-count/ImageCropper';
 import { ConfidenceFilter } from '@/components/admin/fabric-count/ConfidenceFilter';
+import { CameraCapture } from '@/components/admin/fabric-count/CameraCapture';
 
 export const FabricCountForm: React.FC = () => {
   const [formData, setFormData] = useState<Partial<YoloDetectFormData>>({
@@ -34,6 +35,7 @@ export const FabricCountForm: React.FC = () => {
   const [showImageCropper, setShowImageCropper] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string>('');
   const [confidenceThreshold, setConfidenceThreshold] = useState<number>(0.5);
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
 
   // Lọc detections dựa trên confidence threshold
   const filteredDetections = React.useMemo(() => {
@@ -103,6 +105,22 @@ export const FabricCountForm: React.FC = () => {
     setTempImageSrc('');
   };
 
+  const handleCameraCapture = async (file: File) => {
+    try {
+      // Create preview from captured image
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setTempImageSrc(event.target?.result as string);
+        setShowImageCropper(true);
+      };
+      reader.readAsDataURL(file);
+
+      setErrors({ ...errors, image: '' });
+    } catch (error) {
+      toast.error('Lỗi khi xử lý ảnh từ camera');
+    }
+  };
+
   const handleSkipCrop = async (originalFile: File) => {
     try {
       setShowImageCropper(false);
@@ -163,6 +181,13 @@ export const FabricCountForm: React.FC = () => {
         />
       )}
 
+      {/* Camera Capture Modal */}
+      <CameraCapture
+        isOpen={showCameraCapture}
+        onClose={() => setShowCameraCapture(false)}
+        onCapture={handleCameraCapture}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Đếm vải</CardTitle>
@@ -189,6 +214,16 @@ export const FabricCountForm: React.FC = () => {
                   {isDetecting ? '⏳ Đang xử lý...' : '📁 Chọn ảnh'}
                 </Button>
               </label>
+
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={isDetecting || showImageCropper}
+                className="w-full"
+                onClick={() => setShowCameraCapture(true)}
+              >
+                📸 Chụp ảnh từ camera
+              </Button>
 
               {errors.image && (
                 <p className="text-destructive text-sm">{errors.image}</p>
