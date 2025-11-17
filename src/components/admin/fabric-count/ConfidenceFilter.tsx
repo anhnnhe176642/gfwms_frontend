@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Target, X } from 'lucide-react';
 
 interface ConfidenceFilterProps {
   value: number;
@@ -25,7 +26,8 @@ export const ConfidenceFilter: React.FC<ConfidenceFilterProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className="gap-2"
       >
-        <span>🎯 Độ tin cậy: {Math.round(value * 100)}%</span>
+        <Target className="w-4 h-4" />
+        <span>Độ tin cậy: {Math.round(value * 100)}%</span>
         <span className="text-xs text-muted-foreground">
           ({filteredCount}/{detectionCount})
         </span>
@@ -68,8 +70,9 @@ export const ConfidenceFilter: React.FC<ConfidenceFilterProps> = ({
               variant="default"
               size="sm"
               onClick={() => setIsOpen(false)}
-              className="w-full"
+              className="w-full gap-2"
             >
+              <X className="w-4 h-4" />
               Đóng
             </Button>
           </div>

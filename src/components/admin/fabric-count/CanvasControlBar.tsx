@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Check, RotateCcw, Eye, EyeOff } from 'lucide-react';
 
 interface CanvasControlBarProps {
   isEditMode: boolean;
@@ -30,8 +31,16 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
       <Button
         variant={isEditMode ? 'default' : 'outline'}
         onClick={onEditModeToggle}
+        className="gap-2"
       >
-        {isEditMode ? '✓ Chế độ chỉnh sửa (bật)' : '○ Chế độ chỉnh sửa (tắt)'}
+        {isEditMode ? (
+          <>
+            <Check className="w-4 h-4" />
+            Chế độ chỉnh sửa (bật)
+          </>
+        ) : (
+          'Chế độ chỉnh sửa (tắt)'
+        )}
       </Button>
 
       {isEditMode && (
@@ -39,8 +48,10 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
           variant="outline" 
           onClick={onUndo}
           disabled={!canUndo}
+          className="gap-2"
         >
-          ↶ Hoàn tác
+          <RotateCcw className="w-4 h-4" />
+          Hoàn tác
         </Button>
       )}
 
@@ -48,8 +59,19 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
       <Button
         variant={showLabels ? 'default' : 'outline'}
         onClick={onLabelsToggle}
+        className="gap-2"
       >
-        {showLabels ? '👁️ Ẩn tên & độ tin cậy' : '👁️‍🗨️ Hiện tên & độ tin cậy'}
+        {showLabels ? (
+          <>
+            <Eye className="w-4 h-4" />
+            Ẩn tên & độ tin cậy
+          </>
+        ) : (
+          <>
+            <EyeOff className="w-4 h-4" />
+            Hiện tên & độ tin cậy
+          </>
+        )}
       </Button>
 
       {/* Size Control Panel */}

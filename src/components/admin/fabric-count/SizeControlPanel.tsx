@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Ruler, X } from 'lucide-react';
 
 interface SizeControlPanelProps {
   fontSize: number;
@@ -29,7 +30,8 @@ export const SizeControlPanel: React.FC<SizeControlPanelProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className="gap-2"
       >
-        <span>📏 Kích thước: {Math.round(fontSize * 100)}%</span>
+        <Ruler className="w-4 h-4" />
+        <span>Kích thước: {Math.round(fontSize * 100)}%</span>
       </Button>
 
       {isOpen && (
@@ -104,8 +106,9 @@ export const SizeControlPanel: React.FC<SizeControlPanelProps> = ({
               variant="default"
               size="sm"
               onClick={() => setIsOpen(false)}
-              className="w-full"
+              className="w-full gap-2"
             >
+              <X className="w-4 h-4" />
               Đóng
             </Button>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Lightbulb } from 'lucide-react';
 
 interface EditModeControlsProps {
   objectSize: number;
@@ -46,8 +47,9 @@ export const EditModeControls: React.FC<EditModeControlsProps> = ({
       </div>
 
       {/* Instruction Text */}
-      <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-        💡 <strong>Hướng dẫn:</strong> Click vào vòng tròn để xóa, click vào vị trí khác để thêm vật thể mới
+      <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md flex gap-2">
+        <Lightbulb className="w-4 h-4 shrink-0 mt-0.5" />
+        <div><strong>Hướng dẫn:</strong> Click vào vòng tròn để xóa, click vào vị trí khác để thêm vật thể mới</div>
       </div>
 
       {/* Preview Circle */}

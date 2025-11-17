@@ -5,6 +5,7 @@ import { Camera } from 'react-camera-pro';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { RotateCw, Aperture, X } from 'lucide-react';
 
 interface CameraCaptureProps {
   isOpen: boolean;
@@ -81,24 +82,27 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
               <Button
                 variant="outline"
                 onClick={handleToggleCamera}
-                className="flex-1"
+                className="flex-1 gap-2"
                 title={isFacingMode === 'environment' ? 'Chuyển sang camera trước' : 'Chuyển sang camera sau'}
               >
-                🔄 {isFacingMode === 'environment' ? 'Camera Trước' : 'Camera Sau'}
+                <RotateCw className="w-4 h-4" />
+                {isFacingMode === 'environment' ? 'Camera Trước' : 'Camera Sau'}
               </Button>
               <Button
                 onClick={handleCapture}
-                className="flex-1"
+                className="flex-1 gap-2"
               >
-                📸 Chụp
+                <Aperture className="w-4 h-4" />
+                Chụp
               </Button>
             </div>
             <Button
               variant="outline"
               onClick={onClose}
-              className="w-full"
+              className="w-full gap-2"
             >
-              ❌ Đóng
+              <X className="w-4 h-4" />
+              Đóng
             </Button>
           </div>
         </div>

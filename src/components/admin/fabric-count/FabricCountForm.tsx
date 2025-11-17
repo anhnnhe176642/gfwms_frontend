@@ -7,6 +7,7 @@ import { YoloDetectionResponse, Detection } from '@/types/yolo';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Upload, Camera, Loader2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -208,10 +209,20 @@ export const FabricCountForm: React.FC = () => {
                 <Button
                   type="button"
                   disabled={isDetecting || showImageCropper}
-                  className="w-full"
+                  className="w-full gap-2"
                   onClick={() => document.getElementById('image')?.click()}
                 >
-                  {isDetecting ? '⏳ Đang xử lý...' : '📁 Chọn ảnh'}
+                  {isDetecting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Chọn ảnh
+                    </>
+                  )}
                 </Button>
               </label>
 
@@ -219,10 +230,11 @@ export const FabricCountForm: React.FC = () => {
                 type="button"
                 variant="secondary"
                 disabled={isDetecting || showImageCropper}
-                className="w-full"
+                className="w-full gap-2"
                 onClick={() => setShowCameraCapture(true)}
               >
-                📸 Chụp ảnh từ camera
+                <Camera className="w-4 h-4" />
+                Chụp ảnh từ camera
               </Button>
 
               {errors.image && (
