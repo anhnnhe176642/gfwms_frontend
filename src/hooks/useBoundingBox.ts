@@ -49,7 +49,7 @@ interface UseBoundingBoxReturn {
 export const useBoundingBox = ({
   canvasRef,
   enabled = true,
-  edgeThreshold = 15,
+  edgeThreshold = 5,
   handleSize = 10,
   onBoxComplete,
   onBoxUpdate,
@@ -178,6 +178,11 @@ export const useBoundingBox = ({
     (x: number, y: number, box: BoundingBox): string | null => {
       if (!box) return null;
 
+      //  Scale edge threshold theo zoom level
+      // Khi zoom lên (zoomLevel > 1), threshold nhỏ hơn để dễ click vào center
+      // Khi zoom ra (zoomLevel < 1), threshold lớn hơn để dễ resize
+      const scaledThreshold = edgeThreshold / Math.max(zoomLevel, 0.5);
+
       const x1 = Math.min(box.startX, box.endX);
       const y1 = Math.min(box.startY, box.endY);
       const w = Math.abs(box.endX - box.startX);
@@ -192,7 +197,7 @@ export const useBoundingBox = ({
       ];
 
       for (const corner of corners) {
-        if (Math.abs(x - corner.x) < edgeThreshold && Math.abs(y - corner.y) < edgeThreshold) {
+        if (Math.abs(x - corner.x) < scaledThreshold && Math.abs(y - corner.y) < scaledThreshold) {
           return corner.id;
         }
       }
@@ -206,14 +211,14 @@ export const useBoundingBox = ({
       ];
 
       for (const edge of edges) {
-        if (Math.abs(x - edge.x) < edgeThreshold && Math.abs(y - edge.y) < edgeThreshold) {
+        if (Math.abs(x - edge.x) < scaledThreshold && Math.abs(y - edge.y) < scaledThreshold) {
           return edge.id;
         }
       }
 
       return null;
     },
-    [edgeThreshold]
+    [edgeThreshold, zoomLevel]
   );
 
   /**
@@ -223,19 +228,22 @@ export const useBoundingBox = ({
     (x: number, y: number, box: BoundingBox): boolean => {
       if (!box) return false;
 
+      //  Scale threshold theo zoom level
+      const scaledThreshold = edgeThreshold / Math.max(zoomLevel, 0.5);
+
       const x1 = Math.min(box.startX, box.endX);
       const y1 = Math.min(box.startY, box.endY);
       const x2 = Math.max(box.startX, box.endX);
       const y2 = Math.max(box.startY, box.endY);
 
       return (
-        x > x1 + edgeThreshold &&
-        x < x2 - edgeThreshold &&
-        y > y1 + edgeThreshold &&
-        y < y2 - edgeThreshold
+        x > x1 + scaledThreshold &&
+        x < x2 - scaledThreshold &&
+        y > y1 + scaledThreshold &&
+        y < y2 - scaledThreshold
       );
     },
-    [edgeThreshold]
+    [edgeThreshold, zoomLevel]
   );
 
   /**

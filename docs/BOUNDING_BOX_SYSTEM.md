@@ -26,12 +26,12 @@ src/
 Hook này quản lý tất cả logic tương tác với bounding boxes:
 
 #### Tính năng:
-- ✅ Vẽ box mới bằng cách kéo chuột
-- ✅ Di chuyển box (drag inside box)
-- ✅ Resize box (drag corners/edges)
-- ✅ Hỗ trợ single box hoặc multiple boxes
-- ✅ Tự động cập nhật cursor dựa trên vị trí
-- ✅ Xử lý mouse events ngoài canvas
+-  Vẽ box mới bằng cách kéo chuột
+-  Di chuyển box (drag inside box)
+-  Resize box (drag corners/edges)
+-  Hỗ trợ single box hoặc multiple boxes
+-  Tự động cập nhật cursor dựa trên vị trí
+-  Xử lý mouse events ngoài canvas
 
 #### Cách sử dụng:
 

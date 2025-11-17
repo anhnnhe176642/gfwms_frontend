@@ -139,7 +139,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
       const fillColor = `${color}33`;
       
-      // ✅ Scale box coordinates theo zoomLevel
+      //  Scale box coordinates theo zoomLevel
       const x1 = Math.min(box.startX, box.endX) * zoomLevel;
       const y1 = Math.min(box.startY, box.endY) * zoomLevel;
       const width = Math.abs(box.endX - box.startX) * zoomLevel;
