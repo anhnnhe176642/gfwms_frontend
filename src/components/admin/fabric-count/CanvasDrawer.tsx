@@ -3,7 +3,10 @@
 import React, { useCallback, useState } from 'react';
 import { Detection } from '@/types/yolo';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { CanvasControlBar } from './CanvasControlBar';
+import { CanvasDisplay } from './CanvasDisplay';
+import { EditModeControls } from './EditModeControls';
+import { SizeControlPanel } from './SizeControlPanel';
 
 interface CanvasDrawerProps {
   imageUrl: string;
@@ -36,7 +39,10 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   const [objectSize, setObjectSize] = useState(100);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const [hasUserSetSize, setHasUserSetSize] = useState(false);
-  const [showLabels, setShowLabels] = useState(true);
+  const [showLabels, setShowLabels] = useState(false);
+  const [fontSize, setFontSize] = useState(1);
+  const [circleScale, setCircleScale] = useState(1);
+  const [manualCircleColor, setManualCircleColor] = useState('#FF6B6B');
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -104,11 +110,12 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
         // Nếu có row, sử dụng màu theo row; nếu không có, sử dụng màu theo index
         const colorIndex = row !== undefined ? (row - 1) % rowColors.length : index % rowColors.length;
-        const circleColor = rowColors[colorIndex];
+        // Nếu là custom (được vẽ thủ công), dùng màu tuỳ chỉnh; nếu không, dùng màu mặc định
+        const circleColor = class_name === 'custom' ? manualCircleColor : rowColors[colorIndex];
 
         const centerX = center.x * calculatedScale;
         const centerY = center.y * calculatedScale;
-        const radius = (Math.min(dimensions.width, dimensions.height) * calculatedScale) / 2;
+        const radius = (Math.min(dimensions.width, dimensions.height) * calculatedScale) / 2 * circleScale;
 
         // Vẽ vòng tròn với tô màu và độ trong suốt
         ctx.fillStyle = circleColor + '40';
@@ -123,12 +130,13 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
         // Vẽ số thứ tự ở tâm hình tròn
         const orderNumber = index + 1;
-        const fontSize = Math.max(Math.floor(radius * 1.5), 14); // Font size ~ 1.5x bán kính, tối thiểu 14px
-        ctx.font = `bold ${fontSize}px Arial`;
+        const baseFontSize = Math.max(Math.floor(radius * 1.5), 14); // Font size ~ 1.5x bán kính, tối thiểu 14px
+        const adjustedFontSize = Math.floor(baseFontSize * fontSize);
+        ctx.font = `bold ${adjustedFontSize}px Arial`;
         
         // Vẽ viền đen cho chữ
         ctx.strokeStyle = '#000000';
-        ctx.lineWidth = Math.max(fontSize * 0.05, 1); // Độ dày viền ~3% font size, tối thiểu 1px
+        ctx.lineWidth = Math.max(adjustedFontSize * 0.05, 1); // Độ dày viền ~3% font size, tối thiểu 1px
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.strokeText(String(orderNumber), centerX, centerY);
@@ -160,7 +168,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
     };
 
     img.src = imageUrl;
-  }, [currentDetections, calculateScale, imageUrl, isEditMode, objectSize, isDraggingSlider, showLabels]);
+  }, [currentDetections, calculateScale, imageUrl, isEditMode, objectSize, isDraggingSlider, showLabels, fontSize, circleScale, manualCircleColor]);
 
   React.useEffect(() => {
     if (imageUrl) {
@@ -270,93 +278,60 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
   return (
     <div ref={containerRef} className="w-full space-y-4">
-      <div className="flex gap-2 flex-wrap items-center">
-        {enableEdit && (
-          <>
-            <Button
-              variant={isEditMode ? 'default' : 'outline'}
-              onClick={() => setIsEditMode(!isEditMode)}
-            >
-              {isEditMode ? '✓ Chế độ chỉnh sửa (bật)' : '○ Chế độ chỉnh sửa (tắt)'}
-            </Button>
-            {isEditMode && (
-              <Button 
-                variant="outline" 
-                onClick={handleUndo}
-                disabled={history.length <= 1}
-              >
-                ↶ Hoàn tác
-              </Button>
-            )}
-          </>
-        )}
-        <Button
-          variant={showLabels ? 'default' : 'outline'}
-          onClick={() => setShowLabels(!showLabels)}
-        >
-          {showLabels ? '👁️ Ẩn tên & độ tin cậy' : '👁️‍🗨️ Hiện tên & độ tin cậy'}
-        </Button>
-        {confidenceFilter && (
-          <div>
-            {confidenceFilter}
-          </div>
-        )}
-      </div>
-
-      {isEditMode && (
-        <div className="space-y-3">
-          <div className="bg-muted p-3 rounded-md">
-            <div className="flex items-center gap-4">
-              <label className="text-sm font-medium">Kích thước:</label>
-              <input
-                type="range"
-                min="20"
-                max={maxObjectSize}
-                value={objectSize}
-                onChange={(e) => {
-                  setObjectSize(Number(e.target.value));
-                  setHasUserSetSize(true);
-                }}
-                onMouseDown={() => setIsDraggingSlider(true)}
-                onMouseUp={() => setIsDraggingSlider(false)}
-                onTouchStart={() => setIsDraggingSlider(true)}
-                onTouchEnd={() => setIsDraggingSlider(false)}
-                className="w-48 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
-              <span className="text-sm font-medium">{Math.round((objectSize / maxObjectSize) * 100)}%</span>
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-            💡 <strong>Hướng dẫn:</strong> Click vào vòng tròn để xóa, click vào vị trí khác để thêm vật thể mới
-          </div>
-          
-          {isDraggingSlider && (
-            <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
-              <div className="flex flex-col items-center gap-4">
-                <div 
-                  className="bg-blue-500 bg-opacity-40 border-2 border-blue-500 rounded-full flex items-center justify-center"
-                  style={{
-                    width: `${objectSize * scale}px`,
-                    height: `${objectSize * scale}px`,
-                  }}
-                >
-                  <span className="text-white font-bold text-2xl">{Math.round((objectSize / maxObjectSize) * 100)}%</span>
-                </div>
-              </div>
-            </div>
-          )}
+      {enableEdit ? (
+        <CanvasControlBar
+          isEditMode={isEditMode}
+          canUndo={history.length > 1}
+          showLabels={showLabels}
+          onEditModeToggle={() => setIsEditMode(!isEditMode)}
+          onUndo={handleUndo}
+          onLabelsToggle={() => setShowLabels(!showLabels)}
+          sizeControlPanel={
+            <SizeControlPanel
+              fontSize={fontSize}
+              circleScale={circleScale}
+              manualCircleColor={manualCircleColor}
+              onFontSizeChange={setFontSize}
+              onCircleScaleChange={setCircleScale}
+              onManualCircleColorChange={setManualCircleColor}
+            />
+          }
+          confidenceFilter={confidenceFilter}
+        />
+      ) : (
+        <div className="flex gap-2 flex-wrap items-center">
+          <SizeControlPanel
+            fontSize={fontSize}
+            circleScale={circleScale}
+            manualCircleColor={manualCircleColor}
+            onFontSizeChange={setFontSize}
+            onCircleScaleChange={setCircleScale}
+            onManualCircleColorChange={setManualCircleColor}
+          />
+          {confidenceFilter && <div>{confidenceFilter}</div>}
         </div>
       )}
 
-      <div className="flex justify-center">
-        <canvas
-          ref={canvasRef}
-          onClick={handleCanvasClick}
-          className={`max-w-full h-auto border border-input rounded-md ${
-            isEditMode ? 'cursor-pointer' : 'cursor-default'
-          }`}
+      {isEditMode && (
+        <EditModeControls
+          objectSize={objectSize}
+          maxObjectSize={maxObjectSize}
+          isDraggingSlider={isDraggingSlider}
+          scale={scale}
+          onObjectSizeChange={(value) => {
+            setObjectSize(value);
+            setHasUserSetSize(true);
+          }}
+          onDragStart={() => setIsDraggingSlider(true)}
+          onDragEnd={() => setIsDraggingSlider(false)}
         />
-      </div>
+      )}
+
+      <CanvasDisplay
+        canvasRef={canvasRef}
+        isEditMode={isEditMode}
+        onCanvasClick={handleCanvasClick}
+      />
     </div>
   );
 };
