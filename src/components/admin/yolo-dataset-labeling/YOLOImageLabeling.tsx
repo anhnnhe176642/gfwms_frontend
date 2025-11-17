@@ -45,7 +45,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
-  const [zoomLevel, setZoomLevel] = useState(1);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>(classes[0] || '');
@@ -102,14 +101,13 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     const widthRatio = maxDisplayWidth / originalImage.width;
     const heightRatio = maxDisplayHeight / originalImage.height;
     const baseScale = Math.min(widthRatio, heightRatio, 1);
-    const finalScale = baseScale * zoomLevel;
 
-    const displayWidth = originalImage.width * finalScale;
-    const displayHeight = originalImage.height * finalScale;
+    const displayWidth = originalImage.width * baseScale;
+    const displayHeight = originalImage.height * baseScale;
 
     canvas.width = displayWidth;
     canvas.height = displayHeight;
-    setScale(finalScale);
+    setScale(baseScale);
 
     // Vẽ ảnh
     ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
@@ -232,7 +230,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     if (imageLoaded) {
       drawCanvas();
     }
-  }, [imageLoaded, boxes, activeBox, originalImage, containerSize, zoomLevel]);
+  }, [imageLoaded, boxes, activeBox, originalImage, containerSize]);
 
   useEffect(() => {
     if (activeBox && !activeBox.label && selectedClass) {
@@ -390,39 +388,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
         <div className="flex gap-4 h-screen max-h-screen">
           <div style={{ width: '75%' }} className="flex flex-col">
-            <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-t-md border-b">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))}
-                className="h-8 w-8 p-0"
-              >
-                −
-              </Button>
-              <div className="text-sm font-medium min-w-16 text-center">
-                {Math.round(zoomLevel * 100)}%
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoomLevel(Math.min(3, zoomLevel + 0.1))}
-                className="h-8 w-8 p-0"
-              >
-                +
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoomLevel(1)}
-                className="h-8 px-2 text-xs"
-              >
-                Reset
-              </Button>
-            </div>
-
             <div
               ref={canvasContainerRef}
-              className="flex-1 flex flex-col justify-center items-center bg-muted/20 rounded-md overflow-hidden"
+              className="flex-1 flex flex-col justify-center items-center bg-muted/20 rounded-t-md overflow-hidden"
             >
               <canvas
                 ref={canvasRef}
@@ -439,7 +407,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                 <li>Chọn class label trước khi vẽ box</li>
                 <li>Kéo chuột để vẽ bounding box xung quanh đối tượng</li>
                 <li>Click vào box để chọn, kéo cạnh/góc để resize, kéo bên trong để di chuyển</li>
-                <li>Sử dụng zoom (+/-) để label chính xác hơn</li>
                 <li>Nhấn Delete để xóa, Ctrl+Z để undo</li>
               </ul>
             </div>
