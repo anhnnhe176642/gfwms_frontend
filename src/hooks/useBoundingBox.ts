@@ -17,6 +17,10 @@ interface UseBoundingBoxOptions {
   onBoxComplete?: (box: BoundingBox) => void;
   onBoxUpdate?: (box: BoundingBox) => void;
   multipleBoxes?: boolean;
+  scale?: number;
+  canvasLogicalWidth?: number;
+  canvasLogicalHeight?: number;
+  zoomLevel?: number;
 }
 
 interface UseBoundingBoxReturn {
@@ -50,6 +54,10 @@ export const useBoundingBox = ({
   onBoxComplete,
   onBoxUpdate,
   multipleBoxes = false,
+  scale = 1,
+  canvasLogicalWidth = 0,
+  canvasLogicalHeight = 0,
+  zoomLevel = 1,
 }: UseBoundingBoxOptions): UseBoundingBoxReturn => {
   const [boxes, setBoxes] = useState<BoundingBox[]>([]);
   const [activeBox, setActiveBox] = useState<BoundingBox | null>(null);
@@ -61,6 +69,89 @@ export const useBoundingBox = ({
   // Undo/Redo history
   const [history, setHistory] = useState<BoundingBox[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  /**
+   * Helper: Normalize tọa độ mouse theo scale
+   */
+  const getScaledCoordinates = useCallback(
+    (clientX: number, clientY: number, canvas: HTMLCanvasElement) => {
+      const rect = canvas.getBoundingClientRect();
+      // Tính tọa độ trên DOM element
+      let domX = clientX - rect.left;
+      let domY = clientY - rect.top;
+      
+      // Chuyển đổi từ DOM coordinates sang canvas logical coordinates
+      // canvas.width là kích thước sau zoom, domX là pixel trên DOM
+      // canvas logical width là kích thước gốc trước zoom
+      const logicalX = (domX / canvas.width) * canvasLogicalWidth;
+      const logicalY = (domY / canvas.height) * canvasLogicalHeight;
+      
+      return {
+        x: Math.max(0, Math.min(logicalX, canvasLogicalWidth)),
+        y: Math.max(0, Math.min(logicalY, canvasLogicalHeight)),
+      };
+    },
+    [canvasLogicalWidth, canvasLogicalHeight]
+  );
+
+  /**
+   * Helper: Update box trong state
+   */
+  const updateBoxInState = useCallback(
+    (updatedBox: BoundingBox) => {
+      setActiveBox(updatedBox);
+      const existingIndex = boxes.findIndex((b) => b.id === updatedBox.id);
+      if (existingIndex >= 0) {
+        setBoxes((prev) => {
+          const newBoxes = [...prev];
+          newBoxes[existingIndex] = updatedBox;
+          return newBoxes;
+        });
+      }
+    },
+    [boxes]
+  );
+
+  /**
+   * Helper: Xử lý logic resize box
+   */
+  const handleBoxResize = useCallback(
+    (box: BoundingBox, edge: string, x: number, y: number): BoundingBox => {
+      let updatedBox = { ...box };
+      switch (edge) {
+        case 'tl':
+          updatedBox.startX = x;
+          updatedBox.startY = y;
+          break;
+        case 'tr':
+          updatedBox.endX = x;
+          updatedBox.startY = y;
+          break;
+        case 'bl':
+          updatedBox.startX = x;
+          updatedBox.endY = y;
+          break;
+        case 'br':
+          updatedBox.endX = x;
+          updatedBox.endY = y;
+          break;
+        case 'n':
+          updatedBox.startY = y;
+          break;
+        case 's':
+          updatedBox.endY = y;
+          break;
+        case 'w':
+          updatedBox.startX = x;
+          break;
+        case 'e':
+          updatedBox.endX = x;
+          break;
+      }
+      return updatedBox;
+    },
+    []
+  );
 
   /**
    * Lưu state vào history cho undo/redo
@@ -175,9 +266,7 @@ export const useBoundingBox = ({
       const canvas = canvasRef.current;
       if (!canvas || !enabled) return;
 
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const { x, y } = getScaledCoordinates(e.clientX, e.clientY, canvas);
 
       // Tìm box tại vị trí click
       const clickedBox = findBoxAtPoint(x, y);
@@ -222,6 +311,7 @@ export const useBoundingBox = ({
       findBoxAtPoint,
       detectEdgeAtPoint,
       isPointInsideBox,
+      getScaledCoordinates,
     ]
   );
 
@@ -233,13 +323,7 @@ export const useBoundingBox = ({
       const canvas = canvasRef.current;
       if (!canvas || !activeBox) return;
 
-      const rect = canvas.getBoundingClientRect();
-      let x = e.clientX - rect.left;
-      let y = e.clientY - rect.top;
-
-      // Giới hạn trong canvas
-      x = Math.max(0, Math.min(x, canvas.width));
-      y = Math.max(0, Math.min(y, canvas.height));
+      const { x, y } = getScaledCoordinates(e.clientX, e.clientY, canvas);
 
       if (isMoving) {
         // Di chuyển box
@@ -264,18 +348,7 @@ export const useBoundingBox = ({
           endY: newY1 + height,
         };
 
-        setActiveBox(updatedBox);
-        
-        // Cập nhật trong boxes array nếu đã tồn tại
-        const existingIndex = boxes.findIndex((b) => b.id === activeBox.id);
-        if (existingIndex >= 0) {
-          setBoxes((prev) => {
-            const newBoxes = [...prev];
-            newBoxes[existingIndex] = updatedBox;
-            return newBoxes;
-          });
-        }
-        
+        updateBoxInState(updatedBox);
         setLastMousePos({ x, y });
 
         if (onBoxUpdate) {
@@ -283,50 +356,8 @@ export const useBoundingBox = ({
         }
       } else if (isDrawing && resizingEdge) {
         // Resize box
-        let updatedBox = { ...activeBox };
-
-        switch (resizingEdge) {
-          case 'tl':
-            updatedBox.startX = x;
-            updatedBox.startY = y;
-            break;
-          case 'tr':
-            updatedBox.endX = x;
-            updatedBox.startY = y;
-            break;
-          case 'bl':
-            updatedBox.startX = x;
-            updatedBox.endY = y;
-            break;
-          case 'br':
-            updatedBox.endX = x;
-            updatedBox.endY = y;
-            break;
-          case 'n':
-            updatedBox.startY = y;
-            break;
-          case 's':
-            updatedBox.endY = y;
-            break;
-          case 'w':
-            updatedBox.startX = x;
-            break;
-          case 'e':
-            updatedBox.endX = x;
-            break;
-        }
-
-        setActiveBox(updatedBox);
-        
-        // Cập nhật trong boxes array nếu đã tồn tại
-        const existingIndex = boxes.findIndex((b) => b.id === activeBox.id);
-        if (existingIndex >= 0) {
-          setBoxes((prev) => {
-            const newBoxes = [...prev];
-            newBoxes[existingIndex] = updatedBox;
-            return newBoxes;
-          });
-        }
+        const updatedBox = handleBoxResize(activeBox, resizingEdge, x, y);
+        updateBoxInState(updatedBox);
 
         if (onBoxUpdate) {
           onBoxUpdate(updatedBox);
@@ -353,8 +384,10 @@ export const useBoundingBox = ({
       isDrawing,
       resizingEdge,
       lastMousePos,
-      boxes,
       onBoxUpdate,
+      getScaledCoordinates,
+      updateBoxInState,
+      handleBoxResize,
     ]
   );
 
@@ -408,9 +441,7 @@ export const useBoundingBox = ({
         return;
       }
 
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const { x, y } = getScaledCoordinates(e.clientX, e.clientY, canvas);
 
       const hoveredBox = findBoxAtPoint(x, y);
 
@@ -453,6 +484,7 @@ export const useBoundingBox = ({
     findBoxAtPoint,
     detectEdgeAtPoint,
     isPointInsideBox,
+    getScaledCoordinates,
   ]);
 
   /**
@@ -465,12 +497,7 @@ export const useBoundingBox = ({
     if (!canvas || !activeBox) return;
 
     const handleDocumentMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      let x = e.clientX - rect.left;
-      let y = e.clientY - rect.top;
-
-      x = Math.max(0, Math.min(x, canvas.width));
-      y = Math.max(0, Math.min(y, canvas.height));
+      const { x, y } = getScaledCoordinates(e.clientX, e.clientY, canvas);
 
       if (isMoving) {
         const deltaX = x - lastMousePos.x;
@@ -496,63 +523,11 @@ export const useBoundingBox = ({
 
         setActiveBox(updatedBox);
         
-        // Cập nhật trong boxes array
-        const existingIndex = boxes.findIndex((b) => b.id === activeBox.id);
-        if (existingIndex >= 0) {
-          setBoxes((prev) => {
-            const newBoxes = [...prev];
-            newBoxes[existingIndex] = updatedBox;
-            return newBoxes;
-          });
-        }
-
         setLastMousePos({ x, y });
       } else if (isDrawing) {
         if (resizingEdge) {
-          let updatedBox = { ...activeBox };
-
-          switch (resizingEdge) {
-            case 'tl':
-              updatedBox.startX = x;
-              updatedBox.startY = y;
-              break;
-            case 'tr':
-              updatedBox.endX = x;
-              updatedBox.startY = y;
-              break;
-            case 'bl':
-              updatedBox.startX = x;
-              updatedBox.endY = y;
-              break;
-            case 'br':
-              updatedBox.endX = x;
-              updatedBox.endY = y;
-              break;
-            case 'n':
-              updatedBox.startY = y;
-              break;
-            case 's':
-              updatedBox.endY = y;
-              break;
-            case 'w':
-              updatedBox.startX = x;
-              break;
-            case 'e':
-              updatedBox.endX = x;
-              break;
-          }
-
-          setActiveBox(updatedBox);
-          
-          // Cập nhật trong boxes array
-          const existingIndex = boxes.findIndex((b) => b.id === activeBox.id);
-          if (existingIndex >= 0) {
-            setBoxes((prev) => {
-              const newBoxes = [...prev];
-              newBoxes[existingIndex] = updatedBox;
-              return newBoxes;
-            });
-          }
+          const updatedBox = handleBoxResize(activeBox, resizingEdge, x, y);
+          updateBoxInState(updatedBox);
         } else {
           setActiveBox({
             ...activeBox,
@@ -581,9 +556,11 @@ export const useBoundingBox = ({
     activeBox,
     resizingEdge,
     lastMousePos,
-    boxes,
     canvasRef,
     handleMouseUp,
+    getScaledCoordinates,
+    updateBoxInState,
+    handleBoxResize,
   ]);
 
   /**

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { Undo2, Redo2 } from "lucide-react";
+import { Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -44,11 +44,15 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const [baseScale, setBaseScale] = useState(1); // Scale từ fit to container
+  const [zoomLevel, setZoomLevel] = useState(1); // Zoom factor (1 = 100%, 1.5 = 150%, etc)
   const [imageLoaded, setImageLoaded] = useState(false);
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>(classes[0] || '');
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  // Scale cuối cùng = baseScale * zoomLevel
+  const scale = baseScale * zoomLevel;
 
   // Màu sắc cho từng class
   const classColors = [
@@ -81,6 +85,11 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     canvasRef,
     enabled: imageLoaded,
     multipleBoxes: true,
+    scale,
+    zoomLevel,
+    // Truyền kích thước logical (trước zoom)
+    canvasLogicalWidth: originalImage ? originalImage.width * baseScale : 0,
+    canvasLogicalHeight: originalImage ? originalImage.height * baseScale : 0,
   });
 
   const handleMouseDown = hookMouseDown;
@@ -100,30 +109,41 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
     const widthRatio = maxDisplayWidth / originalImage.width;
     const heightRatio = maxDisplayHeight / originalImage.height;
-    const baseScale = Math.min(widthRatio, heightRatio, 1);
+    const newBaseScale = Math.min(widthRatio, heightRatio, 1);
 
-    const displayWidth = originalImage.width * baseScale;
-    const displayHeight = originalImage.height * baseScale;
+    // Update baseScale nếu thay đổi
+    if (newBaseScale !== baseScale) {
+      setBaseScale(newBaseScale);
+    }
+
+    // Canvas size sau zoom
+    const displayWidth = originalImage.width * newBaseScale * zoomLevel;
+    const displayHeight = originalImage.height * newBaseScale * zoomLevel;
 
     canvas.width = displayWidth;
     canvas.height = displayHeight;
-    setScale(baseScale);
 
-    // Vẽ ảnh
+    // Vẽ ảnh với zoom
     ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
 
     // Vẽ boxes
-    const allBoxes = activeBox ? [...boxes, activeBox] : boxes;
+    // Nếu activeBox là box đang chỉnh sửa từ boxes, loại bỏ nó khỏi list để không vẽ 2 lần
+    const boxesToDraw = activeBox && boxes.some(b => b.id === activeBox.id)
+      ? boxes.filter(b => b.id !== activeBox.id) // Loại bỏ box đang edit khỏi list
+      : boxes;
+    
+    const allBoxes = activeBox ? [...boxesToDraw, activeBox] : boxesToDraw;
     
     allBoxes.forEach((box) => {
       const isActive = box.id === activeBox?.id;
       const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
       const fillColor = `${color}33`;
       
-      const x1 = Math.min(box.startX, box.endX);
-      const y1 = Math.min(box.startY, box.endY);
-      const width = Math.abs(box.endX - box.startX);
-      const height = Math.abs(box.endY - box.startY);
+      // ✅ Scale box coordinates theo zoomLevel
+      const x1 = Math.min(box.startX, box.endX) * zoomLevel;
+      const y1 = Math.min(box.startY, box.endY) * zoomLevel;
+      const width = Math.abs(box.endX - box.startX) * zoomLevel;
+      const height = Math.abs(box.endY - box.startY) * zoomLevel;
 
       ctx.fillStyle = fillColor;
       ctx.fillRect(x1, y1, width, height);
@@ -190,6 +210,65 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     });
   };
 
+  // Zoom handlers
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(prev + 0.2, 3)); // Max 300%
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(prev - 0.2, 0.5)); // Min 50%
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+  };
+
+  const handleWheel = useCallback(
+    (e: WheelEvent) => {
+      // Chỉ zoom khi Ctrl được ấn
+      if (!e.ctrlKey) return;
+      
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1; // Scroll down = zoom out, up = zoom in
+      setZoomLevel((prev) => Math.min(Math.max(prev + delta, 0.5), 3));
+    },
+    []
+  );
+
+  // Pan support (kéo để move khi zoom > 100%)
+  const handleMouseDownOnContainer = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (zoomLevel <= 1) return; // Chỉ pan khi zoom > 100%
+      
+      // Nếu click vào canvas, để canvas xử lý
+      if (e.target === canvasRef.current) return;
+      
+      const container = canvasContainerRef.current;
+      if (!container) return;
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const scrollLeft = container.scrollLeft;
+      const scrollTop = container.scrollTop;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        container.scrollLeft = scrollLeft - dx;
+        container.scrollTop = scrollTop - dy;
+      };
+
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [zoomLevel]
+  );
+
   useEffect(() => {
     const updateSize = () => {
       if (canvasContainerRef.current) {
@@ -230,7 +309,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     if (imageLoaded) {
       drawCanvas();
     }
-  }, [imageLoaded, boxes, activeBox, originalImage, containerSize]);
+  }, [imageLoaded, boxes, activeBox, originalImage, containerSize, zoomLevel]);
 
   useEffect(() => {
     if (activeBox && !activeBox.label && selectedClass) {
@@ -267,6 +346,16 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeBox, deleteActiveBox, undo, redo, canUndo, canRedo]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleWheel]);
 
   const handleSave = () => {
     if (!originalImage) return;
@@ -321,26 +410,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
               Vẽ bounding boxes xung quanh các đối tượng trong ảnh và gán class label.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={undo}
-              disabled={!canUndo}
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={redo}
-              disabled={!canRedo}
-              title="Redo (Ctrl+Shift+Z)"
-            >
-              <Redo2 className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -388,16 +457,83 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
         <div className="flex gap-4 h-screen max-h-screen">
           <div style={{ width: '75%' }} className="flex flex-col">
+            {/* Zoom controls */}
+            <div className="flex items-center justify-between bg-muted/50 p-3 rounded-t-md border-b">
+              <div className="flex items-center gap-2">
+                {/* Undo/Redo */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={undo}
+                  disabled={!canUndo}
+                  title="Undo (Ctrl+Z)"
+                >
+                  <Undo2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={redo}
+                  disabled={!canRedo}
+                  title="Redo (Ctrl+Shift+Z)"
+                >
+                  <Redo2 className="h-4 w-4" />
+                </Button>
+
+                {/* Separator */}
+                <div className="w-px h-6 bg-border" />
+
+                {/* Zoom controls */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 0.5}
+                  title="Zoom out (Ctrl+Scroll Down)"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium w-16 text-center">
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 3}
+                  title="Zoom in (Ctrl+Scroll Up)"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetZoom}
+                  title="Reset zoom"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+              <span className="text-xs text-muted-foreground">💡 Ctrl+Scroll để zoom</span>
+            </div>
+
             <div
               ref={canvasContainerRef}
-              className="flex-1 flex flex-col justify-center items-center bg-muted/20 rounded-t-md overflow-hidden"
+              className="flex-1 bg-muted/20 overflow-auto cursor-grab active:cursor-grabbing"
+              style={{
+                display: 'flex',
+                alignItems: zoomLevel === 1 ? 'center' : 'flex-start',
+                justifyContent: zoomLevel === 1 ? 'center' : 'flex-start',
+                padding: '20px',
+              }}
+              onMouseDown={handleMouseDownOnContainer}
             >
               <canvas
                 ref={canvasRef}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
-                className="max-w-full max-h-full border-2 border-dashed border-primary rounded-md cursor-crosshair"
+                className="border-2 border-dashed border-primary rounded-md cursor-crosshair"
               />
             </div>
 
@@ -408,6 +544,8 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                 <li>Kéo chuột để vẽ bounding box xung quanh đối tượng</li>
                 <li>Click vào box để chọn, kéo cạnh/góc để resize, kéo bên trong để di chuyển</li>
                 <li>Nhấn Delete để xóa, Ctrl+Z để undo</li>
+                <li>Ctrl+Scroll để zoom in/out, hoặc dùng nút +/- trên thanh zoom</li>
+                <li>Khi zoom &gt; 100%, kéo trên canvas để pan (di chuyển ảnh)</li>
               </ul>
             </div>
           </div>
@@ -479,13 +617,13 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                         <div className="flex justify-between">
                           <span>Size:</span>
                           <span className="font-mono text-foreground">
-                            {Math.round(Math.abs(box.endX - box.startX) / scale)} × {Math.round(Math.abs(box.endY - box.startY) / scale)}
+                            {Math.round(Math.abs(box.endX - box.startX))} × {Math.round(Math.abs(box.endY - box.startY))}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Pos:</span>
                           <span className="font-mono text-foreground">
-                            ({Math.round(Math.min(box.startX, box.endX) / scale)}, {Math.round(Math.min(box.startY, box.endY) / scale)})
+                            ({Math.round(Math.min(box.startX, box.endX))}, {Math.round(Math.min(box.startY, box.endY))})
                           </span>
                         </div>
                       </div>
