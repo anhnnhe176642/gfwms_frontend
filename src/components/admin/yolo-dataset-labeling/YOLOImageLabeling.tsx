@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useBoundingBox, BoundingBox } from '@/hooks/useBoundingBox';
+import { useCanvasOptimization } from '@/hooks/useCanvasOptimization';
 import { 
   boundingBoxToYOLO,
   isValidBoundingBox,
@@ -44,6 +45,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
   const rafRef = useRef<number | null>(null); // Request Animation Frame reference
   const [baseScale, setBaseScale] = useState(1); // Scale từ fit to container
   const [zoomLevel, setZoomLevel] = useState(1); // Zoom factor (1 = 100%, 1.5 = 150%, etc)
@@ -51,6 +53,15 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>(classes[0] || '');
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [showOptimizationStats, setShowOptimizationStats] = useState(false); // Debug mode
+
+  //  NEW: Initialize canvas optimization (Pattern 1-5 from Label Studio)
+  const optimization = useCanvasOptimization(canvasRef, imageRef, {
+    fps: 60,
+    enableOffscreen: true,
+    enableViewportCulling: true,
+    viewportPadding: 50,
+  });
 
   // Scale cuối cùng = baseScale * zoomLevel
   const scale = baseScale * zoomLevel;
@@ -97,7 +108,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const handleMouseMove = hookMouseMove;
   const handleMouseUp = hookMouseUp;
 
-  // Vẽ canvas - optimized với RAF
+  // Vẽ canvas - optimized với viewport culling + batch rendering
   const drawCanvas = useCallback(() => {
     // Cancel any pending RAF
     if (rafRef.current) {
@@ -107,9 +118,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     rafRef.current = requestAnimationFrame(() => {
       const canvas = canvasRef.current;
       if (!canvas || !originalImage) return;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
 
       const maxDisplayWidth = containerSize.width > 0 ? containerSize.width : 700;
       const maxDisplayHeight = containerSize.height > 0 ? containerSize.height : 700;
@@ -131,36 +139,68 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       canvas.width = displayWidth;
       canvas.height = displayHeight;
 
-      // Vẽ ảnh với zoom
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      //  Pattern 5: Calculate viewport + culling
+      const viewport = optimization.getViewport(0, 0, zoomLevel);
+
+      // Prepare boxes for culling
+      const boxesToCull = boxes.map((box) => ({
+        id: box.id,
+        x: Math.min(box.startX, box.endX) * zoomLevel,
+        y: Math.min(box.startY, box.endY) * zoomLevel,
+        width: Math.abs(box.endX - box.startX) * zoomLevel,
+        height: Math.abs(box.endY - box.startY) * zoomLevel,
+        label: box.label,
+        startX: box.startX,
+        startY: box.startY,
+        endX: box.endX,
+        endY: box.endY,
+      }));
+
+      //  Pattern 5: Cull invisible boxes
+      const visibleBoxes = optimization.culledBoxes(boxesToCull, viewport);
+
+      // Clear canvas
+      ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+      // Draw image with zoom
       ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
 
-      // Tối ưu: Chỉ merge activeBox vào array một lần (không dùng useMemo trong RAF)
-      let allBoxes: typeof boxes;
-      if (!activeBox) {
-        allBoxes = boxes;
-      } else {
-        const existsInBoxes = boxes.some(b => b.id === activeBox.id);
-        if (existsInBoxes) {
-          // Replace existing box with activeBox
-          allBoxes = boxes.map(b => b.id === activeBox.id ? activeBox : b);
-        } else {
-          // Add new activeBox to the end
-          allBoxes = [...boxes, activeBox];
+      // Merge active box with visible boxes for rendering
+      let renderedBoxes = visibleBoxes;
+      if (activeBox) {
+        const activeScreenBox = {
+          id: activeBox.id,
+          x: Math.min(activeBox.startX, activeBox.endX) * zoomLevel,
+          y: Math.min(activeBox.startY, activeBox.endY) * zoomLevel,
+          width: Math.abs(activeBox.endX - activeBox.startX) * zoomLevel,
+          height: Math.abs(activeBox.endY - activeBox.startY) * zoomLevel,
+          label: activeBox.label,
+          startX: activeBox.startX,
+          startY: activeBox.startY,
+          endX: activeBox.endX,
+          endY: activeBox.endY,
+        };
+
+        const existsInVisible = visibleBoxes.some((b: any) => b.id === activeBox.id);
+        if (!existsInVisible) {
+          renderedBoxes = [...visibleBoxes, activeScreenBox];
         }
       }
-      
-      // Batch drawing operations
+
+      //  Pattern 2: Batch draw all boxes
       ctx.save();
-      
-      allBoxes.forEach((box) => {
+
+      renderedBoxes.forEach((box: any) => {
         const isActive = box.id === activeBox?.id;
         const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
-        
-        // Pre-calculate coordinates once
-        const x1 = Math.min(box.startX, box.endX) * zoomLevel;
-        const y1 = Math.min(box.startY, box.endY) * zoomLevel;
-        const width = Math.abs(box.endX - box.startX) * zoomLevel;
-        const height = Math.abs(box.endY - box.startY) * zoomLevel;
+
+        const x1 = box.x;
+        const y1 = box.y;
+        const width = box.width;
+        const height = box.height;
 
         // Fill
         ctx.fillStyle = `${color}33`;
@@ -201,7 +241,12 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
           ctx.fillRect(x1 - halfHandle, y1 - halfHandle, handleSize, handleSize);
           ctx.fillRect(x1 + width - halfHandle, y1 - halfHandle, handleSize, handleSize);
           ctx.fillRect(x1 - halfHandle, y1 + height - halfHandle, handleSize, handleSize);
-          ctx.fillRect(x1 + width - halfHandle, y1 + height - halfHandle, handleSize, handleSize);
+          ctx.fillRect(
+            x1 + width - halfHandle,
+            y1 + height - halfHandle,
+            handleSize,
+            handleSize
+          );
 
           // Draw edge handles
           const halfEdge = edgeSize / 2;
@@ -213,8 +258,23 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       });
 
       ctx.restore();
+
+      //  Debug: Show optimization stats if enabled
+      if (showOptimizationStats) {
+        const stats = optimization.getStats();
+        if (stats) {
+          ctx.fillStyle = '#00FF00';
+          ctx.font = '12px monospace';
+          ctx.fillText(`Visible: ${stats.visibleBoxes}/${stats.totalBoxes}`, 10, 20);
+          ctx.fillText(`Speedup: ${stats.estimatedSpeedup.toFixed(2)}x`, 10, 35);
+          ctx.fillText(`Optimized: ${(stats.optimizationRatio * 100).toFixed(0)}%`, 10, 50);
+        }
+      }
+
+      // RAF loop - tiếp tục vẽ frame tiếp theo
+      drawCanvas();
     });
-  }, [originalImage, containerSize, baseScale, zoomLevel, boxes, activeBox, getColorForClass]);
+  }, [originalImage, containerSize, baseScale, zoomLevel, boxes, activeBox, optimization, getColorForClass, showOptimizationStats]);
 
   // Zoom handlers
   const handleZoomIn = () => {
