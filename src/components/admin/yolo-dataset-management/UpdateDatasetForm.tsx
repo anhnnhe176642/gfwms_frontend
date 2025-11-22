@@ -191,7 +191,6 @@ export function UpdateDatasetForm() {
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DRAFT">Nháp</SelectItem>
                   <SelectItem value="ACTIVE">Hoạt động</SelectItem>
                   <SelectItem value="ARCHIVED">Lưu trữ</SelectItem>
                 </SelectContent>

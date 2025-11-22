@@ -18,7 +18,6 @@ import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterH
 import { StatusBadge } from "@/components/admin/table/Badges"
 
 const DATASET_STATUS_OPTIONS = [
-  { label: 'Nháp', value: 'DRAFT' },
   { label: 'Hoạt động', value: 'ACTIVE' },
   { label: 'Lưu trữ', value: 'ARCHIVED' },
 ]
@@ -79,20 +78,20 @@ export const createDatasetColumns = (
     }
   },
   {
-    accessorKey: "imageCount",
+    accessorKey: "totalImages",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
         <span className="font-medium">Tổng ảnh</span>
         <SortButton column={column} label="Sắp xếp theo tổng ảnh" />
       </div>
     ),
-    cell: ({ row }) => <span className="font-medium">{row.getValue("imageCount")}</span>,
+    cell: ({ row }) => <span className="font-medium">{row.getValue("totalImages") || row.original.imageCount || 0}</span>,
     meta: {
       title: "Tổng ảnh"
     }
   },
   {
-    accessorKey: "labeledCount",
+    accessorKey: "totalLabels",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
         <span className="font-medium">Ảnh được gán nhãn</span>
@@ -100,8 +99,8 @@ export const createDatasetColumns = (
       </div>
     ),
     cell: ({ row }) => {
-      const imageCount = (row.original.imageCount ?? row.original.totalImages ?? 0) as number
-      const labeledCount = (row.getValue("labeledCount") ?? row.original.totalLabels ?? 0) as number
+      const imageCount = (row.original.totalImages ?? row.original.imageCount ?? 0) as number
+      const labeledCount = (row.getValue("totalLabels") ?? row.original.labeledCount ?? 0) as number
       const progress = imageCount > 0 ? Math.round((labeledCount / imageCount) * 100) : 0
       
       return (
@@ -113,7 +112,7 @@ export const createDatasetColumns = (
               style={{ width: `${progress}%` }}
             />
           </div>
-          <span className="text-xs text-muted-foreground min-w-fit">{progress}%</span>
+          <span className="text-xs text-muted-foreground">{progress}%</span>
         </div>
       )
     },
@@ -126,7 +125,7 @@ export const createDatasetColumns = (
     header: ({ column }) => (
       <CheckboxFilterHeader column={column} title="Trạng thái" options={DATASET_STATUS_OPTIONS} />
     ),
-    cell: ({ row }) => <StatusBadge status={row.getValue("status")} />,
+    cell: ({ row }) => <div className="ms-3"><StatusBadge status={row.getValue("status")} /></div>,
     filterFn: (row, id, value) => {
       if (!value || value.length === 0) return true
       return value.includes(row.getValue(id))

@@ -26,11 +26,9 @@ export type DatasetListParams = {
   page?: number;
   limit?: number;
   search?: string;
-  status?: string; // e.g., "DRAFT,ACTIVE"
-  sortBy?: string; // e.g., "name,createdAt"
-  order?: string; // e.g., "desc,asc"
-  createdFrom?: string; // ISO date string
-  createdTo?: string; // ISO date string
+  status?: string; // e.g., "ACTIVE,ARCHIVED"
+  sortBy?: string; // e.g., "name,createdAt,totalImages,totalLabels,status"
+  order?: string; // e.g., "asc,desc"
 };
 
 export type DatasetDetail = DatasetListItem & {

@@ -67,6 +67,13 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
           to: 'createdTo',
         },
       },
+      sortingFieldMap: {
+        name: 'name',
+        createdAt: 'createdAt',
+        totalImages: 'totalImages',
+        totalLabels: 'totalLabels',
+        status: 'status',
+      },
     },
     onError: (err) => {
       console.error('Failed to fetch datasets:', err);
