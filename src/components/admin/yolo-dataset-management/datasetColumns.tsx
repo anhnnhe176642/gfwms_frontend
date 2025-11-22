@@ -15,7 +15,7 @@ import type { DatasetListItem } from "@/types/yolo-dataset"
 import { SortButton } from "@/components/admin/table/SortButton"
 import { CheckboxFilterHeader } from "@/components/admin/table/CheckboxFilterHeader"
 import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterHeader"
-import { StatusBadge } from "@/components/admin/table/Badges"
+import { DatasetStatusBadge } from "@/components/admin/table/Badges"
 
 const DATASET_STATUS_OPTIONS = [
   { label: 'Hoạt động', value: 'ACTIVE' },
@@ -125,7 +125,7 @@ export const createDatasetColumns = (
     header: ({ column }) => (
       <CheckboxFilterHeader column={column} title="Trạng thái" options={DATASET_STATUS_OPTIONS} />
     ),
-    cell: ({ row }) => <div className="ms-3"><StatusBadge status={row.getValue("status")} /></div>,
+    cell: ({ row }) => <div className="ms-3"><DatasetStatusBadge status={row.getValue("status")} /></div>,
     filterFn: (row, id, value) => {
       if (!value || value.length === 0) return true
       return value.includes(row.getValue(id))

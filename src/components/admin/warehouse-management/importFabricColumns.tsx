@@ -16,7 +16,7 @@ import { ImportFabricStatus } from "@/types/importFabric"
 import { SortButton } from "@/components/admin/table/SortButton"
 import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterHeader"
 import { CheckboxFilterHeader } from "@/components/admin/table/CheckboxFilterHeader"
-import { StatusBadge } from "@/components/admin/table/Badges"
+import { ImportFabricStatusBadge } from "@/components/admin/table/Badges"
 import { IMPORT_FABRIC_STATUS_OPTIONS } from "@/constants/importFabric"
 
 export type ImportFabricColumnActions = {
@@ -98,7 +98,7 @@ export const createImportFabricColumns = (
 
       return (
         <div className="flex items-center justify-between gap-2">
-          <StatusBadge status={row.getValue("status")} />
+          <ImportFabricStatusBadge status={row.getValue("status")} />
           {actions.onArrangeShelf && isPending && (
             <Button
               variant="outline"

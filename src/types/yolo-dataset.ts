@@ -1,6 +1,6 @@
 import type { PaginationState } from './common';
 
-export type DatasetStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+export type DatasetStatus = 'ACTIVE' | 'ARCHIVED';
 
 export type DatasetListItem = {
   id: string;

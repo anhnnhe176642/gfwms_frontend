@@ -1,8 +1,11 @@
 import type { UserStatus } from '@/types/user';
 import type { RoleOption } from '@/types/role';
+import type { DatasetStatus } from '@/types/yolo-dataset';
+import type { ImportFabricStatus } from '@/types/importFabric';
 import { Badge } from '@/components/ui/badge';
 import { USER_STATUS_CONFIG } from '@/constants/user';
 import { IMPORT_FABRIC_STATUS_CONFIG } from '@/constants/importFabric';
+import { DATASET_STATUS_CONFIG } from '@/constants/yolo-dataset';
 
 type StatusBadgeProps = {
   status: UserStatus | string;
@@ -13,12 +16,31 @@ type StatusBadgeProps = {
  * Uses generic Badge component with user status config
  */
 export function StatusBadge({ status }: StatusBadgeProps) {
-  // Try to use IMPORT_FABRIC_STATUS_CONFIG first, fallback to USER_STATUS_CONFIG
-  const config = (IMPORT_FABRIC_STATUS_CONFIG as any)[status] 
-    ? IMPORT_FABRIC_STATUS_CONFIG
-    : USER_STATUS_CONFIG;
-  
-  return <Badge value={status} config={config as any} />;
+  return <Badge value={status} config={USER_STATUS_CONFIG as any} />;
+}
+
+type ImportFabricStatusBadgeProps = {
+  status: ImportFabricStatus;
+};
+
+/**
+ * Status badge component for import fabric
+ * Uses generic Badge component with import fabric status config
+ */
+export function ImportFabricStatusBadge({ status }: ImportFabricStatusBadgeProps) {
+  return <Badge value={status} config={IMPORT_FABRIC_STATUS_CONFIG as any} />;
+}
+
+type DatasetStatusBadgeProps = {
+  status: DatasetStatus;
+};
+
+/**
+ * Status badge component for datasets
+ * Uses generic Badge component with dataset status config
+ */
+export function DatasetStatusBadge({ status }: DatasetStatusBadgeProps) {
+  return <Badge value={status} config={DATASET_STATUS_CONFIG as any} />;
 }
 
 type RoleBadgeProps = {
