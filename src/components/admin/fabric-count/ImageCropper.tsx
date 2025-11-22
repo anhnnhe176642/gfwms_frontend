@@ -29,6 +29,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   const MAX_DISPLAY_HEIGHT = 600;
 
   // Sử dụng hook useBoundingBox để quản lý crop box
+  // canvasLogicalWidth/Height là kích thước ảnh gốc (trước scale)
   const {
     boxes,
     activeBox,
@@ -40,10 +41,14 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     canvasRef,
     enabled: imageLoaded,
     multipleBoxes: false, // Chỉ cho phép 1 crop box
+    edgeThreshold: 15, // Tăng vùng resize để dễ kéo cạnh
+    // Truyền kích thước ảnh gốc để hook ánh xạ tọa độ DOM -> logical coordinates
+    canvasLogicalWidth: originalImage?.width || 0,
+    canvasLogicalHeight: originalImage?.height || 0,
   });
 
-  // Lấy crop box hiện tại (box đầu tiên hoặc box đang vẽ)
-  const cropBox = boxes.length > 0 ? boxes[0] : activeBox;
+  // Lấy crop box hiện tại - ưu tiên activeBox (đang vẽ/resize) rồi mới là boxes
+  const cropBox = activeBox || (boxes.length > 0 ? boxes[0] : null);
 
   // Vẽ canvas với ảnh và crop box
   const drawCanvas = () => {
@@ -70,8 +75,18 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
 
     // Vẽ crop box nếu có
     if (cropBox && cropBox.startX !== cropBox.endX && cropBox.startY !== cropBox.endY) {
+      // cropBox đang ở logical coordinates (kích thước ảnh gốc)
+      // Cần scale để vẽ trên canvas display
+      const scaledBox = {
+        ...cropBox,
+        startX: cropBox.startX * calculatedScale,
+        startY: cropBox.startY * calculatedScale,
+        endX: cropBox.endX * calculatedScale,
+        endY: cropBox.endY * calculatedScale,
+      };
+
       // Vẽ overlay tối
-      drawDimOverlay(ctx, displayWidth, displayHeight, cropBox, 0.5);
+      drawDimOverlay(ctx, displayWidth, displayHeight, scaledBox, 0.5);
 
       // Vẽ lại vùng sáng (vùng sẽ được cắt)
       const x1 = Math.min(cropBox.startX, cropBox.endX);
@@ -81,18 +96,18 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
 
       ctx.drawImage(
         originalImage,
-        x1 / calculatedScale,
-        y1 / calculatedScale,
-        width / calculatedScale,
-        height / calculatedScale,
         x1,
         y1,
         width,
-        height
+        height,
+        x1 * calculatedScale,
+        y1 * calculatedScale,
+        width * calculatedScale,
+        height * calculatedScale
       );
 
       // Vẽ border và handles sử dụng helper
-      drawBoundingBox(ctx, cropBox, {
+      drawBoundingBox(ctx, scaledBox, {
         strokeColor: '#4ECDC4',
         lineWidth: 2,
         showHandles: true,
@@ -131,23 +146,26 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     if (!cropBox || !originalImage) return;
 
     try {
-      let width = Math.abs(cropBox.endX - cropBox.startX) / scale;
-      let height = Math.abs(cropBox.endY - cropBox.startY) / scale;
+      // cropBox đã ở logical coordinates (kích thước ảnh gốc)
+      // Không cần chia scale, có thể dùng trực tiếp
+      const x1 = Math.min(cropBox.startX, cropBox.endX);
+      const y1 = Math.min(cropBox.startY, cropBox.endY);
+      const x2 = Math.max(cropBox.startX, cropBox.endX);
+      const y2 = Math.max(cropBox.startY, cropBox.endY);
+
+      let width = x2 - x1;
+      let height = y2 - y1;
 
       if (width < 50 || height < 50) {
         toast.error('Vùng cắt quá nhỏ, vui lòng chọn vùng lớn hơn');
         return;
       }
 
-      // Lấy vị trí và kích thước
-      const centerX = (cropBox.startX + cropBox.endX) / 2 / scale;
-      const centerY = (cropBox.startY + cropBox.endY) / 2 / scale;
-      const x1 = Math.max(0, Math.round(centerX - width / 2));
-      const y1 = Math.max(0, Math.round(centerY - height / 2));
-
-      // Đảm bảo không vượt quá biên ảnh
-      const finalWidth = Math.min(Math.round(width), originalImage.width - x1);
-      const finalHeight = Math.min(Math.round(height), originalImage.height - y1);
+      // Làm tròn tọa độ
+      const finalX = Math.max(0, Math.round(x1));
+      const finalY = Math.max(0, Math.round(y1));
+      const finalWidth = Math.min(Math.round(width), originalImage.width - finalX);
+      const finalHeight = Math.min(Math.round(height), originalImage.height - finalY);
 
       if (finalWidth < 50 || finalHeight < 50) {
         toast.error('Vùng cắt quá nhỏ sau khi điều chỉnh');
@@ -167,8 +185,8 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
 
       ctx.drawImage(
         originalImage,
-        x1,
-        y1,
+        finalX,
+        finalY,
         finalWidth,
         finalHeight,
         0,

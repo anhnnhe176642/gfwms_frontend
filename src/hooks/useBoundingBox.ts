@@ -85,14 +85,18 @@ export const useBoundingBox = ({
       let domY = clientY - rect.top;
       
       // Chuyển đổi từ DOM coordinates sang canvas logical coordinates
-      // canvas.width là kích thước sau zoom, domX là pixel trên DOM
-      // canvas logical width là kích thước gốc trước zoom
-      const logicalX = (domX / canvas.width) * canvasLogicalWidth;
-      const logicalY = (domY / canvas.height) * canvasLogicalHeight;
+      // canvas.width là pixel size trên DOM (sau scale CSS)
+      // canvasLogicalWidth là actual canvas resolution (nếu được truyền)
+      // Công thức: (domPixel / domSize) * logicalSize
+      const logicalWidth = canvasLogicalWidth || canvas.width;
+      const logicalHeight = canvasLogicalHeight || canvas.height;
+      
+      const x = (domX / canvas.width) * logicalWidth;
+      const y = (domY / canvas.height) * logicalHeight;
       
       return {
-        x: Math.max(0, Math.min(logicalX, canvasLogicalWidth)),
-        y: Math.max(0, Math.min(logicalY, canvasLogicalHeight)),
+        x: Math.max(0, Math.min(x, logicalWidth)),
+        y: Math.max(0, Math.min(y, logicalHeight)),
       };
     },
     [canvasLogicalWidth, canvasLogicalHeight]
@@ -232,22 +236,15 @@ export const useBoundingBox = ({
     (x: number, y: number, box: BoundingBox): boolean => {
       if (!box) return false;
 
-      //  Scale threshold theo zoom level
-      const scaledThreshold = edgeThreshold / Math.max(zoomLevel, 0.5);
-
       const x1 = Math.min(box.startX, box.endX);
       const y1 = Math.min(box.startY, box.endY);
       const x2 = Math.max(box.startX, box.endX);
       const y2 = Math.max(box.startY, box.endY);
 
-      return (
-        x > x1 + scaledThreshold &&
-        x < x2 - scaledThreshold &&
-        y > y1 + scaledThreshold &&
-        y < y2 - scaledThreshold
-      );
+      // Kiểm tra đơn giản: điểm có nằm trong hộp không
+      return x > x1 && x < x2 && y > y1 && y < y2;
     },
-    [edgeThreshold, zoomLevel]
+    []
   );
 
   /**
@@ -527,8 +524,12 @@ export const useBoundingBox = ({
         const width = x2 - x1;
         const height = y2 - y1;
 
-        const newX1 = Math.max(0, Math.min(x1 + deltaX, canvas.width - width));
-        const newY1 = Math.max(0, Math.min(y1 + deltaY, canvas.height - height));
+        // Tính logical bounds (không phải DOM pixels)
+        const logicalWidth = canvasLogicalWidth || canvas.width;
+        const logicalHeight = canvasLogicalHeight || canvas.height;
+
+        const newX1 = Math.max(0, Math.min(x1 + deltaX, logicalWidth - width));
+        const newY1 = Math.max(0, Math.min(y1 + deltaY, logicalHeight - height));
 
         const updatedBox = {
           ...activeBox,
@@ -539,6 +540,16 @@ export const useBoundingBox = ({
         };
 
         setActiveBox(updatedBox);
+        // Cập nhật vào boxes state
+        setBoxes((prev) => {
+          const idx = prev.findIndex((b) => b.id === activeBox.id);
+          if (idx >= 0) {
+            const newBoxes = [...prev];
+            newBoxes[idx] = updatedBox;
+            return newBoxes;
+          }
+          return prev;
+        });
         
         setLastMousePos({ x, y });
       } else if (isDrawing) {
@@ -578,6 +589,8 @@ export const useBoundingBox = ({
     getScaledCoordinates,
     updateBoxInState,
     handleBoxResize,
+    canvasLogicalWidth,
+    canvasLogicalHeight,
   ]);
 
   /**
