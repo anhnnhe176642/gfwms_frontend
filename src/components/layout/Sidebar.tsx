@@ -122,6 +122,12 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
+      label: 'Quản lý Dataset YOLO',
+      href: ROUTES.ADMIN.YOLO_DATASETS.LIST.path,
+      icon: Tag,
+      requiredPermission: PERMISSIONS.YOLO.VIEW_DATASET.key,
+    },
+    {
       label: 'Quản lý kho',
       icon: Warehouse,
       requiredPermission: PERMISSIONS.WAREHOUSES.VIEW_LIST.key,

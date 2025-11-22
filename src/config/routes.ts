@@ -200,6 +200,36 @@ export const ROUTES = {
       },
     },
 
+    // YOLO Dataset Management
+    YOLO_DATASETS: {
+      LIST: {
+        path: '/admin/yolo-datasets',
+        name: 'Quản lý Dataset YOLO',
+        description: 'Quản lý các dataset YOLO để huấn luyện mô hình',
+        requiredPermission: PERMISSIONS.YOLO.VIEW_DATASET.key,
+      },
+      DETAIL: {
+        path: '/admin/yolo-datasets/:id',
+        name: 'Chi tiết Dataset YOLO',
+        requiredPermission: PERMISSIONS.YOLO.VIEW_DATASET.key,
+      },
+      CREATE: {
+        path: '/admin/yolo-datasets/create',
+        name: 'Tạo Dataset YOLO',
+        requiredPermission: PERMISSIONS.YOLO.MANAGE_DATASET.key,
+      },
+      EDIT: {
+        path: '/admin/yolo-datasets/:id/edit',
+        name: 'Chỉnh sửa Dataset YOLO',
+        requiredPermission: PERMISSIONS.YOLO.MANAGE_DATASET.key,
+      },
+      LABEL: {
+        path: '/admin/yolo-datasets/:id/label',
+        name: 'Gán nhãn ảnh',
+        requiredPermission: PERMISSIONS.YOLO.MANAGE_DATASET.key,
+      },
+    },
+
     // Warehouse Management
     WAREHOUSES: {
       LIST: {

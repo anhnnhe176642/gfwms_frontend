@@ -197,6 +197,8 @@ export const useFormValidation = <T extends Record<string, unknown>>(
     setFieldValue,
     setFieldError,
     setFieldErrors,
+    setErrors,
+    setTouched,
     validateForm,
     validateField,
   };
