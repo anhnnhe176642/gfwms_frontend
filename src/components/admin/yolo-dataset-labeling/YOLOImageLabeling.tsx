@@ -115,6 +115,15 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   // State to track if we've loaded initial boxes
   const [initialBoxesLoaded, setInitialBoxesLoaded] = useState(false);
   const [baseScaleReady, setBaseScaleReady] = useState(false);
+
+  // Sync boxes and activeBox to refs for use in drawCanvas without dependency issues
+  useEffect(() => {
+    boxesRef.current = boxes;
+  }, [boxes]);
+
+  useEffect(() => {
+    activeBoxRef.current = activeBox;
+  }, [activeBox]);
   const [isAutoLabeling, setIsAutoLabeling] = useState(false);
 
   // Sync refs với state - chỉ update ref, không trigger re-render
@@ -144,33 +153,14 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       const heightRatio = maxDisplayHeight / originalImage.height;
       const calculatedScale = Math.min(widthRatio, heightRatio, 1);
       
-      if (baseScale !== calculatedScale) {
-        // baseScale changed - rescale all boxes to match new scale
-        // Boxes stored as pixel * baseScale, need to adjust them
-        if (boxes.length > 0 && baseScale > 0) {
-          // Convert boxes from old scale back to pixel coords, then apply new scale
-          const oldScale = baseScale;
-          const rescaledBoxes = boxes.map(box => ({
-            ...box,
-            startX: (box.startX / oldScale) * calculatedScale,
-            startY: (box.startY / oldScale) * calculatedScale,
-            endX: (box.endX / oldScale) * calculatedScale,
-            endY: (box.endY / oldScale) * calculatedScale,
-          }));
-          // Update all boxes with new scale
-          rescaledBoxes.forEach(box => {
-            if (box.id) {
-              updateBox(box.id, box);
-            }
-          });
-        }
+      if (Math.abs(baseScale - calculatedScale) > 0.0001) {
         setBaseScale(calculatedScale);
       } else if (!baseScaleReady) {
         setBaseScaleReady(true);
         console.log('BaseScale ready:', calculatedScale);
       }
     }
-  }, [originalImage, containerSize, baseScale, baseScaleReady, boxes, updateBox]);
+  }, [originalImage, containerSize, baseScale, baseScaleReady]);
 
   // Load existing labels AFTER baseScale is ready
   useEffect(() => {
@@ -216,11 +206,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     }
   }, [existingLabels, classes, originalImage, baseScale, baseScaleReady, initialBoxesLoaded, clearBoxes, addBox]);
 
-  // Monitor baseScale changes
-  useEffect(() => {
-    console.log('⚠️ baseScale changed:', baseScale, 'initialBoxesLoaded:', initialBoxesLoaded);
-  }, [baseScale, initialBoxesLoaded]);
-
   const handleMouseDown = hookMouseDown;
   const handleMouseMove = hookMouseMove;
   const handleMouseUp = hookMouseUp;
@@ -259,8 +244,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       endX: box.endX,
       endY: box.endY,
     }));
-
-    console.log('Drawing canvas with boxes:', boxes.length, 'boxesToRender:', boxesToRender);
 
     // Clear canvas
     ctx.clearRect(0, 0, displayWidth, displayHeight);
@@ -422,9 +405,11 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   useEffect(() => {
     const updateSize = () => {
       if (canvasContainerRef.current) {
+        // Use offsetWidth/offsetHeight to get the full container size
+        // including scrollbar, preventing oscillation when scrollbar appears
         setContainerSize({
-          width: canvasContainerRef.current.clientWidth,
-          height: canvasContainerRef.current.clientHeight,
+          width: canvasContainerRef.current.offsetWidth,
+          height: canvasContainerRef.current.offsetHeight,
         });
       }
     };
@@ -459,14 +444,14 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     if (imageLoaded && baseScaleReady) {
       drawCanvas();
     }
-  }, [imageLoaded, baseScaleReady, drawCanvas, containerSize]);
+  }, [imageLoaded, baseScaleReady, baseScale, zoomLevel, containerSize]);
 
   // Redraw canvas when boxes or activeBox change
   useEffect(() => {
     if (imageLoaded && originalImage) {
       drawCanvas();
     }
-  }, [boxes, activeBox, drawCanvas, imageLoaded, originalImage]);
+  }, [boxes, activeBox, imageLoaded, originalImage]);
 
   useEffect(() => {
     if (activeBox && !activeBox.label && selectedClass) {
