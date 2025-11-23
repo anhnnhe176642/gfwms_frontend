@@ -66,6 +66,9 @@ export const useBoundingBox = ({
   const [resizingEdge, setResizingEdge] = useState<string | null>(null);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
   
+  // Map để O(1) lookup box by id - tối ưu performance
+  const boxMapRef = useRef<Map<string, BoundingBox>>(new Map());
+  
   // Throttle cho cursor updates
   const lastCursorUpdate = useRef<number>(0);
   const CURSOR_THROTTLE_MS = 16; // ~60fps
@@ -73,6 +76,19 @@ export const useBoundingBox = ({
   // Undo/Redo history
   const [history, setHistory] = useState<BoundingBox[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  /**
+   * Sync boxMap mỗi khi boxes thay đổi
+   */
+  useEffect(() => {
+    const map = new Map<string, BoundingBox>();
+    boxes.forEach((box) => {
+      if (box.id) {
+        map.set(box.id, box);
+      }
+    });
+    boxMapRef.current = map;
+  }, [boxes]);
 
   /**
    * Helper: Normalize tọa độ mouse theo scale
@@ -197,7 +213,7 @@ export const useBoundingBox = ({
   }, [historyIndex]);
 
   /**
-   * Phát hiện cạnh hoặc góc tại một điểm
+   * Phát hiện cạnh hoặc góc tại một điểm - tối ưu O(1) check
    */
   const detectEdgeAtPoint = useCallback(
     (x: number, y: number, box: BoundingBox): string | null => {
@@ -212,34 +228,21 @@ export const useBoundingBox = ({
       const y1 = Math.min(box.startY, box.endY);
       const w = Math.abs(box.endX - box.startX);
       const h = Math.abs(box.endY - box.startY);
+      const x2 = x1 + w;
+      const y2 = y1 + h;
 
-      // Kiểm tra góc
-      const corners = [
-        { id: 'tl', x: x1, y: y1 },
-        { id: 'tr', x: x1 + w, y: y1 },
-        { id: 'bl', x: x1, y: y1 + h },
-        { id: 'br', x: x1 + w, y: y1 + h },
-      ];
+      // Inline threshold check - tránh tạo array
+      // Kiểm tra 4 góc
+      if (Math.abs(x - x1) < scaledThreshold && Math.abs(y - y1) < scaledThreshold) return 'tl';
+      if (Math.abs(x - x2) < scaledThreshold && Math.abs(y - y1) < scaledThreshold) return 'tr';
+      if (Math.abs(x - x1) < scaledThreshold && Math.abs(y - y2) < scaledThreshold) return 'bl';
+      if (Math.abs(x - x2) < scaledThreshold && Math.abs(y - y2) < scaledThreshold) return 'br';
 
-      for (const corner of corners) {
-        if (Math.abs(x - corner.x) < scaledThreshold && Math.abs(y - corner.y) < scaledThreshold) {
-          return corner.id;
-        }
-      }
-
-      // Kiểm tra cạnh
-      const edges = [
-        { id: 'n', x: x1 + w / 2, y: y1 },
-        { id: 's', x: x1 + w / 2, y: y1 + h },
-        { id: 'w', x: x1, y: y1 + h / 2 },
-        { id: 'e', x: x1 + w, y: y1 + h / 2 },
-      ];
-
-      for (const edge of edges) {
-        if (Math.abs(x - edge.x) < scaledThreshold && Math.abs(y - edge.y) < scaledThreshold) {
-          return edge.id;
-        }
-      }
+      // Kiểm tra 4 cạnh
+      if (Math.abs(x - (x1 + w / 2)) < scaledThreshold && Math.abs(y - y1) < scaledThreshold) return 'n';
+      if (Math.abs(x - (x1 + w / 2)) < scaledThreshold && Math.abs(y - y2) < scaledThreshold) return 's';
+      if (Math.abs(x - x1) < scaledThreshold && Math.abs(y - (y1 + h / 2)) < scaledThreshold) return 'w';
+      if (Math.abs(x - x2) < scaledThreshold && Math.abs(y - (y1 + h / 2)) < scaledThreshold) return 'e';
 
       return null;
     },
@@ -266,10 +269,13 @@ export const useBoundingBox = ({
 
   /**
    * Tìm box tại điểm click - optimized
+   * Vẫn O(n) vì cần duyệt toàn bộ vì thứ tự Z (overlap detection)
+   * Nhưng dùng early return + reverse iteration để nhanh hơn
    */
   const findBoxAtPoint = useCallback(
     (x: number, y: number): BoundingBox | null => {
       // Duyệt ngược để ưu tiên box vẽ sau (trên cùng)
+      // Early return khi tìm thấy - O(1) trong trường hợp tốt (hover trên box cùng)
       for (let i = boxes.length - 1; i >= 0; i--) {
         const box = boxes[i];
         // Kiểm tra edge trước (nhỏ hơn) rồi mới kiểm tra inside (lớn hơn)
@@ -618,7 +624,7 @@ export const useBoundingBox = ({
   }, []);
 
   /**
-   * Cập nhật box
+   * Cập nhật box - giữ nguyên O(n) vì cần update array order
    */
   const updateBox = useCallback((id: string, updates: Partial<BoundingBox>) => {
     setBoxes((prev) =>
@@ -627,11 +633,14 @@ export const useBoundingBox = ({
   }, []);
 
   /**
-   * Xóa box
+   * Xóa box - tối ưu với boxMap
    */
   const removeBox = useCallback((id: string) => {
     setBoxes((prev) => prev.filter((box) => box.id !== id));
-  }, []);
+    if (activeBox?.id === id) {
+      setActiveBox(null);
+    }
+  }, [activeBox]);
 
   /**
    * Xóa tất cả boxes

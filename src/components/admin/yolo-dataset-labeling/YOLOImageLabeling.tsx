@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw, Wand2, Loader2, Save, CheckCircle2, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useBoundingBox, BoundingBox } from '@/hooks/useBoundingBox';
 import { useCanvasOptimization } from '@/hooks/useCanvasOptimization';
 import { yoloService } from '@/services/yolo.service';
+import { BoxesList } from './BoxesList';
 import { 
   boundingBoxToYOLO,
   isValidBoundingBox,
@@ -62,6 +63,8 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const rafRef = useRef<number | null>(null); // Request Animation Frame reference
+  const boxesRef = useRef<BoundingBox[]>([]); // Track boxes without triggering redraw
+  const activeBoxRef = useRef<BoundingBox | null>(null); // Track active box
   const [baseScale, setBaseScale] = useState(1); // Scale từ fit to container
   const [zoomLevel, setZoomLevel] = useState(1); // Zoom factor (1 = 100%, 1.5 = 150%, etc)
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -72,6 +75,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const [showLabelsOnCanvas, setShowLabelsOnCanvas] = useState(false); // Toggle label text on boxes - default hidden
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isMarking, setIsMarking] = useState(false);
+  const [forceRedraw, setForceRedraw] = useState(0); // Trigger để force canvas redraw khi cần
 
   //  NEW: Initialize canvas optimization (Pattern 1-5 from Label Studio)
   const optimization = useCanvasOptimization(canvasRef, imageRef, {
@@ -127,6 +131,15 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const [initialBoxesLoaded, setInitialBoxesLoaded] = useState(false);
   const [baseScaleReady, setBaseScaleReady] = useState(false);
   const [isAutoLabeling, setIsAutoLabeling] = useState(false);
+
+  // Sync refs với state - chỉ update ref, không trigger re-render
+  useEffect(() => {
+    boxesRef.current = boxes;
+  }, [boxes]);
+
+  useEffect(() => {
+    activeBoxRef.current = activeBox;
+  }, [activeBox]);
 
   // Reset initialBoxesLoaded when existingLabels changes (e.g., loading a new image)
   useEffect(() => {
@@ -248,6 +261,10 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
+
+      // Use refs instead of closure to get latest boxes without dependency
+      const boxes = boxesRef.current;
+      const activeBox = activeBoxRef.current;
 
       // Prepare boxes for rendering (NO culling for accuracy)
       // Viewport culling có thể gây lệch khi zoom lớn, disable để đảm bảo tính đúng
@@ -378,7 +395,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       // Do NOT call drawCanvas() here - let React re-render trigger it
       // This prevents infinite loop and ensures baseScale stabilizes
     });
-  }, [originalImage, baseScale, zoomLevel, boxes, activeBox, optimization, getColorForClass, showOptimizationStats, showLabelsOnCanvas]);
+  }, [originalImage, baseScale, zoomLevel, optimization, getColorForClass, showOptimizationStats, showLabelsOnCanvas]);
 
   // Zoom handlers
   const handleZoomIn = () => {
@@ -926,94 +943,16 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
             </div>
           </div>
 
-          <div style={{ width: '25%' }} className="flex flex-col bg-muted/20 rounded-md p-4 overflow-hidden">
-            <div className="mb-3">
-              <Label className="text-sm font-semibold">Danh sách boxes ({boxes.length}):</Label>
-            </div>
-
-            {boxes.length > 0 ? (
-              <div className="flex-1 overflow-y-auto space-y-2">
-                {boxes.map((box, index) => {
-                  const boxColor = box.label ? getColorForClass(box.label) : '#4ECDC4';
-                  const isActive = activeBox?.id === box.id;
-                  return (
-                    <div
-                      key={box.id}
-                      onClick={() => setActiveBox(box)}
-                      className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
-                        isActive
-                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                          : 'border-border hover:border-primary/50 hover:bg-muted/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full shrink-0"
-                            style={{ backgroundColor: boxColor }}
-                          />
-                          <span className="text-xs font-medium">#{index + 1}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteBox(box.id!);
-                          }}
-                          className="h-5 w-5 p-0 hover:bg-destructive/10"
-                        >
-                          <span className="text-xs">✕</span>
-                        </Button>
-                      </div>
-
-                      <Select
-                        value={box.label || selectedClass}
-                        onValueChange={(value) => handleChangeBoxLabel(box.id!, value)}
-                      >
-                        <SelectTrigger className="h-7 text-xs bg-background border-border/50">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {classes.map((cls) => (
-                            <SelectItem key={cls} value={cls}>
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className="w-2 h-2 rounded-full"
-                                  style={{ backgroundColor: getColorForClass(cls) }}
-                                />
-                                <span className="text-xs">{cls}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <div className="mt-2 text-xs text-muted-foreground space-y-1 border-t border-border/30 pt-2">
-                        <div className="flex justify-between">
-                          <span>Size:</span>
-                          <span className="font-mono text-foreground">
-                            {Math.round(Math.abs(box.endX - box.startX))} × {Math.round(Math.abs(box.endY - box.startY))}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Pos:</span>
-                          <span className="font-mono text-foreground">
-                            ({Math.round(Math.min(box.startX, box.endX))}, {Math.round(Math.min(box.startY, box.endY))})
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-muted-foreground text-xs">Chưa có boxes</div>
-                </div>
-              </div>
-            )}
+          <div style={{ width: '25%' }} className="flex flex-col overflow-hidden">
+            <BoxesList 
+              boxes={boxes}
+              activeBox={activeBox}
+              classes={classes}
+              onSelectBox={setActiveBox}
+              onDeleteBox={handleDeleteBox}
+              onChangeBoxLabel={handleChangeBoxLabel}
+              getColorForClass={getColorForClass}
+            />
           </div>
         </div>
 
