@@ -128,6 +128,26 @@ export function createDatasetImageColumns(
       },
     },
     {
+      accessorKey: 'notes',
+      header: ({ column }) => (
+        <div className="flex items-center gap-1">
+          <span className="font-medium">Ghi chú</span>
+          <SortButton column={column} label="Sắp xếp theo ghi chú" />
+        </div>
+      ),
+      cell: ({ row }) => {
+        const notes = row.getValue('notes') as string | undefined;
+        return (
+          <div className="max-w-xs truncate text-sm text-muted-foreground" title={notes}>
+            {notes || '-'}
+          </div>
+        );
+      },
+      meta: {
+        title: 'Ghi chú',
+      },
+    },
+    {
       accessorKey: 'uploadedByUser.fullname',
       header: ({ column }) => (
         <div className="flex items-center gap-1">

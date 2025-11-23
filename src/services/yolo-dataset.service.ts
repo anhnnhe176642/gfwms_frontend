@@ -75,18 +75,10 @@ export const yoloDatasetService = {
   },
 
   /**
-   * Lấy thông tin chi tiết một ảnh
+   * Lấy thông tin chi tiết một ảnh (bao gồm annotations nếu có)
    */
   getImageById: async (imageId: string): Promise<any> => {
     const response = await api.get(`/v1/yolo/datasets/images/${imageId}`);
-    return response.data.data;
-  },
-
-  /**
-   * Lấy thông tin ảnh chi tiết cùng các annotations hiện tại
-   */
-  getImageDetailWithAnnotations: async (imageId: string): Promise<any> => {
-    const response = await api.get(`/v1/yolo/datasets/images/${imageId}/details`);
     return response.data.data;
   },
 

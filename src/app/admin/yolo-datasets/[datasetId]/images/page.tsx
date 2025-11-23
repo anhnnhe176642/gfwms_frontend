@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { DatasetImagesTable } from '@/components/admin/yolo-dataset-management';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,8 +18,7 @@ import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, Loader } from 'lucide-react';
 import { toast } from 'sonner';
-import Image from 'next/image';
-import type { DatasetImage } from '@/types/yolo-dataset';
+import type { DatasetImageDetail } from '@/types/yolo-dataset';
 
 export default function DatasetImagesPage({
   params,
@@ -27,11 +26,12 @@ export default function DatasetImagesPage({
   params: Promise<{ datasetId: string }>;
 }) {
   const router = useRouter();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [datasetId, setDatasetId] = useState<string | null>(null);
   const [datasetName, setDatasetName] = useState<string>('');
   const [isLoadingDataset, setIsLoadingDataset] = useState(true);
   const [viewImageDialogOpen, setViewImageDialogOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<DatasetImage | null>(null);
+  const [selectedImage, setSelectedImage] = useState<DatasetImageDetail | null>(null);
   const [loadingImage, setLoadingImage] = useState(false);
 
   useEffect(() => {
@@ -54,11 +54,119 @@ export default function DatasetImagesPage({
     initPage();
   }, [params]);
 
+  // Vẽ annotations lên canvas khi selectedImage thay đổi
+  useEffect(() => {
+    if (!selectedImage || !selectedImage.imageUrl) {
+      return;
+    }
+
+    // Delay để đảm bảo canvas đã mount và visible trong DOM
+    const timer = setTimeout(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        return;
+      }
+      
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) {
+        return;
+      }
+
+      // Tạo mapping color cho từng class
+      const classColorMap: Record<string, string> = {};
+      const colors = [
+        '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+        '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788',
+      ];
+      let colorIndex = 0;
+
+      // Gán màu cho các class
+      if (selectedImage.annotations && selectedImage.annotations.length > 0) {
+        selectedImage.annotations.forEach((ann) => {
+          if (ann.class_name && !classColorMap[ann.class_name]) {
+            classColorMap[ann.class_name] = colors[colorIndex % colors.length];
+            colorIndex++;
+          }
+        });
+      }
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        // Set canvas kích thước bằng ảnh
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Clear canvas trước
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Vẽ ảnh
+        ctx.drawImage(img, 0, 0);
+
+        // Vẽ các annotations
+        if (selectedImage.annotations && selectedImage.annotations.length > 0) {
+          
+          selectedImage.annotations.forEach((ann, index) => {
+            // Convert từ normalized coordinates (0-1) sang pixel coordinates
+            const x1 = ann.x1 * img.width;
+            const y1 = ann.y1 * img.height;
+            const x2 = ann.x2 * img.width;
+            const y2 = ann.y2 * img.height;
+            const width = x2 - x1;
+            const height = y2 - y1;
+
+            // Lấy màu từ class name (cùng class = cùng màu)
+            const color = ann.class_name ? classColorMap[ann.class_name] : '#4ECDC4';
+
+            // Vẽ fill với alpha
+            ctx.fillStyle = `${color}33`;
+            ctx.fillRect(x1, y1, width, height);
+
+            // Vẽ border
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x1, y1, width, height);
+
+            // Vẽ label text
+            if (ann.class_name) {
+              ctx.fillStyle = color;
+              ctx.font = 'bold 14px Arial';
+              const textMetrics = ctx.measureText(ann.class_name);
+              const textPadding = 4;
+              const textHeight = 18;
+
+              // Background cho text
+              ctx.fillRect(
+                x1,
+                Math.max(0, y1 - textHeight - textPadding),
+                textMetrics.width + textPadding * 2,
+                textHeight
+              );
+
+              // Text
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillText(ann.class_name, x1 + textPadding, Math.max(14, y1 - textPadding - 2));
+            }
+          });
+        }
+      };
+
+      img.onerror = (e) => {
+        toast.error('Không thể tải ảnh');
+      };
+
+      img.src = selectedImage.imageUrl || '';
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [selectedImage]);
+
   const handleViewImage = async (imageId: string) => {
     setLoadingImage(true);
     try {
-      const image = await yoloDatasetService.getImageById(imageId);
-      setSelectedImage(image);
+      const imageDetail = await yoloDatasetService.getImageById(imageId);
+      setSelectedImage(imageDetail);
       setViewImageDialogOpen(true);
     } catch (err) {
       const message = getServerErrorMessage(err) || 'Không thể tải thông tin ảnh';
@@ -137,7 +245,7 @@ export default function DatasetImagesPage({
 
         {/* Image Detail Dialog */}
         <Dialog open={viewImageDialogOpen} onOpenChange={setViewImageDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Chi tiết ảnh</DialogTitle>
               <DialogDescription>
@@ -151,17 +259,19 @@ export default function DatasetImagesPage({
               </div>
             ) : selectedImage ? (
               <div className="space-y-4">
-                {/* Image Preview */}
-                <div className="relative w-full bg-muted rounded-lg overflow-hidden">
+                {/* Image Preview with Annotations */}
+                <div className="flex flex-col items-center justify-center bg-muted/50 rounded-lg border p-4">
                   {selectedImage.imageUrl ? (
-                    <div className="relative w-full" style={{ aspectRatio: '4/3' }}>
-                      <Image
-                        src={selectedImage.imageUrl}
-                        alt={selectedImage.filename}
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
+                    <canvas
+                      ref={canvasRef}
+                      style={{ 
+                        maxWidth: '100%',
+                        maxHeight: '70vh',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '0.5rem',
+                        backgroundColor: '#000'
+                      }}
+                    />
                   ) : (
                     <div className="flex items-center justify-center w-full h-48 bg-muted">
                       <p className="text-muted-foreground">Không có ảnh để hiển thị</p>
