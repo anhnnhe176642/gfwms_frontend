@@ -21,6 +21,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   onCancel,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scaleRef = useRef(1); // Dùng ref để không trigger re-render khi scale thay đổi
   const [scale, setScale] = useState(1);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
@@ -29,7 +30,8 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   const MAX_DISPLAY_HEIGHT = 600;
 
   // Sử dụng hook useBoundingBox để quản lý crop box
-  // canvasLogicalWidth/Height là kích thước ảnh gốc (trước scale)
+  // Canvas DOM size = logical size * scale (zoom level)
+  // useBoundingBox cần zoomLevel để convert DOM pixels -> logical coords
   const {
     boxes,
     activeBox,
@@ -42,7 +44,8 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     enabled: imageLoaded,
     multipleBoxes: false, // Chỉ cho phép 1 crop box
     edgeThreshold: 15, // Tăng vùng resize để dễ kéo cạnh
-    // Truyền kích thước ảnh gốc để hook ánh xạ tọa độ DOM -> logical coordinates
+    zoomLevel: scaleRef.current, // Dùng ref để hook luôn có scale chính xác
+    // Truyền kích thước ảnh gốc
     canvasLogicalWidth: originalImage?.width || 0,
     canvasLogicalHeight: originalImage?.height || 0,
   });
@@ -68,6 +71,9 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
 
     canvas.width = displayWidth;
     canvas.height = displayHeight;
+    
+    // Cập nhật ref để hook dùng scale chính xác
+    scaleRef.current = calculatedScale;
     setScale(calculatedScale);
 
     // Vẽ ảnh gốc
