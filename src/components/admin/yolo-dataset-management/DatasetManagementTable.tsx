@@ -25,7 +25,7 @@ import { getServerErrorMessage } from '@/lib/errorHandler';
 import { PERMISSIONS } from '@/constants/permissions';
 import { ROUTES } from '@/config/routes';
 import type { DatasetListItem, DatasetListParams } from '@/types/yolo-dataset';
-import { Search, RefreshCw, Upload } from 'lucide-react';
+import { Search, RefreshCw, Upload, Download } from 'lucide-react';
 
 export type DatasetManagementTableProps = {
   initialParams?: DatasetListParams;
@@ -41,8 +41,6 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [datasetToDelete, setDatasetToDelete] = useState<string | number | null>(null);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-
-  // Use custom hook for table state and data fetching
   const {
     data: datasets,
     loading,
@@ -112,6 +110,37 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
   };
 
   /**
+   * Handle export dataset
+   */
+  const handleExportClick = async (datasetId: string | number) => {
+    setActionLoading(true);
+    try {
+      // Find dataset name from current datasets
+      const dataset = datasets.find(d => d.id === datasetId);
+      const datasetName = dataset?.name || 'dataset';
+      
+      const blob = await yoloDatasetService.exportDataset(datasetId);
+      
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${datasetName}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Xuất dataset thành công');
+    } catch (err) {
+      const message = getServerErrorMessage(err) || 'Không thể xuất dataset';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  /**
    * Confirm and execute delete
    */
   const confirmDelete = async () => {
@@ -153,6 +182,7 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
     onEdit: hasPermission(PERMISSIONS.YOLO.MANAGE_DATASET.key) ? handleEditClick : undefined,
     onView: hasPermission(PERMISSIONS.YOLO.VIEW_DATASET.key) ? handleViewClick : undefined,
     onViewImages: hasPermission(PERMISSIONS.YOLO.VIEW_DATASET.key) ? handleViewImagesClick : undefined,
+    onExport: hasPermission(PERMISSIONS.YOLO.VIEW_DATASET.key) ? handleExportClick : undefined,
   });
 
   if (loading && datasets.length === 0) {

@@ -12,3 +12,5 @@ export type { UploadImageFormProps } from './UploadImageForm';
 export { EditImageStatusDialog } from './EditImageStatusDialog';
 export { ImportDatasetZipDialog } from './ImportDatasetZipDialog';
 export type { ImportDatasetZipDialogProps } from './ImportDatasetZipDialog';
+export { ImportDatasetToExistingDialog } from './ImportDatasetToExistingDialog';
+export type { ImportDatasetToExistingDialogProps } from './ImportDatasetToExistingDialog';

@@ -183,3 +183,18 @@ export type ImportZipDatasetPayload = {
   name: string;
   description?: string;
 };
+
+export type ImportDatasetToExistingResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    importedCount: number;
+    failedCount: number;
+    errors: Array<{
+      filename?: string;
+      error: string;
+    }>;
+  };
+};
+
+export type ExportDatasetResponse = Blob;

@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
-import { ArrowLeft, RefreshCw, Edit, Loader, Copy } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Edit, Loader, Copy, Download, Upload } from 'lucide-react';
 import { useNavigation } from '@/hooks/useNavigation';
+import { ImportDatasetToExistingDialog } from './ImportDatasetToExistingDialog';
 import type { DatasetDetail, DatasetStatus } from '@/types/yolo-dataset';
 
 const DATASET_STATUS_COLORS: Record<DatasetStatus, string> = {
@@ -34,6 +35,8 @@ export function DatasetDetailView({ datasetId, onEdit }: DatasetDetailViewProps)
   const [dataset, setDataset] = useState<DatasetDetail | null>(null);
   const [error, setError] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   // Fetch dataset data
   useEffect(() => {
@@ -82,6 +85,32 @@ export function DatasetDetailView({ datasetId, onEdit }: DatasetDetailViewProps)
       await navigator.clipboard.writeText(dataset.id.toString());
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!dataset?.id) return;
+
+    setIsExporting(true);
+    try {
+      const blob = await yoloDatasetService.exportDataset(dataset.id);
+      
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${dataset.name || 'dataset'}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Xuất dataset thành công');
+    } catch (err) {
+      const message = getServerErrorMessage(err) || 'Không thể xuất dataset';
+      toast.error(message);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -161,6 +190,14 @@ export function DatasetDetailView({ datasetId, onEdit }: DatasetDetailViewProps)
             className="h-9 w-9"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button onClick={handleExport} disabled={isExporting} variant="outline" className="gap-2">
+            <Download className="h-4 w-4" />
+            {isExporting ? 'Đang xuất...' : 'Xuất ZIP'}
+          </Button>
+          <Button onClick={() => setImportDialogOpen(true)} variant="outline" className="gap-2">
+            <Upload className="h-4 w-4" />
+            Nhập ảnh
           </Button>
           <Button onClick={handleEdit} className="gap-2">
             <Edit className="h-4 w-4" />
@@ -289,6 +326,16 @@ export function DatasetDetailView({ datasetId, onEdit }: DatasetDetailViewProps)
         </Card>
       )}
 
+      {/* Import Dialog */}
+      <ImportDatasetToExistingDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        datasetId={dataset.id}
+        datasetName={dataset.name}
+        onSuccess={async () => {
+          await handleRefresh();
+        }}
+      />
     </div>
   );
 }

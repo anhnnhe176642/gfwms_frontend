@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -27,6 +27,7 @@ export type DatasetColumnActions = {
   onEdit?: (datasetId: string | number) => void
   onDelete?: (datasetId: string | number) => void
   onViewImages?: (datasetId: string | number) => void
+  onExport?: (datasetId: string | number) => void
 }
 
 export const createDatasetColumns = (
@@ -207,6 +208,15 @@ export const createDatasetColumns = (
                   onClick={() => actions.onEdit?.(dataset.id)}
                 >
                   Chỉnh sửa
+                </DropdownMenuItem>
+              )}
+
+              {actions.onExport && (
+                <DropdownMenuItem
+                  onClick={() => actions.onExport?.(dataset.id)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Xuất ZIP
                 </DropdownMenuItem>
               )}
               

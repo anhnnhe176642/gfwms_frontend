@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
-import { DatasetImagesTable } from '@/components/admin/yolo-dataset-management';
+import { DatasetImagesTable, ImportDatasetToExistingDialog } from '@/components/admin/yolo-dataset-management';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +16,7 @@ import {
 import { ROUTES } from '@/config/routes';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, Loader, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DatasetImageDetail } from '@/types/yolo-dataset';
 
@@ -33,6 +33,9 @@ export default function DatasetImagesPage({
   const [viewImageDialogOpen, setViewImageDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<DatasetImageDetail | null>(null);
   const [loadingImage, setLoadingImage] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const initPage = async () => {
@@ -178,6 +181,32 @@ export default function DatasetImagesPage({
     }
   };
 
+  const handleExport = async () => {
+    if (!datasetId) return;
+
+    setIsExporting(true);
+    try {
+      const blob = await yoloDatasetService.exportDataset(datasetId);
+      
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${datasetName || 'dataset'}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Xuất dataset thành công');
+    } catch (err) {
+      const message = getServerErrorMessage(err) || 'Không thể xuất dataset';
+      toast.error(message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (isLoadingDataset) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -211,20 +240,33 @@ export default function DatasetImagesPage({
       <div className="container mx-auto py-8 px-4">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.back()}
-              className="h-9 w-9"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">Quản lý ảnh Dataset</h1>
-              <p className="text-sm text-muted-foreground">
-                {datasetName || 'Dataset'}
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.back()}
+                className="h-9 w-9"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">Quản lý ảnh Dataset</h1>
+                <p className="text-sm text-muted-foreground">
+                  {datasetName || 'Dataset'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button onClick={handleExport} disabled={isExporting} variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                {isExporting ? 'Đang xuất...' : 'Xuất ZIP'}
+              </Button>
+              <Button onClick={() => setImportDialogOpen(true)} variant="outline" className="gap-2">
+                <Upload className="h-4 w-4" />
+                Nhập ảnh
+              </Button>
             </div>
           </div>
 
@@ -238,12 +280,27 @@ export default function DatasetImagesPage({
             </CardHeader>
             <CardContent>
               <DatasetImagesTable
+                key={refreshKey}
                 datasetId={datasetId}
                 onViewImage={handleViewImage}
               />
             </CardContent>
           </Card>
         </div>
+
+        {/* Import Dialog */}
+        {datasetId && (
+          <ImportDatasetToExistingDialog
+            open={importDialogOpen}
+            onOpenChange={setImportDialogOpen}
+            datasetId={datasetId}
+            datasetName={datasetName}
+            onSuccess={async () => {
+              // Refresh the images table
+              setRefreshKey(prev => prev + 1);
+            }}
+          />
+        )}
 
         {/* Image Detail Dialog */}
         <Dialog open={viewImageDialogOpen} onOpenChange={setViewImageDialogOpen}>

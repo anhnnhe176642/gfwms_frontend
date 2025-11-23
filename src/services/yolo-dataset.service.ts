@@ -15,6 +15,8 @@ import type {
   UpdateDatasetImagePayload,
   UpdateDatasetImageResponse,
   ImportDatasetFromZipResponse,
+  ImportDatasetToExistingResponse,
+  ExportDatasetResponse,
 } from '@/types/yolo-dataset';
 
 const BASE_PATH = '/v1/yolo/datasets';
@@ -188,6 +190,44 @@ export const yoloDatasetService = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Import ảnh vào dataset có sẵn từ file ZIP
+   * @param datasetId - ID của dataset
+   * @param zipFile - File ZIP chứa ảnh
+   */
+  importDatasetToExisting: async (
+    datasetId: string | number,
+    zipFile: File
+  ): Promise<ImportDatasetToExistingResponse> => {
+    const formData = new FormData();
+    formData.append('zipFile', zipFile);
+
+    const response = await api.post<ImportDatasetToExistingResponse>(
+      `${BASE_PATH}/${datasetId}/import`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Xuất dataset thành file ZIP
+   * @param datasetId - ID của dataset cần xuất
+   */
+  exportDataset: async (datasetId: string | number): Promise<Blob> => {
+    const response = await api.get<Blob>(
+      `${BASE_PATH}/${datasetId}/export`,
+      {
+        responseType: 'blob',
       }
     );
     return response.data;
