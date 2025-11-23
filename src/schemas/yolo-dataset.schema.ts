@@ -71,3 +71,33 @@ export const updateDatasetSchema = yup.object().shape({
 });
 
 export type UpdateDatasetFormData = yup.InferType<typeof updateDatasetSchema>;
+
+/**
+ * Schema xác thực import dataset từ file ZIP
+ */
+export const importDatasetZipSchema = yup.object().shape({
+  zipFile: yup
+    .mixed<File>()
+    .required('File ZIP là bắt buộc')
+    .test('fileType', 'File phải là file ZIP (.zip)', function(value: any) {
+      if (!value) return false;
+      return value.type === 'application/zip' || value.type === 'application/x-zip-compressed' || (value.name && value.name.endsWith('.zip'));
+    })
+    .test('fileSize', 'File không được vượt quá 500MB', function(value: any) {
+      if (!value) return false;
+      return value.size <= 500 * 1024 * 1024;
+    }),
+  name: yup
+    .string()
+    .required('Tên dataset là bắt buộc')
+    .min(3, 'Tên dataset phải ít nhất 3 ký tự')
+    .max(255, 'Tên dataset không được vượt quá 255 ký tự')
+    .matches(/^[a-zA-Z0-9_-]+$/, 'Tên dataset chỉ được chứa chữ, số, gạch dưới (_) và gạch ngang (-)'),
+  description: yup
+    .string()
+    .optional()
+    .default('')
+    .max(1000, 'Mô tả không được vượt quá 1000 ký tự'),
+});
+
+export type ImportDatasetZipFormData = yup.InferType<typeof importDatasetZipSchema>;

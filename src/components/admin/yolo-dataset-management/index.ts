@@ -10,3 +10,5 @@ export type { DatasetImageColumnActions } from './datasetImageColumns';
 export { UploadImageForm } from './UploadImageForm';
 export type { UploadImageFormProps } from './UploadImageForm';
 export { EditImageStatusDialog } from './EditImageStatusDialog';
+export { ImportDatasetZipDialog } from './ImportDatasetZipDialog';
+export type { ImportDatasetZipDialogProps } from './ImportDatasetZipDialog';

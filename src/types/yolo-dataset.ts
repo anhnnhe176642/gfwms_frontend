@@ -154,3 +154,32 @@ export type GetDatasetWithImageResponse = {
   message: string;
   data: DatasetWithImages;
 };
+
+export type DatasetImportStatistics = {
+  importedCount: number;
+  failedCount: number;
+  errors: Array<{
+    filename: string;
+    error: string;
+  }>;
+};
+
+export type ImportDatasetFromZipResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    dataset: DatasetDetail;
+    importedCount: number;
+    failedCount: number;
+    errors: Array<{
+      filename?: string;
+      error: string;
+    }>;
+  };
+};
+
+export type ImportZipDatasetPayload = {
+  zipFile: File;
+  name: string;
+  description?: string;
+};

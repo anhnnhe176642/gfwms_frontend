@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Button } from "@/components/ui/button";
-import { Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw, Wand2, Loader2, Save, CheckCircle2, FileText } from "lucide-react";
+import { Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw, Wand2, Loader2, Save, CheckCircle2, FileText, Lightbulb } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -871,7 +871,10 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                   <RotateCcw className="h-4 w-4" />
                 </Button>
               </div>
-              <span className="text-xs text-muted-foreground">💡 Ctrl+Scroll để zoom</span>
+              <span className="text-xs text-muted-foreground flex gap-1 items-center">
+                <Lightbulb className="w-4 h-4 shrink-0" />
+                Ctrl+Scroll để zoom
+              </span>
             </div>
 
             <div
@@ -894,16 +897,19 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
               />
             </div>
 
-            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md mt-4">
-              💡 <strong>Hướng dẫn:</strong>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Chọn class label trước khi vẽ box</li>
-                <li>Kéo chuột để vẽ bounding box xung quanh đối tượng</li>
-                <li>Click vào box để chọn, kéo cạnh/góc để resize, kéo bên trong để di chuyển</li>
-                <li>Nhấn Delete để xóa, Ctrl+Z để undo</li>
-                <li>Ctrl+Scroll để zoom in/out, hoặc dùng nút +/- trên thanh zoom</li>
-                <li>Khi zoom &gt; 100%, kéo trên canvas để pan (di chuyển ảnh)</li>
-              </ul>
+            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md mt-4 flex gap-2">
+              <Lightbulb className="w-5 h-5 shrink-0 mt-0.5" />
+              <div>
+                <strong>Hướng dẫn:</strong>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Chọn class label trước khi vẽ box</li>
+                  <li>Kéo chuột để vẽ bounding box xung quanh đối tượng</li>
+                  <li>Click vào box để chọn, kéo cạnh/góc để resize, kéo bên trong để di chuyển</li>
+                  <li>Nhấn Delete để xóa, Ctrl+Z để undo</li>
+                  <li>Ctrl+Scroll để zoom in/out, hoặc dùng nút +/- trên thanh zoom</li>
+                  <li>Khi zoom &gt; 100%, kéo trên canvas để pan (di chuyển ảnh)</li>
+                </ul>
+              </div>
             </div>
           </div>
 

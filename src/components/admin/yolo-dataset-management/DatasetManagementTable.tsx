@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { createDatasetColumns } from './datasetColumns';
+import { ImportDatasetZipDialog } from './ImportDatasetZipDialog';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { useServerTable } from '@/hooks/useServerTable';
 import { useRouteAccess } from '@/hooks/useRouteAccess';
@@ -24,7 +25,7 @@ import { getServerErrorMessage } from '@/lib/errorHandler';
 import { PERMISSIONS } from '@/constants/permissions';
 import { ROUTES } from '@/config/routes';
 import type { DatasetListItem, DatasetListParams } from '@/types/yolo-dataset';
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, Upload } from 'lucide-react';
 
 export type DatasetManagementTableProps = {
   initialParams?: DatasetListParams;
@@ -37,6 +38,7 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [datasetToDelete, setDatasetToDelete] = useState<string | number | null>(null);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
@@ -179,7 +181,7 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
 
   return (
     <div className="space-y-4">
-      {/* Search bar */}
+      {/* Search and Import bar */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -196,6 +198,17 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
           <Search className="h-4 w-4 mr-2" />
           Tìm kiếm
         </Button>
+        {hasPermission(PERMISSIONS.YOLO.MANAGE_DATASET.key) && (
+          <Button
+            onClick={() => setImportDialogOpen(true)}
+            disabled={loading}
+            variant="outline"
+            className="gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Import ZIP
+          </Button>
+        )}
       </div>
 
       {/* Info bar */}
@@ -251,6 +264,15 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Import Dataset ZIP Dialog */}
+      <ImportDatasetZipDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onSuccess={async () => {
+          await refresh();
+        }}
+      />
     </div>
   );
 }

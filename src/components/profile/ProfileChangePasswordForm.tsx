@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Eye, EyeOff, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Lightbulb } from 'lucide-react';
 
 interface ChangePasswordFormProps {
   onSuccess?: () => void;
@@ -189,9 +189,10 @@ export function ProfileChangePasswordForm({ onSuccess }: ChangePasswordFormProps
           )}
 
           {/* Info */}
-          <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950">
+          <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950 flex gap-2 items-start">
+            <Lightbulb className="w-4 h-4 shrink-0 mt-0.5 text-blue-800 dark:text-blue-200" />
             <p className="text-xs text-blue-800 dark:text-blue-200">
-              💡 Sau khi đổi password thành công, bạn không cần đăng nhập lại. Token hiện tại vẫn còn hiệu lực.
+              Sau khi đổi password thành công, bạn không cần đăng nhập lại. Token hiện tại vẫn còn hiệu lực.
             </p>
           </div>
 

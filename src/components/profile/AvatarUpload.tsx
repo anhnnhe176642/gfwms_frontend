@@ -7,7 +7,7 @@ import { getServerErrorMessage } from '@/lib/errorHandler';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, User } from 'lucide-react';
+import { Upload, User, Lightbulb } from 'lucide-react';
 import Image from 'next/image';
 import type { ProfileUser } from '@/types/user';
 
@@ -177,9 +177,10 @@ export function AvatarUpload({ user, onSuccess }: AvatarUploadProps) {
         )}
 
         {/* Info */}
-        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950">
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950 flex gap-2 items-start">
+          <Lightbulb className="w-4 h-4 shrink-0 mt-0.5 text-blue-800 dark:text-blue-200" />
           <p className="text-xs text-blue-800 dark:text-blue-200">
-            💡 Avatar cũ sẽ tự động bị xóa khỏi server khi bạn upload ảnh mới.
+            Avatar cũ sẽ tự động bị xóa khỏi server khi bạn upload ảnh mới.
           </p>
         </div>
       </CardContent>

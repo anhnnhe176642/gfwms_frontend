@@ -14,6 +14,7 @@ import type {
   DatasetImageListParams,
   UpdateDatasetImagePayload,
   UpdateDatasetImageResponse,
+  ImportDatasetFromZipResponse,
 } from '@/types/yolo-dataset';
 
 const BASE_PATH = '/v1/yolo/datasets';
@@ -160,5 +161,35 @@ export const yoloDatasetService = {
    */
   deleteImage: async (imageId: string): Promise<void> => {
     await api.delete(`/v1/yolo/datasets/images/${imageId}`);
+  },
+
+  /**
+   * Import dataset từ file ZIP
+   * @param zipFile - File ZIP chứa dataset
+   * @param name - Tên dataset (bắt buộc)
+   * @param description - Mô tả dataset (tùy chọn)
+   */
+  importZipDataset: async (
+    zipFile: File,
+    name: string,
+    description?: string
+  ): Promise<ImportDatasetFromZipResponse> => {
+    const formData = new FormData();
+    formData.append('zipFile', zipFile);
+    formData.append('name', name);
+    if (description) {
+      formData.append('description', description);
+    }
+
+    const response = await api.post<ImportDatasetFromZipResponse>(
+      `${BASE_PATH}/import-zip`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
   },
 };

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { useBoundingBox } from '@/hooks/useBoundingBox';
 import { drawBoundingBox, drawDimOverlay } from '@/lib/canvasHelpers';
+import { Lightbulb } from 'lucide-react';
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -271,8 +272,11 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
           />
         </div>
 
-        <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-          💡 <strong>Hướng dẫn:</strong> Kéo chuột để vẽ hộp cắt. Sau khi vẽ xong, kéo các cạnh/góc để điều chỉnh kích thước hoặc kéo bên trong hộp để di chuyển.
+        <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md flex gap-2 items-start">
+          <Lightbulb className="w-5 h-5 shrink-0 mt-0.5" />
+          <div>
+            <strong>Hướng dẫn:</strong> Kéo chuột để vẽ hộp cắt. Sau khi vẽ xong, kéo các cạnh/góc để điều chỉnh kích thước hoặc kéo bên trong hộp để di chuyển.
+          </div>
         </div>
 
         <div className="flex gap-2 justify-end">
