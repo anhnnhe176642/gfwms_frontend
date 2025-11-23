@@ -85,36 +85,31 @@ const ImageLabelPage: React.FC = () => {
 
         // Lấy annotations hiện tại (nếu có)
         if (imageDetail.annotations && Array.isArray(imageDetail.annotations)) {
-          // API trả về annotations với x1, y1, x2, y2 là normalized coordinates (0-1)
-          // Cần convert sang pixel coordinates dựa trên kích thước ảnh thực tế
-          const imgWidth = imageDetail.width || 0;
-          const imgHeight = imageDetail.height || 0;
+          // Annotations (pixel format) - Source of truth
+          // Array of: {class_id, class_name, x1, y1, x2, y2, confidence}
+          // x1, y1 = top-left corner; x2, y2 = bottom-right corner (pixel coordinates)
+          const pixelLabels: ExistingLabel[] = imageDetail.annotations.map((ann: any) => {
+            const x1Pixel = ann.x1 || 0;
+            const y1Pixel = ann.y1 || 0;
+            const x2Pixel = ann.x2 || 0;
+            const y2Pixel = ann.y2 || 0;
+            
+            const width = Math.max(0, x2Pixel - x1Pixel);
+            const height = Math.max(0, y2Pixel - y1Pixel);
 
-          if (imgWidth > 0 && imgHeight > 0) {
-            const normalizedLabels: ExistingLabel[] = imageDetail.annotations.map((ann: any) => {
-              // Convert từ normalized (0-1) sang pixel coordinates
-              const x1Pixel = (ann.x1 || 0) * imgWidth;
-              const y1Pixel = (ann.y1 || 0) * imgHeight;
-              const x2Pixel = (ann.x2 || 0) * imgWidth;
-              const y2Pixel = (ann.y2 || 0) * imgHeight;
-              
-              const width = Math.max(0, x2Pixel - x1Pixel);
-              const height = Math.max(0, y2Pixel - y1Pixel);
+            // Tìm class index từ danh sách classes dataset
+            const classIndex = datasetClasses.indexOf(ann.class_name || '');
 
-              // Tìm class index từ danh sách classes dataset
-              const classIndex = datasetClasses.indexOf(ann.class_name || '');
-
-              return {
-                classId: classIndex >= 0 ? classIndex : (ann.class_id || 0),
-                className: ann.class_name || '',
-                x: x1Pixel,
-                y: y1Pixel,
-                width: width,
-                height: height,
-              };
-            });
-            setExistingLabels(normalizedLabels);
-          }
+            return {
+              classId: classIndex >= 0 ? classIndex : (ann.class_id || 0),
+              className: ann.class_name || '',
+              x: x1Pixel,
+              y: y1Pixel,
+              width: width,
+              height: height,
+            };
+          });
+          setExistingLabels(pixelLabels);
         }
       } catch (err) {
         const message = getServerErrorMessage(err) || 'Không thể tải thông tin ảnh';

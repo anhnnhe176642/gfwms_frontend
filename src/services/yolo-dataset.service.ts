@@ -121,31 +121,28 @@ export const yoloDatasetService = {
 
   /**
    * Lưu annotations (labels) cho ảnh
+   * Annotations (pixel format) - Source of truth
+   * Array of: {class_id, class_name, x1, y1, x2, y2, confidence}
+   * x1, y1 = top-left corner; x2, y2 = bottom-right corner (pixel coordinates)
    * Input: annotations with x (x1 pixel), y (y1 pixel), width (pixels), height (pixels)
-   * Output: API expects x1, y1, x2, y2 (normalized 0-1)
    */
   saveImageAnnotations: async (imageId: string, annotations: any[]): Promise<any> => {
-    // Get image details first to know dimensions
-    const imageDetail = await api.get(`/v1/yolo/datasets/images/${imageId}`);
-    const imgWidth = imageDetail.data.data.width || 1920;
-    const imgHeight = imageDetail.data.data.height || 2560;
-
     const payload: UpdateDatasetImagePayload = {
       annotations: annotations.map((ann) => {
-        // Convert from pixel coordinates to normalized (0-1)
-        const x1Normalized = (ann.x || 0) / imgWidth;
-        const y1Normalized = (ann.y || 0) / imgHeight;
-        const x2Normalized = ((ann.x || 0) + (ann.width || 0)) / imgWidth;
-        const y2Normalized = ((ann.y || 0) + (ann.height || 0)) / imgHeight;
+        // Convert from x, y, width, height (pixel format) to x1, y1, x2, y2 (pixel format)
+        const x1Pixel = ann.x || 0;
+        const y1Pixel = ann.y || 0;
+        const x2Pixel = (ann.x || 0) + (ann.width || 0);
+        const y2Pixel = (ann.y || 0) + (ann.height || 0);
 
         return {
           class_id: ann.classId,
           class_name: ann.className,
           confidence: ann.confidence || 1,
-          x1: Math.max(0, Math.min(1, x1Normalized)),
-          y1: Math.max(0, Math.min(1, y1Normalized)),
-          x2: Math.max(0, Math.min(1, x2Normalized)),
-          y2: Math.max(0, Math.min(1, y2Normalized)),
+          x1: Math.max(0, x1Pixel),
+          y1: Math.max(0, y1Pixel),
+          x2: Math.max(0, x2Pixel),
+          y2: Math.max(0, y2Pixel),
         };
       }),
       status: 'COMPLETED',

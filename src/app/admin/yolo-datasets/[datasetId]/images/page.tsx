@@ -108,11 +108,13 @@ export default function DatasetImagesPage({
         if (selectedImage.annotations && selectedImage.annotations.length > 0) {
           
           selectedImage.annotations.forEach((ann, index) => {
-            // Convert từ normalized coordinates (0-1) sang pixel coordinates
-            const x1 = ann.x1 * img.width;
-            const y1 = ann.y1 * img.height;
-            const x2 = ann.x2 * img.width;
-            const y2 = ann.y2 * img.height;
+            // Annotations (pixel format) - Source of truth
+            // Array of: {class_id, class_name, x1, y1, x2, y2, confidence}
+            // x1, y1 = top-left corner; x2, y2 = bottom-right corner (pixel coordinates)
+            const x1 = ann.x1;
+            const y1 = ann.y1;
+            const x2 = ann.x2;
+            const y2 = ann.y2;
             const width = x2 - x1;
             const height = y2 - y1;
 

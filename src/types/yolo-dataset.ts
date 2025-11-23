@@ -102,12 +102,19 @@ export type DatasetImageListParams = {
 };
 
 export type DatasetImageAnnotation = {
+  /** Class ID index */
   class_id: number;
+  /** Class name */
   class_name: string;
+  /** Confidence score (0-1) */
   confidence: number;
+  /** x1 - top-left corner x coordinate (pixel format) */
   x1: number;
+  /** y1 - top-left corner y coordinate (pixel format) */
   y1: number;
+  /** x2 - bottom-right corner x coordinate (pixel format) */
   x2: number;
+  /** y2 - bottom-right corner y coordinate (pixel format) */
   y2: number;
 };
 

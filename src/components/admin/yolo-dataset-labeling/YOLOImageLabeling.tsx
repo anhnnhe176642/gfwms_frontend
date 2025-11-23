@@ -19,21 +19,32 @@ import {
 interface YOLOImageLabelingProps {
   imageSrc: string;
   classes: string[];
+  /**
+   * Existing labels in pixel format
+   * Array of: {classId, className, x, y, width, height}
+   * x, y = top-left corner in pixels; width, height = dimensions in pixels
+   */
   existingLabels?: Array<{
     classId: number;
     className: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+    x: number;  // x1 pixel coordinate (top-left corner)
+    y: number;  // y1 pixel coordinate (top-left corner)
+    width: number;   // width in pixels
+    height: number;  // height in pixels
   }>;
+  /**
+   * Callback when labels are saved
+   * Labels are in pixel format
+   * Array of: {classId, className, x, y, width, height}
+   * x, y = top-left corner in pixels; width, height = dimensions in pixels
+   */
   onSave: (labels: Array<{
     classId: number;
     className: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+    x: number;  // x1 pixel coordinate (top-left corner)
+    y: number;  // y1 pixel coordinate (top-left corner)
+    width: number;   // width in pixels
+    height: number;  // height in pixels
   }>, status?: 'draft' | 'completed') => void;
   onCancel: () => void;
   disabled?: boolean;
@@ -175,6 +186,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       clearBoxes();
       
       // Convert existing labels from pixel coordinates to canvas display coordinates
+      // Annotations (pixel format) - Source of truth
+      // Array of: {classId, className, x, y, width, height}
+      // x, y = top-left corner in pixels; width, height = dimensions in pixels
       const loadedBoxes = existingLabels.map((label, index) => {
         // existingLabels are in original image pixel coordinates
         // Need to scale them to match the canvas display coordinates
@@ -603,7 +617,10 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     }
 
     // Convert boxes from canvas coordinates to PIXEL coordinates
-    // Format must match what saveImageAnnotations expects: x1, y1, width, height in pixels
+    // Annotations (pixel format) - Source of truth
+    // Array of: {class_id, class_name, x1, y1, x2, y2, confidence}
+    // x1, y1 = top-left corner; x2, y2 = bottom-right corner (pixel coordinates)
+    // Format must match what saveImageAnnotations expects: classId, className, x, y, width, height in pixels
     const labels = validBoxes.map((box) => {
       // Boxes are in canvas display coordinates (scaled by baseScale)
       // Convert back to original image pixel coordinates
@@ -621,13 +638,13 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
       const classId = classes.indexOf(box.label || '');
 
-      // Return pixel coordinates (x1, y1, width, height in original image pixels)
-      // This is what saveImageAnnotations expects to convert to x1, y1, x2, y2
+      // Return pixel coordinates (x, y, width, height in original image pixels)
+      // This will be converted to x1, y1, x2, y2 in saveImageAnnotations
       return {
         classId,
         className: box.label || '',
-        x: normalized.startX,  // x1 pixel coordinate
-        y: normalized.startY,  // y1 pixel coordinate
+        x: normalized.startX,  // x1 pixel coordinate (top-left corner)
+        y: normalized.startY,  // y1 pixel coordinate (top-left corner)
         width: width,           // width in pixels
         height: height,         // height in pixels
       };
