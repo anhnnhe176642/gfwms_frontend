@@ -20,7 +20,7 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { updateDatasetSchema, type UpdateDatasetFormData } from '@/schemas/yolo-dataset.schema';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, Loader, Plus, Trash2 } from 'lucide-react';
 
 export function UpdateDatasetForm() {
   const router = useRouter();
@@ -30,6 +30,8 @@ export function UpdateDatasetForm() {
   const [isLoadingDataset, setIsLoadingDataset] = useState(true);
   const [serverError, setServerError] = useState('');
   const [currentClasses, setCurrentClasses] = useState<string[]>([]);
+  const [newClassName, setNewClassName] = useState('');
+  const [classNameError, setClassNameError] = useState('');
 
   // Form validation and state management
   const { values, errors, handleChange, handleBlur, handleSubmit, setFieldErrors, setFieldValue, setTouched } =
@@ -42,6 +44,7 @@ export function UpdateDatasetForm() {
           name: data.name,
           description: data.description,
           status: data.status as any,
+          classes: currentClasses,
         };
         await yoloDatasetService.updateDataset(datasetId as string, payload);
         toast.success('Cập nhật dataset thành công');
@@ -90,6 +93,57 @@ export function UpdateDatasetForm() {
   const handleSubmitWithTouched = async (e: React.FormEvent<HTMLFormElement>) => {
     setTouched((prev) => ({ ...prev, name: true }));
     return handleSubmit(e);
+  };
+
+  /**
+   * Validate and add new class
+   */
+  const handleAddClass = () => {
+    setClassNameError('');
+    
+    // Trim whitespace
+    const trimmedName = newClassName.trim();
+    
+    if (!trimmedName) {
+      setClassNameError('Tên lớp không được để trống');
+      return;
+    }
+
+    // Check if class already exists
+    if (currentClasses.includes(trimmedName)) {
+      setClassNameError('Lớp này đã tồn tại');
+      return;
+    }
+
+    // Validate class name (alphanumeric, underscore, hyphen)
+    if (!/^[a-zA-Z0-9_-]+$/.test(trimmedName)) {
+      setClassNameError('Tên lớp chỉ được chứa chữ, số, gạch dưới (_) và gạch ngang (-)');
+      return;
+    }
+
+    // Add to classes
+    setCurrentClasses([...currentClasses, trimmedName]);
+    setNewClassName('');
+    toast.success(`Đã thêm lớp: ${trimmedName}`);
+  };
+
+  /**
+   * Remove class by index
+   */
+  const handleRemoveClass = (index: number) => {
+    const removedClass = currentClasses[index];
+    setCurrentClasses(currentClasses.filter((_, i) => i !== index));
+    toast.success(`Đã xóa lớp: ${removedClass}`);
+  };
+
+  /**
+   * Handle Enter key in class input
+   */
+  const handleClassInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddClass();
+    }
   };
 
   if (isLoadingDataset) {
@@ -207,25 +261,74 @@ export function UpdateDatasetForm() {
           <CardHeader>
             <CardTitle>Các lớp (Classes)</CardTitle>
             <CardDescription>
-              Các lớp không thể thay đổi sau khi tạo dataset
+              Quản lý các lớp đối tượng trong dataset
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Classes List - Read Only */}
+            {/* Add New Class Input */}
+            <div className="space-y-2">
+              <Label htmlFor="newClass">Thêm lớp mới</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="newClass"
+                  placeholder="fabric_defect"
+                  value={newClassName}
+                  onChange={(e) => {
+                    setNewClassName(e.target.value);
+                    setClassNameError('');
+                  }}
+                  onKeyDown={handleClassInputKeyDown}
+                  disabled={isLoading}
+                  className={classNameError ? 'border-destructive' : ''}
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddClass}
+                  disabled={isLoading || !newClassName.trim()}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Thêm
+                </Button>
+              </div>
+              {classNameError && (
+                <p className="text-sm text-destructive">{classNameError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Chỉ được chứa chữ, số, gạch dưới (_) và gạch ngang (-). Nhấn Enter hoặc click "Thêm"
+              </p>
+            </div>
+
+            {/* Classes List */}
             <div className="space-y-2">
               <Label>Danh sách các lớp</Label>
               {currentClasses.length === 0 ? (
                 <div className="p-4 border-2 border-dashed rounded-lg text-center text-muted-foreground">
-                  Chưa có lớp nào.
+                  Chưa có lớp nào. Thêm lớp phía trên để bắt đầu.
                 </div>
               ) : (
                 <div className="space-y-2">
                   {currentClasses.map((cls, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
+                      className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                     >
-                      <span className="font-medium text-sm">{cls}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          #{index + 1}
+                        </span>
+                        <span className="font-medium text-sm">{cls}</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveClass(index)}
+                        disabled={isLoading}
+                        className="h-8 w-8 p-0 hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   ))}
                 </div>

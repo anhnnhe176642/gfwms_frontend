@@ -20,6 +20,7 @@ interface YOLOImageLabelingProps {
   classes: string[];
   existingLabels?: Array<{
     classId: number;
+    className: string;
     x: number;
     y: number;
     width: number;
@@ -34,6 +35,7 @@ interface YOLOImageLabelingProps {
     height: number;
   }>) => void;
   onCancel: () => void;
+  disabled?: boolean;
 }
 
 export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
@@ -42,6 +44,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   existingLabels = [],
   onSave,
   onCancel,
+  disabled = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -88,6 +91,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     clearBoxes,
     setActiveBox,
     updateBox,
+    addBox,
     undo,
     redo,
     canUndo,
@@ -104,6 +108,83 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     canvasLogicalHeight: originalImage ? originalImage.height * baseScale : 0,
   });
 
+  // State to track if we've loaded initial boxes
+  const [initialBoxesLoaded, setInitialBoxesLoaded] = useState(false);
+  const [baseScaleReady, setBaseScaleReady] = useState(false);
+
+  // Reset initialBoxesLoaded when existingLabels changes (e.g., loading a new image)
+  useEffect(() => {
+    if (existingLabels !== undefined && existingLabels.length > 0) {
+      console.log('existingLabels changed, resetting initialBoxesLoaded');
+      setInitialBoxesLoaded(false);
+      setBaseScaleReady(false);
+    }
+  }, [existingLabels]);
+
+  // Calculate and stabilize baseScale first
+  useEffect(() => {
+    if (originalImage && containerSize.width > 0 && containerSize.height > 0) {
+      const maxDisplayWidth = containerSize.width;
+      const maxDisplayHeight = containerSize.height;
+      const widthRatio = maxDisplayWidth / originalImage.width;
+      const heightRatio = maxDisplayHeight / originalImage.height;
+      const calculatedScale = Math.min(widthRatio, heightRatio, 1);
+      
+      if (baseScale !== calculatedScale) {
+        setBaseScale(calculatedScale);
+      } else if (!baseScaleReady) {
+        setBaseScaleReady(true);
+        console.log('BaseScale ready:', calculatedScale);
+      }
+    }
+  }, [originalImage, containerSize, baseScale, baseScaleReady]);
+
+  // Load existing labels AFTER baseScale is ready
+  useEffect(() => {
+    if (existingLabels && existingLabels.length > 0 && originalImage && baseScale > 0 && baseScaleReady && !initialBoxesLoaded) {
+      console.log('Loading existing labels:', existingLabels.length);
+      console.log('BaseScale for loading:', baseScale);
+      console.log('Image dimensions:', { width: originalImage.width, height: originalImage.height });
+      console.log('ContainerSize:', containerSize);
+      
+      // Clear any existing boxes first
+      clearBoxes();
+      
+      // Convert existing labels from pixel coordinates to canvas display coordinates
+      const loadedBoxes = existingLabels.map((label, index) => {
+        // existingLabels are in original image pixel coordinates
+        // Need to scale them to match the canvas display coordinates
+        const box = {
+          id: `existing-${index}-${Date.now()}`,
+          startX: label.x * baseScale,
+          startY: label.y * baseScale,
+          endX: (label.x + label.width) * baseScale,
+          endY: (label.y + label.height) * baseScale,
+          label: label.className || (label.classId < classes.length ? classes[label.classId] : classes[0]),
+        };
+        console.log(`Loading box ${index}:`, {
+          pixel: { x: label.x, y: label.y, w: label.width, h: label.height },
+          canvas: { startX: box.startX, startY: box.startY, endX: box.endX, endY: box.endY },
+          baseScale,
+        });
+        return box;
+      });
+      
+      // Add boxes to the state via the hook's addBox function
+      loadedBoxes.forEach((box) => {
+        addBox(box);
+      });
+      
+      setInitialBoxesLoaded(true);
+      toast.success(`Đã tải ${loadedBoxes.length} labels có sẵn`);
+    }
+  }, [existingLabels, classes, originalImage, baseScale, baseScaleReady, initialBoxesLoaded, clearBoxes, addBox]);
+
+  // Monitor baseScale changes
+  useEffect(() => {
+    console.log('⚠️ baseScale changed:', baseScale, 'initialBoxesLoaded:', initialBoxesLoaded);
+  }, [baseScale, initialBoxesLoaded]);
+
   const handleMouseDown = hookMouseDown;
   const handleMouseMove = hookMouseMove;
   const handleMouseUp = hookMouseUp;
@@ -117,24 +198,11 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
     rafRef.current = requestAnimationFrame(() => {
       const canvas = canvasRef.current;
-      if (!canvas || !originalImage) return;
+      if (!canvas || !originalImage || baseScale === 0) return;
 
-      const maxDisplayWidth = containerSize.width > 0 ? containerSize.width : 700;
-      const maxDisplayHeight = containerSize.height > 0 ? containerSize.height : 700;
-
-      const widthRatio = maxDisplayWidth / originalImage.width;
-      const heightRatio = maxDisplayHeight / originalImage.height;
-      const newBaseScale = Math.min(widthRatio, heightRatio, 1);
-
-      // Update baseScale nếu thay đổi
-      if (newBaseScale !== baseScale) {
-        setBaseScale(newBaseScale);
-        return; // Exit early, will re-draw on next render
-      }
-
-      // Canvas size sau zoom
-      const displayWidth = originalImage.width * newBaseScale * zoomLevel;
-      const displayHeight = originalImage.height * newBaseScale * zoomLevel;
+      // Canvas size sau zoom (sử dụng baseScale đã được tính sẵn)
+      const displayWidth = originalImage.width * baseScale * zoomLevel;
+      const displayHeight = originalImage.height * baseScale * zoomLevel;
 
       canvas.width = displayWidth;
       canvas.height = displayHeight;
@@ -159,8 +227,12 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         endY: box.endY,
       }));
 
+      console.log('Drawing canvas with boxes:', boxes.length, 'boxesToCull:', boxesToCull);
+
       //  Pattern 5: Cull invisible boxes
       const visibleBoxes = optimization.culledBoxes(boxesToCull, viewport);
+
+      console.log('Visible boxes after culling:', visibleBoxes.length);
 
       // Clear canvas
       ctx.clearRect(0, 0, displayWidth, displayHeight);
@@ -271,10 +343,10 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         }
       }
 
-      // RAF loop - tiếp tục vẽ frame tiếp theo
-      drawCanvas();
+      // Do NOT call drawCanvas() here - let React re-render trigger it
+      // This prevents infinite loop and ensures baseScale stabilizes
     });
-  }, [originalImage, containerSize, baseScale, zoomLevel, boxes, activeBox, optimization, getColorForClass, showOptimizationStats]);
+  }, [originalImage, baseScale, zoomLevel, boxes, activeBox, optimization, getColorForClass, showOptimizationStats]);
 
   // Zoom handlers
   const handleZoomIn = () => {
@@ -372,7 +444,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   }, [imageSrc]);
 
   useEffect(() => {
-    if (imageLoaded) {
+    if (imageLoaded && baseScaleReady) {
       drawCanvas();
     }
     
@@ -381,7 +453,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [imageLoaded, drawCanvas]);
+  }, [imageLoaded, baseScaleReady, drawCanvas]);
 
   useEffect(() => {
     if (activeBox && !activeBox.label && selectedClass) {
@@ -439,28 +511,39 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       return;
     }
 
-    const yoloLabels = validBoxes.map((box) => {
-      const normalized = normalizeBoundingBox(box);
-      const yolo = boundingBoxToYOLO(
-        normalized,
-        originalImage.width,
-        originalImage.height
-      );
+    // Convert boxes from canvas coordinates to PIXEL coordinates
+    // Format must match what saveImageAnnotations expects: x1, y1, width, height in pixels
+    const labels = validBoxes.map((box) => {
+      // Boxes are in canvas display coordinates (scaled by baseScale)
+      // Convert back to original image pixel coordinates
+      const pixelBox = {
+        startX: box.startX / baseScale,
+        startY: box.startY / baseScale,
+        endX: box.endX / baseScale,
+        endY: box.endY / baseScale,
+      };
+
+      // Normalize to get startX, startY (top-left corner in pixels)
+      const normalized = normalizeBoundingBox(pixelBox);
+      const width = Math.abs(normalized.endX - normalized.startX);
+      const height = Math.abs(normalized.endY - normalized.startY);
 
       const classId = classes.indexOf(box.label || '');
 
+      // Return pixel coordinates (x1, y1, width, height in original image pixels)
+      // This is what saveImageAnnotations expects to convert to x1, y1, x2, y2
       return {
         classId,
         className: box.label || '',
-        x: yolo.x,
-        y: yolo.y,
-        width: yolo.width,
-        height: yolo.height,
+        x: normalized.startX,  // x1 pixel coordinate
+        y: normalized.startY,  // y1 pixel coordinate
+        width: width,           // width in pixels
+        height: height,         // height in pixels
       };
     });
 
-    onSave(yoloLabels);
-    toast.success(`Đã lưu ${yoloLabels.length} labels`);
+    onSave(labels);
+    toast.success(`Đã lưu ${labels.length} labels`);
   };
 
   const handleDeleteBox = (boxId: string) => {
@@ -714,16 +797,16 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel} disabled={disabled}>
             Hủy
           </Button>
           {boxes.length > 0 && (
-            <Button variant="outline" onClick={clearBoxes}>
+            <Button variant="outline" onClick={clearBoxes} disabled={disabled}>
               Xóa tất cả
             </Button>
           )}
-          <Button onClick={handleSave} disabled={boxes.length === 0}>
-            💾 Lưu labels ({boxes.length})
+          <Button onClick={handleSave} disabled={boxes.length === 0 || disabled}>
+            💾 {disabled ? 'Đang lưu...' : 'Lưu labels'} ({boxes.length})
           </Button>
         </div>
       </CardContent>

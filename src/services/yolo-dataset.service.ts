@@ -83,6 +83,22 @@ export const yoloDatasetService = {
   },
 
   /**
+   * Lấy thông tin ảnh chi tiết cùng các annotations hiện tại
+   */
+  getImageDetailWithAnnotations: async (imageId: string): Promise<any> => {
+    const response = await api.get(`/v1/yolo/datasets/images/${imageId}/details`);
+    return response.data.data;
+  },
+
+  /**
+   * Lấy thông tin dataset cùng danh sách classes
+   */
+  getDatasetWithClasses: async (datasetId: string | number): Promise<any> => {
+    const response = await api.get(`${BASE_PATH}/${datasetId}`);
+    return response.data.data;
+  },
+
+  /**
    * Tải ảnh lên dataset
    */
   uploadImage: async (datasetId: string | number, file: File, notes?: string): Promise<any> => {
@@ -104,6 +120,45 @@ export const yoloDatasetService = {
    * Cập nhật thông tin ảnh (gán nhãn, cập nhật trạng thái, ghi chú)
    */
   updateImage: async (imageId: string, payload: UpdateDatasetImagePayload): Promise<any> => {
+    const response = await api.patch<UpdateDatasetImageResponse>(
+      `/v1/yolo/datasets/images/${imageId}`,
+      payload
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Lưu annotations (labels) cho ảnh
+   * Input: annotations with x (x1 pixel), y (y1 pixel), width (pixels), height (pixels)
+   * Output: API expects x1, y1, x2, y2 (normalized 0-1)
+   */
+  saveImageAnnotations: async (imageId: string, annotations: any[]): Promise<any> => {
+    // Get image details first to know dimensions
+    const imageDetail = await api.get(`/v1/yolo/datasets/images/${imageId}`);
+    const imgWidth = imageDetail.data.data.width || 1920;
+    const imgHeight = imageDetail.data.data.height || 2560;
+
+    const payload: UpdateDatasetImagePayload = {
+      annotations: annotations.map((ann) => {
+        // Convert from pixel coordinates to normalized (0-1)
+        const x1Normalized = (ann.x || 0) / imgWidth;
+        const y1Normalized = (ann.y || 0) / imgHeight;
+        const x2Normalized = ((ann.x || 0) + (ann.width || 0)) / imgWidth;
+        const y2Normalized = ((ann.y || 0) + (ann.height || 0)) / imgHeight;
+
+        return {
+          class_id: ann.classId,
+          class_name: ann.className,
+          confidence: ann.confidence || 1,
+          x1: Math.max(0, Math.min(1, x1Normalized)),
+          y1: Math.max(0, Math.min(1, y1Normalized)),
+          x2: Math.max(0, Math.min(1, x2Normalized)),
+          y2: Math.max(0, Math.min(1, y2Normalized)),
+        };
+      }),
+      status: 'COMPLETED',
+    };
+
     const response = await api.patch<UpdateDatasetImageResponse>(
       `/v1/yolo/datasets/images/${imageId}`,
       payload

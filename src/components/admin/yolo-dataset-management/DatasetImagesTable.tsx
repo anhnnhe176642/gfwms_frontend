@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { VisibilityState } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,7 @@ export type DatasetImagesTableProps = {
 };
 
 export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTableProps) {
+  const router = useRouter();
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -105,9 +107,8 @@ export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTabl
           onViewImage?.(imageId);
         },
         onLabel: (imageId) => {
-          setSelectedImageId(imageId);
-          // TODO: Implement label functionality
-          toast.info('Chức năng gán nhãn sẽ được phát triển');
+          // Navigate to label page
+          router.push(`/admin/yolo-datasets/${datasetId}/images/${imageId}/label`);
         },
         onUpdateStatus: (imageId) => {
           setSelectedImageId(imageId);
@@ -118,7 +119,7 @@ export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTabl
           setDeleteDialogOpen(true);
         },
       }),
-    [onViewImage]
+    [onViewImage, datasetId, router]
   );
 
   const handleSearch_click = () => {

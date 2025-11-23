@@ -53,6 +53,21 @@ export const updateDatasetSchema = yup.object().shape({
     .string()
     .optional()
     .oneOf(['DRAFT', 'ACTIVE', 'ARCHIVED'], 'Trạng thái không hợp lệ'),
+  classes: yup
+    .array()
+    .of(
+      yup
+        .string()
+        .required('Tên lớp là bắt buộc')
+        .trim()
+        .min(2, 'Tên lớp phải ít nhất 2 ký tự')
+        .max(100, 'Tên lớp không được vượt quá 100 ký tự')
+        .matches(/^[a-zA-Z0-9_-]+$/, 'Tên lớp chỉ được chứa chữ, số, gạch dưới (_) và gạch ngang (-)')
+    )
+    .optional()
+    .min(0, 'Không được vượt quá 0 lớp')
+    .max(50, 'Không được vượt quá 50 lớp')
+    .default([]),
 });
 
 export type UpdateDatasetFormData = yup.InferType<typeof updateDatasetSchema>;

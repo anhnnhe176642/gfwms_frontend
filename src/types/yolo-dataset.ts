@@ -121,3 +121,29 @@ export type UpdateDatasetImageResponse = {
   message: string;
   data: DatasetImage;
 };
+
+export type DatasetImageDetail = DatasetImage & {
+  annotations?: DatasetImageAnnotation[];
+};
+
+export type GetImageDetailResponse = {
+  message: string;
+  data: DatasetImageDetail;
+};
+
+export type DatasetWithImages = {
+  id: string;
+  name: string;
+  description?: string;
+  classes: string[];
+  status: DatasetStatus;
+  imageCount?: number;
+  totalImages?: number;
+  labeledCount?: number;
+  totalLabels?: number;
+};
+
+export type GetDatasetWithImageResponse = {
+  message: string;
+  data: DatasetWithImages;
+};
