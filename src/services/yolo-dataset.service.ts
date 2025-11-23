@@ -232,4 +232,17 @@ export const yoloDatasetService = {
     );
     return response.data;
   },
+
+  /**
+   * Tạo export token để huấn luyện mô hình
+   * @param datasetId - ID của dataset
+   */
+  createExportToken: async (datasetId: string | number): Promise<{ token: string; expiresIn: string }> => {
+    const response = await api.post<{
+      success: boolean;
+      message: string;
+      data: { token: string; expiresIn: string };
+    }>(`${BASE_PATH}/${datasetId}/export-token`);
+    return response.data.data;
+  },
 };

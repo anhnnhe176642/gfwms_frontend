@@ -128,6 +128,12 @@ export const Sidebar: React.FC = () => {
       requiredPermission: PERMISSIONS.YOLO.VIEW_DATASET.key,
     },
     {
+      label: 'Quản lý Model YOLO',
+      href: ROUTES.ADMIN.YOLO_MODELS.LIST.path,
+      icon: Package,
+      requiredPermission: PERMISSIONS.YOLO.VIEW_MODELS.key,
+    },
+    {
       label: 'Quản lý kho',
       icon: Warehouse,
       requiredPermission: PERMISSIONS.WAREHOUSES.VIEW_LIST.key,

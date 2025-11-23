@@ -73,3 +73,18 @@ export type {
 
 // Auth types 
 export type * from './auth';
+
+// YOLO Model types
+export type {
+  YoloModelStatus,
+  YoloModel,
+  YoloModelListItem,
+  YoloModelListResponse,
+  YoloModelListParams,
+  YoloActiveModel,
+  YoloActiveModelResponse,
+  YoloModelDetailResponse,
+  UpdateYoloModelPayload,
+  UpdateYoloModelResponse,
+  ActivateYoloModelResponse,
+} from './yolo-model';

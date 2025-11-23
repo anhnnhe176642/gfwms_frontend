@@ -225,6 +225,21 @@ export const ROUTES = {
       },
     },
 
+    // YOLO Model Management
+    YOLO_MODELS: {
+      LIST: {
+        path: '/admin/yolo-models',
+        name: 'Quản lý Model YOLO',
+        description: 'Quản lý các mô hình YOLO',
+        requiredPermission: PERMISSIONS.YOLO.VIEW_MODELS.key,
+      },
+      DETAIL: {
+        path: '/admin/yolo-models/:id',
+        name: 'Chi tiết Model YOLO',
+        requiredPermission: PERMISSIONS.YOLO.VIEW_MODEL.key,
+      },
+    },
+
     // Warehouse Management
     WAREHOUSES: {
       LIST: {

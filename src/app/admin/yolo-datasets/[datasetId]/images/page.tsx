@@ -16,7 +16,7 @@ import {
 import { ROUTES } from '@/config/routes';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
-import { ArrowLeft, Loader, Download, Upload } from 'lucide-react';
+import { ArrowLeft, Loader, Download, Upload, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DatasetImageDetail } from '@/types/yolo-dataset';
 
@@ -266,6 +266,10 @@ export default function DatasetImagesPage({
               <Button onClick={() => setImportDialogOpen(true)} variant="outline" className="gap-2">
                 <Upload className="h-4 w-4" />
                 Nhập ảnh
+              </Button>
+              <Button onClick={() => router.push(`/admin/yolo-datasets/${datasetId}/training`)} variant="default" className="gap-2">
+                <Cpu className="h-4 w-4" />
+                Đào tạo mô hình
               </Button>
             </div>
           </div>
