@@ -2,13 +2,14 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw, Wand2, Loader2, Save, CheckCircle2, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useBoundingBox, BoundingBox } from '@/hooks/useBoundingBox';
 import { useCanvasOptimization } from '@/hooks/useCanvasOptimization';
+import { yoloService } from '@/services/yolo.service';
 import { 
   boundingBoxToYOLO,
   isValidBoundingBox,
@@ -33,7 +34,7 @@ interface YOLOImageLabelingProps {
     y: number;
     width: number;
     height: number;
-  }>) => void;
+  }>, status?: 'draft' | 'completed') => void;
   onCancel: () => void;
   disabled?: boolean;
 }
@@ -57,6 +58,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const [selectedClass, setSelectedClass] = useState<string>(classes[0] || '');
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [showOptimizationStats, setShowOptimizationStats] = useState(false); // Debug mode
+  const [showLabelsOnCanvas, setShowLabelsOnCanvas] = useState(false); // Toggle label text on boxes - default hidden
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isMarking, setIsMarking] = useState(false);
 
   //  NEW: Initialize canvas optimization (Pattern 1-5 from Label Studio)
   const optimization = useCanvasOptimization(canvasRef, imageRef, {
@@ -101,7 +105,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     canvasRef,
     enabled: imageLoaded,
     multipleBoxes: true,
-    scale,
+    scale: baseScale, // Logical scale (zoom handled separately in mouse calcs)
     zoomLevel,
     // Truyền kích thước logical (trước zoom)
     canvasLogicalWidth: originalImage ? originalImage.width * baseScale : 0,
@@ -111,6 +115,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   // State to track if we've loaded initial boxes
   const [initialBoxesLoaded, setInitialBoxesLoaded] = useState(false);
   const [baseScaleReady, setBaseScaleReady] = useState(false);
+  const [isAutoLabeling, setIsAutoLabeling] = useState(false);
 
   // Reset initialBoxesLoaded when existingLabels changes (e.g., loading a new image)
   useEffect(() => {
@@ -131,13 +136,32 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       const calculatedScale = Math.min(widthRatio, heightRatio, 1);
       
       if (baseScale !== calculatedScale) {
+        // baseScale changed - rescale all boxes to match new scale
+        // Boxes stored as pixel * baseScale, need to adjust them
+        if (boxes.length > 0 && baseScale > 0) {
+          // Convert boxes from old scale back to pixel coords, then apply new scale
+          const oldScale = baseScale;
+          const rescaledBoxes = boxes.map(box => ({
+            ...box,
+            startX: (box.startX / oldScale) * calculatedScale,
+            startY: (box.startY / oldScale) * calculatedScale,
+            endX: (box.endX / oldScale) * calculatedScale,
+            endY: (box.endY / oldScale) * calculatedScale,
+          }));
+          // Update all boxes with new scale
+          rescaledBoxes.forEach(box => {
+            if (box.id) {
+              updateBox(box.id, box);
+            }
+          });
+        }
         setBaseScale(calculatedScale);
       } else if (!baseScaleReady) {
         setBaseScaleReady(true);
         console.log('BaseScale ready:', calculatedScale);
       }
     }
-  }, [originalImage, containerSize, baseScale, baseScaleReady]);
+  }, [originalImage, containerSize, baseScale, baseScaleReady, boxes, updateBox]);
 
   // Load existing labels AFTER baseScale is ready
   useEffect(() => {
@@ -200,7 +224,8 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       const canvas = canvasRef.current;
       if (!canvas || !originalImage || baseScale === 0) return;
 
-      // Canvas size sau zoom (sử dụng baseScale đã được tính sẵn)
+      // Canvas size = baseScale * zoomLevel
+      // Zoom baked into canvas resolution
       const displayWidth = originalImage.width * baseScale * zoomLevel;
       const displayHeight = originalImage.height * baseScale * zoomLevel;
 
@@ -210,11 +235,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      //  Pattern 5: Calculate viewport + culling
-      const viewport = optimization.getViewport(0, 0, zoomLevel);
-
-      // Prepare boxes for culling
-      const boxesToCull = boxes.map((box) => ({
+      // Prepare boxes for rendering (NO culling for accuracy)
+      // Viewport culling có thể gây lệch khi zoom lớn, disable để đảm bảo tính đúng
+      const boxesToRender = boxes.map((box) => ({
         id: box.id,
         x: Math.min(box.startX, box.endX) * zoomLevel,
         y: Math.min(box.startY, box.endY) * zoomLevel,
@@ -227,12 +250,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         endY: box.endY,
       }));
 
-      console.log('Drawing canvas with boxes:', boxes.length, 'boxesToCull:', boxesToCull);
-
-      //  Pattern 5: Cull invisible boxes
-      const visibleBoxes = optimization.culledBoxes(boxesToCull, viewport);
-
-      console.log('Visible boxes after culling:', visibleBoxes.length);
+      console.log('Drawing canvas with boxes:', boxes.length, 'boxesToRender:', boxesToRender);
 
       // Clear canvas
       ctx.clearRect(0, 0, displayWidth, displayHeight);
@@ -241,7 +259,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
 
       // Merge active box with visible boxes for rendering
-      let renderedBoxes = visibleBoxes;
+      let renderedBoxes = boxesToRender;
       if (activeBox) {
         const activeScreenBox = {
           id: activeBox.id,
@@ -256,9 +274,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
           endY: activeBox.endY,
         };
 
-        const existsInVisible = visibleBoxes.some((b: any) => b.id === activeBox.id);
-        if (!existsInVisible) {
-          renderedBoxes = [...visibleBoxes, activeScreenBox];
+        const existsInRender = boxesToRender.some((b: any) => b.id === activeBox.id);
+        if (!existsInRender) {
+          renderedBoxes = [...boxesToRender, activeScreenBox];
         }
       }
 
@@ -284,7 +302,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         ctx.strokeRect(x1, y1, width, height);
 
         // Label
-        if (box.label) {
+        if (box.label && showLabelsOnCanvas) {
           ctx.fillStyle = color;
           ctx.font = 'bold 14px Arial';
           const labelMetrics = ctx.measureText(box.label);
@@ -346,7 +364,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       // Do NOT call drawCanvas() here - let React re-render trigger it
       // This prevents infinite loop and ensures baseScale stabilizes
     });
-  }, [originalImage, baseScale, zoomLevel, boxes, activeBox, optimization, getColorForClass, showOptimizationStats]);
+  }, [originalImage, baseScale, zoomLevel, boxes, activeBox, optimization, getColorForClass, showOptimizationStats, showLabelsOnCanvas]);
 
   // Zoom handlers
   const handleZoomIn = () => {
@@ -453,7 +471,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [imageLoaded, baseScaleReady, drawCanvas]);
+  }, [imageLoaded, baseScaleReady, drawCanvas, containerSize]);
 
   useEffect(() => {
     if (activeBox && !activeBox.label && selectedClass) {
@@ -501,6 +519,79 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     };
   }, [handleWheel]);
 
+  /**
+   * Tự động label bằng cách gọi YOLO detect API
+   */
+  const handleAutoLabel = async () => {
+    if (!originalImage || !imageSrc) {
+      toast.error('Vui lòng tải ảnh trước');
+      return;
+    }
+
+    setIsAutoLabeling(true);
+    try {
+      // Fetch image as blob
+      const response = await fetch(imageSrc);
+      const blob = await response.blob();
+      const file = new File([blob], 'image.jpg', { type: blob.type });
+
+      // Call YOLO detect API
+      console.log('Calling YOLO detect API...');
+      const result = await yoloService.detect({
+        image: file,
+        confidence: 0.3,
+      });
+
+      if (!result.success || !result.data.detections) {
+        toast.error('Không thể phát hiện vật thể');
+        return;
+      }
+
+      const detections = result.data.detections;
+      console.log('Detections received:', detections);
+
+      // Clear existing boxes
+      clearBoxes();
+
+      // Convert detections to boxes and add to canvas
+      const addedBoxes: BoundingBox[] = [];
+      
+      detections.forEach((detection, index) => {
+        // Detection format from API has bbox: {x1, y1, x2, y2} in PIXEL coordinates (not normalized!)
+        // API returns actual pixel coordinates matching the image dimensions
+        const x1 = detection.bbox.x1;
+        const y1 = detection.bbox.y1;
+        const x2 = detection.bbox.x2;
+        const y2 = detection.bbox.y2;
+
+        // Convert pixel coordinates to canvas coordinates (scale by baseScale)
+        const box: BoundingBox = {
+          id: `auto-label-${index}-${Date.now()}`,
+          startX: x1 * baseScale,
+          startY: y1 * baseScale,
+          endX: x2 * baseScale,
+          endY: y2 * baseScale,
+          // Use detected class name if it exists in our classes list, otherwise use first class
+          label: detection.class_name && classes.includes(detection.class_name) 
+            ? detection.class_name 
+            : (classes.length > 0 ? classes[0] : 'Object'),
+        };
+
+        addBox(box);
+        addedBoxes.push(box);
+        console.log(`Box ${index}:`, { pixel: { x1, y1, x2, y2 }, canvas: box });
+      });
+
+      toast.success(`Phát hiện và tự động label ${addedBoxes.length} vật thể`);
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Lỗi khi tự động label';
+      console.error('Auto-label error:', error);
+      toast.error(message);
+    } finally {
+      setIsAutoLabeling(false);
+    }
+  };
+
   const handleSave = () => {
     if (!originalImage) return;
 
@@ -542,7 +633,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       };
     });
 
-    onSave(labels);
+    onSave(labels, 'completed');
     toast.success(`Đã lưu ${labels.length} labels`);
   };
 
@@ -553,6 +644,85 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
   const handleChangeBoxLabel = (boxId: string, newLabel: string) => {
     updateBox(boxId, { label: newLabel });
+  };
+
+  const handleSaveDraft = async () => {
+    if (!originalImage) return;
+
+    const validBoxes = boxes.filter((box) => isValidBoundingBox(box, 10));
+
+    const labels = validBoxes.map((box) => {
+      const pixelBox = {
+        startX: box.startX / baseScale,
+        startY: box.startY / baseScale,
+        endX: box.endX / baseScale,
+        endY: box.endY / baseScale,
+      };
+
+      const normalized = normalizeBoundingBox(pixelBox);
+      const width = Math.abs(normalized.endX - normalized.startX);
+      const height = Math.abs(normalized.endY - normalized.startY);
+      const classId = classes.indexOf(box.label || '');
+
+      return {
+        classId,
+        className: box.label || '',
+        x: normalized.startX,
+        y: normalized.startY,
+        width: width,
+        height: height,
+      };
+    });
+
+    setIsSavingDraft(true);
+    try {
+      onSave(labels, 'draft');
+      toast.success(`Đã lưu nháp ${labels.length} labels`);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    if (!originalImage) return;
+
+    const validBoxes = boxes.filter((box) => isValidBoundingBox(box, 10));
+
+    if (validBoxes.length === 0) {
+      toast.error('Vui lòng vẽ ít nhất một bounding box');
+      return;
+    }
+
+    const labels = validBoxes.map((box) => {
+      const pixelBox = {
+        startX: box.startX / baseScale,
+        startY: box.startY / baseScale,
+        endX: box.endX / baseScale,
+        endY: box.endY / baseScale,
+      };
+
+      const normalized = normalizeBoundingBox(pixelBox);
+      const width = Math.abs(normalized.endX - normalized.startX);
+      const height = Math.abs(normalized.endY - normalized.startY);
+      const classId = classes.indexOf(box.label || '');
+
+      return {
+        classId,
+        className: box.label || '',
+        x: normalized.startX,
+        y: normalized.startY,
+        width: width,
+        height: height,
+      };
+    });
+
+    setIsMarking(true);
+    try {
+      onSave(labels, 'completed');
+      toast.success(`✅ Đã đánh dấu hoàn thành với ${labels.length} labels`);
+    } finally {
+      setIsMarking(false);
+    }
   };
 
   return (
@@ -638,6 +808,40 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                 {/* Separator */}
                 <div className="w-px h-6 bg-border" />
 
+                {/* Auto-label button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAutoLabel}
+                  disabled={isAutoLabeling || !imageLoaded}
+                  title="Tự động label bằng AI"
+                  className="gap-2"
+                >
+                  {isAutoLabeling ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  {isAutoLabeling ? 'Đang phát hiện...' : 'Tự động label'}
+                </Button>
+
+                {/* Separator */}
+                <div className="w-px h-6 bg-border" />
+
+                {/* Toggle labels visibility */}
+                <Button
+                  variant={showLabelsOnCanvas ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setShowLabelsOnCanvas(!showLabelsOnCanvas)}
+                  title="Ẩn/hiện tên class trên box"
+                  className="gap-2"
+                >
+                  {showLabelsOnCanvas ? 'Ẩn label' : 'Hiện label'}
+                </Button>
+
+                {/* Separator */}
+                <div className="w-px h-6 bg-border" />
+
                 {/* Zoom controls */}
                 <Button
                   variant="outline"
@@ -677,8 +881,8 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
               className="flex-1 bg-muted/20 overflow-auto cursor-grab active:cursor-grabbing"
               style={{
                 display: 'flex',
-                alignItems: zoomLevel === 1 ? 'center' : 'flex-start',
-                justifyContent: zoomLevel === 1 ? 'center' : 'flex-start',
+                alignItems: 'flex-start',
+                justifyContent: 'flex-start',
                 padding: '20px',
               }}
               onMouseDown={handleMouseDownOnContainer}
@@ -805,8 +1009,31 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
               Xóa tất cả
             </Button>
           )}
-          <Button onClick={handleSave} disabled={boxes.length === 0 || disabled}>
-            💾 {disabled ? 'Đang lưu...' : 'Lưu labels'} ({boxes.length})
+          <Button 
+            variant="outline" 
+            onClick={handleSaveDraft} 
+            disabled={boxes.length === 0 || disabled || isSavingDraft}
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            {isSavingDraft ? 'Đang lưu...' : 'Lưu nháp'}
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            disabled={boxes.length === 0 || disabled}
+            className="gap-2"
+          >
+            <Save className="h-4 w-4" />
+            💾 {disabled ? 'Đang lưu...' : 'Lưu'} ({boxes.length})
+          </Button>
+          <Button 
+            variant="default" 
+            onClick={handleMarkComplete} 
+            disabled={boxes.length === 0 || disabled || isMarking}
+            className="gap-2 bg-green-600 hover:bg-green-700"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            {isMarking ? 'Đang xử lý...' : 'Hoàn thành'}
           </Button>
         </div>
       </CardContent>

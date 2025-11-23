@@ -76,30 +76,47 @@ export const useBoundingBox = ({
 
   /**
    * Helper: Normalize tọa độ mouse theo scale
+   * 
+   * Canvas.width = image.width * baseScale * zoomLevel  
+   * Use offsetX/offsetY - coordinates relative to target element (canvas)
+   * Handles scroll, padding, border automatically
    */
   const getScaledCoordinates = useCallback(
-    (clientX: number, clientY: number, canvas: HTMLCanvasElement) => {
-      const rect = canvas.getBoundingClientRect();
-      // Tính tọa độ trên DOM element
-      let domX = clientX - rect.left;
-      let domY = clientY - rect.top;
+    (clientX: number, clientY: number, canvas: HTMLCanvasElement, event?: MouseEvent | React.MouseEvent) => {
+      let domX: number;
+      let domY: number;
       
-      // Chuyển đổi từ DOM coordinates sang canvas logical coordinates
-      // canvas.width là pixel size trên DOM (sau scale CSS)
-      // canvasLogicalWidth là actual canvas resolution (nếu được truyền)
-      // Công thức: (domPixel / domSize) * logicalSize
-      const logicalWidth = canvasLogicalWidth || canvas.width;
-      const logicalHeight = canvasLogicalHeight || canvas.height;
+      // Prefer offsetX/offsetY if available (handles scroll/padding correctly)
+      if (event && 'nativeEvent' in event) {
+        // React synthetic event
+        const nativeEvent = (event as React.MouseEvent).nativeEvent;
+        domX = nativeEvent.offsetX;
+        domY = nativeEvent.offsetY;
+      } else if (event && 'offsetX' in event) {
+        // Native event
+        domX = (event as MouseEvent).offsetX;
+        domY = (event as MouseEvent).offsetY;
+      } else {
+        // Fallback to clientX - rect
+        const canvasRect = canvas.getBoundingClientRect();
+        domX = clientX - canvasRect.left;
+        domY = clientY - canvasRect.top;
+      }
       
-      const x = (domX / canvas.width) * logicalWidth;
-      const y = (domY / canvas.height) * logicalHeight;
+      // Convert from screen coords to canvas logical coords (canvas.width = logical * zoomLevel)
+      const x = domX / (zoomLevel || 1);
+      const y = domY / (zoomLevel || 1);
+      
+      // Clamp to logical bounds
+      const maxX = canvas.width / (zoomLevel || 1);
+      const maxY = canvas.height / (zoomLevel || 1);
       
       return {
-        x: Math.max(0, Math.min(x, logicalWidth)),
-        y: Math.max(0, Math.min(y, logicalHeight)),
+        x: Math.max(0, Math.min(x, maxX)),
+        y: Math.max(0, Math.min(y, maxY)),
       };
     },
-    [canvasLogicalWidth, canvasLogicalHeight]
+    [zoomLevel]
   );
 
   /**
@@ -273,7 +290,7 @@ export const useBoundingBox = ({
       const canvas = canvasRef.current;
       if (!canvas || !enabled) return;
 
-      const { x, y } = getScaledCoordinates(e.clientX, e.clientY, canvas);
+      const { x, y } = getScaledCoordinates(e.clientX, e.clientY, canvas, e);
 
       // Tìm box tại vị trí click
       const clickedBox = findBoxAtPoint(x, y);
@@ -330,7 +347,7 @@ export const useBoundingBox = ({
       const canvas = canvasRef.current;
       if (!canvas || !activeBox) return;
 
-      const { x, y } = getScaledCoordinates(e.clientX, e.clientY, canvas);
+      const { x, y } = getScaledCoordinates(e.clientX, e.clientY, canvas, e);
 
       if (isMoving) {
         // Di chuyển box

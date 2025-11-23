@@ -130,7 +130,7 @@ const ImageLabelPage: React.FC = () => {
     }
   }, [datasetId, imageId]);
 
-  const handleSave = async (labels: ExistingLabel[]) => {
+  const handleSave = async (labels: ExistingLabel[], status?: 'draft' | 'completed') => {
     if (!imageId) {
       toast.error('Image ID không hợp lệ');
       return;
@@ -139,12 +139,22 @@ const ImageLabelPage: React.FC = () => {
     setSaving(true);
     try {
       await yoloDatasetService.saveImageAnnotations(imageId, labels);
-      toast.success(`Đã lưu ${labels.length} bounding boxes`);
       
-      // Quay lại trang danh sách ảnh sau 1 giây
-      setTimeout(() => {
-        router.push(`/admin/yolo-datasets/${datasetId}/images`);
-      }, 1000);
+      // Map component status to API status
+      if (status === 'draft') {
+        // Cập nhật trạng thái = PROCESSING (đang xử lý nháp)
+        await yoloDatasetService.updateImage(imageId, { status: 'PROCESSING' });
+        toast.success(`Đã lưu nháp ${labels.length} bounding boxes`);
+      } else if (status === 'completed') {
+        // Cập nhật trạng thái = COMPLETED (hoàn thành)
+        await yoloDatasetService.updateImage(imageId, { status: 'COMPLETED' });
+        toast.success(`Đã lưu hoàn thành ${labels.length} bounding boxes`);
+        
+        // Quay lại trang danh sách ảnh sau 1 giây
+        setTimeout(() => {
+          router.push(`/admin/yolo-datasets/${datasetId}/images`);
+        }, 1000);
+      }
     } catch (err) {
       const message = getServerErrorMessage(err) || 'Không thể lưu labels';
       toast.error(message);
