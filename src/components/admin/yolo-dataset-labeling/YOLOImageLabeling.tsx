@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useBoundingBox, BoundingBox } from '@/hooks/useBoundingBox';
-import { useCanvasOptimization } from '@/hooks/useCanvasOptimization';
 import { yoloService } from '@/services/yolo.service';
 import { BoxesList } from './BoxesList';
 import { 
@@ -62,7 +61,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
-  const rafRef = useRef<number | null>(null); // Request Animation Frame reference
+
   const boxesRef = useRef<BoundingBox[]>([]); // Track boxes without triggering redraw
   const activeBoxRef = useRef<BoundingBox | null>(null); // Track active box
   const [baseScale, setBaseScale] = useState(1); // Scale từ fit to container
@@ -71,22 +70,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>(classes[0] || '');
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [showOptimizationStats, setShowOptimizationStats] = useState(false); // Debug mode
   const [showLabelsOnCanvas, setShowLabelsOnCanvas] = useState(false); // Toggle label text on boxes - default hidden
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isMarking, setIsMarking] = useState(false);
-  const [forceRedraw, setForceRedraw] = useState(0); // Trigger để force canvas redraw khi cần
-
-  //  NEW: Initialize canvas optimization (Pattern 1-5 from Label Studio)
-  const optimization = useCanvasOptimization(canvasRef, imageRef, {
-    fps: 60,
-    enableOffscreen: true,
-    enableViewportCulling: true,
-    viewportPadding: 50,
-  });
-
-  // Scale cuối cùng = baseScale * zoomLevel
-  const scale = baseScale * zoomLevel;
 
   // Màu sắc cho từng class - memoized
   const classColors = React.useMemo(() => [
@@ -120,7 +106,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     canvasRef,
     enabled: imageLoaded,
     multipleBoxes: true,
-    scale: baseScale, // Logical scale (zoom handled separately in mouse calcs)
     zoomLevel,
     // Truyền kích thước logical (trước zoom)
     canvasLogicalWidth: originalImage ? originalImage.width * baseScale : 0,
@@ -242,160 +227,138 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
   // Vẽ canvas - optimized với viewport culling + batch rendering
   const drawCanvas = useCallback(() => {
-    // Cancel any pending RAF
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
+    const canvas = canvasRef.current;
+    if (!canvas || !originalImage || baseScale === 0) return;
+
+    // Canvas size = baseScale * zoomLevel
+    // Zoom baked into canvas resolution
+    const displayWidth = originalImage.width * baseScale * zoomLevel;
+    const displayHeight = originalImage.height * baseScale * zoomLevel;
+
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Use refs instead of closure to get latest boxes without dependency
+    const boxes = boxesRef.current;
+    const activeBox = activeBoxRef.current;
+
+    // Prepare boxes for rendering (NO culling for accuracy)
+    // Viewport culling có thể gây lệch khi zoom lớn, disable để đảm bảo tính đúng
+    const boxesToRender = boxes.map((box) => ({
+      id: box.id,
+      x: Math.min(box.startX, box.endX) * zoomLevel,
+      y: Math.min(box.startY, box.endY) * zoomLevel,
+      width: Math.abs(box.endX - box.startX) * zoomLevel,
+      height: Math.abs(box.endY - box.startY) * zoomLevel,
+      label: box.label,
+      startX: box.startX,
+      startY: box.startY,
+      endX: box.endX,
+      endY: box.endY,
+    }));
+
+    console.log('Drawing canvas with boxes:', boxes.length, 'boxesToRender:', boxesToRender);
+
+    // Clear canvas
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+    // Draw image with zoom
+    ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
+
+    // Merge active box with visible boxes for rendering
+    let renderedBoxes = boxesToRender;
+    if (activeBox) {
+      const activeScreenBox = {
+        id: activeBox.id,
+        x: Math.min(activeBox.startX, activeBox.endX) * zoomLevel,
+        y: Math.min(activeBox.startY, activeBox.endY) * zoomLevel,
+        width: Math.abs(activeBox.endX - activeBox.startX) * zoomLevel,
+        height: Math.abs(activeBox.endY - activeBox.startY) * zoomLevel,
+        label: activeBox.label,
+        startX: activeBox.startX,
+        startY: activeBox.startY,
+        endX: activeBox.endX,
+        endY: activeBox.endY,
+      };
+
+      const existsInRender = boxesToRender.some((b: any) => b.id === activeBox.id);
+      if (!existsInRender) {
+        renderedBoxes = [...boxesToRender, activeScreenBox];
+      }
     }
 
-    rafRef.current = requestAnimationFrame(() => {
-      const canvas = canvasRef.current;
-      if (!canvas || !originalImage || baseScale === 0) return;
+    //  Pattern 2: Batch draw all boxes
+    ctx.save();
 
-      // Canvas size = baseScale * zoomLevel
-      // Zoom baked into canvas resolution
-      const displayWidth = originalImage.width * baseScale * zoomLevel;
-      const displayHeight = originalImage.height * baseScale * zoomLevel;
+    renderedBoxes.forEach((box: any) => {
+      const isActive = box.id === activeBox?.id;
+      const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
 
-      canvas.width = displayWidth;
-      canvas.height = displayHeight;
+      const x1 = box.x;
+      const y1 = box.y;
+      const width = box.width;
+      const height = box.height;
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      // Fill
+      ctx.fillStyle = `${color}33`;
+      ctx.fillRect(x1, y1, width, height);
 
-      // Use refs instead of closure to get latest boxes without dependency
-      const boxes = boxesRef.current;
-      const activeBox = activeBoxRef.current;
+      // Stroke
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isActive ? 3 : 2;
+      ctx.strokeRect(x1, y1, width, height);
 
-      // Prepare boxes for rendering (NO culling for accuracy)
-      // Viewport culling có thể gây lệch khi zoom lớn, disable để đảm bảo tính đúng
-      const boxesToRender = boxes.map((box) => ({
-        id: box.id,
-        x: Math.min(box.startX, box.endX) * zoomLevel,
-        y: Math.min(box.startY, box.endY) * zoomLevel,
-        width: Math.abs(box.endX - box.startX) * zoomLevel,
-        height: Math.abs(box.endY - box.startY) * zoomLevel,
-        label: box.label,
-        startX: box.startX,
-        startY: box.startY,
-        endX: box.endX,
-        endY: box.endY,
-      }));
+      // Label
+      if (box.label && showLabelsOnCanvas) {
+        ctx.fillStyle = color;
+        ctx.font = 'bold 14px Arial';
+        const labelMetrics = ctx.measureText(box.label);
+        const labelPadding = 6;
+        const labelHeight = 20;
 
-      console.log('Drawing canvas with boxes:', boxes.length, 'boxesToRender:', boxesToRender);
+        ctx.fillRect(
+          x1,
+          y1 - labelHeight - labelPadding,
+          labelMetrics.width + labelPadding * 2,
+          labelHeight + labelPadding
+        );
 
-      // Clear canvas
-      ctx.clearRect(0, 0, displayWidth, displayHeight);
-
-      // Draw image with zoom
-      ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
-
-      // Merge active box with visible boxes for rendering
-      let renderedBoxes = boxesToRender;
-      if (activeBox) {
-        const activeScreenBox = {
-          id: activeBox.id,
-          x: Math.min(activeBox.startX, activeBox.endX) * zoomLevel,
-          y: Math.min(activeBox.startY, activeBox.endY) * zoomLevel,
-          width: Math.abs(activeBox.endX - activeBox.startX) * zoomLevel,
-          height: Math.abs(activeBox.endY - activeBox.startY) * zoomLevel,
-          label: activeBox.label,
-          startX: activeBox.startX,
-          startY: activeBox.startY,
-          endX: activeBox.endX,
-          endY: activeBox.endY,
-        };
-
-        const existsInRender = boxesToRender.some((b: any) => b.id === activeBox.id);
-        if (!existsInRender) {
-          renderedBoxes = [...boxesToRender, activeScreenBox];
-        }
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(box.label, x1 + labelPadding, y1 - labelPadding - 2);
       }
 
-      //  Pattern 2: Batch draw all boxes
-      ctx.save();
+      // Handles (only for active box)
+      if (isActive) {
+        ctx.fillStyle = color;
+        const handleSize = 8;
+        const edgeSize = 6;
 
-      renderedBoxes.forEach((box: any) => {
-        const isActive = box.id === activeBox?.id;
-        const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
+        // Draw corner handles
+        const halfHandle = handleSize / 2;
+        ctx.fillRect(x1 - halfHandle, y1 - halfHandle, handleSize, handleSize);
+        ctx.fillRect(x1 + width - halfHandle, y1 - halfHandle, handleSize, handleSize);
+        ctx.fillRect(x1 - halfHandle, y1 + height - halfHandle, handleSize, handleSize);
+        ctx.fillRect(
+          x1 + width - halfHandle,
+          y1 + height - halfHandle,
+          handleSize,
+          handleSize
+        );
 
-        const x1 = box.x;
-        const y1 = box.y;
-        const width = box.width;
-        const height = box.height;
-
-        // Fill
-        ctx.fillStyle = `${color}33`;
-        ctx.fillRect(x1, y1, width, height);
-
-        // Stroke
-        ctx.strokeStyle = color;
-        ctx.lineWidth = isActive ? 3 : 2;
-        ctx.strokeRect(x1, y1, width, height);
-
-        // Label
-        if (box.label && showLabelsOnCanvas) {
-          ctx.fillStyle = color;
-          ctx.font = 'bold 14px Arial';
-          const labelMetrics = ctx.measureText(box.label);
-          const labelPadding = 6;
-          const labelHeight = 20;
-
-          ctx.fillRect(
-            x1,
-            y1 - labelHeight - labelPadding,
-            labelMetrics.width + labelPadding * 2,
-            labelHeight + labelPadding
-          );
-
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillText(box.label, x1 + labelPadding, y1 - labelPadding - 2);
-        }
-
-        // Handles (only for active box)
-        if (isActive) {
-          ctx.fillStyle = color;
-          const handleSize = 8;
-          const edgeSize = 6;
-
-          // Draw corner handles
-          const halfHandle = handleSize / 2;
-          ctx.fillRect(x1 - halfHandle, y1 - halfHandle, handleSize, handleSize);
-          ctx.fillRect(x1 + width - halfHandle, y1 - halfHandle, handleSize, handleSize);
-          ctx.fillRect(x1 - halfHandle, y1 + height - halfHandle, handleSize, handleSize);
-          ctx.fillRect(
-            x1 + width - halfHandle,
-            y1 + height - halfHandle,
-            handleSize,
-            handleSize
-          );
-
-          // Draw edge handles
-          const halfEdge = edgeSize / 2;
-          ctx.fillRect(x1 + width / 2 - halfEdge, y1 - halfEdge, edgeSize, edgeSize);
-          ctx.fillRect(x1 + width / 2 - halfEdge, y1 + height - halfEdge, edgeSize, edgeSize);
-          ctx.fillRect(x1 - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
-          ctx.fillRect(x1 + width - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
-        }
-      });
-
-      ctx.restore();
-
-      //  Debug: Show optimization stats if enabled
-      if (showOptimizationStats) {
-        const stats = optimization.getStats();
-        if (stats) {
-          ctx.fillStyle = '#00FF00';
-          ctx.font = '12px monospace';
-          ctx.fillText(`Visible: ${stats.visibleBoxes}/${stats.totalBoxes}`, 10, 20);
-          ctx.fillText(`Speedup: ${stats.estimatedSpeedup.toFixed(2)}x`, 10, 35);
-          ctx.fillText(`Optimized: ${(stats.optimizationRatio * 100).toFixed(0)}%`, 10, 50);
-        }
+        // Draw edge handles
+        const halfEdge = edgeSize / 2;
+        ctx.fillRect(x1 + width / 2 - halfEdge, y1 - halfEdge, edgeSize, edgeSize);
+        ctx.fillRect(x1 + width / 2 - halfEdge, y1 + height - halfEdge, edgeSize, edgeSize);
+        ctx.fillRect(x1 - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
+        ctx.fillRect(x1 + width - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
       }
-
-      // Do NOT call drawCanvas() here - let React re-render trigger it
-      // This prevents infinite loop and ensures baseScale stabilizes
     });
-  }, [originalImage, baseScale, zoomLevel, optimization, getColorForClass, showOptimizationStats, showLabelsOnCanvas]);
+
+    ctx.restore();
+  }, [originalImage, baseScale, zoomLevel, getColorForClass, showLabelsOnCanvas]);
 
   // Zoom handlers
   const handleZoomIn = () => {
@@ -496,13 +459,14 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     if (imageLoaded && baseScaleReady) {
       drawCanvas();
     }
-    
-    return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
   }, [imageLoaded, baseScaleReady, drawCanvas, containerSize]);
+
+  // Redraw canvas when boxes or activeBox change
+  useEffect(() => {
+    if (imageLoaded && originalImage) {
+      drawCanvas();
+    }
+  }, [boxes, activeBox, drawCanvas, imageLoaded, originalImage]);
 
   useEffect(() => {
     if (activeBox && !activeBox.label && selectedClass) {

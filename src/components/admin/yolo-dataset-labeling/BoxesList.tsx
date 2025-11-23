@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,6 +31,13 @@ const BoxItem = memo<BoxItemProps>(({
   onChangeBoxLabel,
   getColorForClass,
 }) => {
+  const [selectedLabel, setSelectedLabel] = useState(box.label || classes[0]);
+  
+  // Sync internal state khi box.label thay đổi
+  useEffect(() => {
+    setSelectedLabel(box.label || classes[0]);
+  }, [box.label, classes]);
+  
   const boxColor = box.label ? getColorForClass(box.label) : '#4ECDC4';
   
   const handleSelect = useCallback(() => {
@@ -43,6 +50,7 @@ const BoxItem = memo<BoxItemProps>(({
   }, [box.id, onDeleteBox]);
 
   const handleLabelChange = useCallback((value: string) => {
+    setSelectedLabel(value);
     onChangeBoxLabel(box.id!, value);
   }, [box.id, onChangeBoxLabel]);
 
@@ -74,7 +82,8 @@ const BoxItem = memo<BoxItemProps>(({
       </div>
 
       <Select
-        value={box.label || classes[0]}
+        key={`select-${box.id}-${box.label}`}
+        value={selectedLabel}
         onValueChange={handleLabelChange}
       >
         <SelectTrigger className="h-7 text-xs bg-background border-border/50">
@@ -110,18 +119,6 @@ const BoxItem = memo<BoxItemProps>(({
         </div>
       </div>
     </div>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison: chỉ re-render nếu box data hoặc isActive thay đổi
-  // Bỏ qua callback changes vì chúng là identity stable
-  return (
-    prevProps.box.id === nextProps.box.id &&
-    prevProps.box.label === nextProps.box.label &&
-    prevProps.box.startX === nextProps.box.startX &&
-    prevProps.box.startY === nextProps.box.startY &&
-    prevProps.box.endX === nextProps.box.endX &&
-    prevProps.box.endY === nextProps.box.endY &&
-    prevProps.isActive === nextProps.isActive
   );
 });
 
