@@ -191,15 +191,6 @@ export const ROUTES = {
       },
     },
 
-    // YOLO Dataset Labeling
-    YOLO_DATASET_LABELING: {
-      LIST: {
-        path: '/admin/yolo-dataset-labeling',
-        name: 'Gán nhãn dataset YOLO',
-        description: 'Tạo label cho ảnh để train YOLO model',
-      },
-    },
-
     // YOLO Dataset Management
     YOLO_DATASETS: {
       LIST: {

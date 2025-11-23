@@ -113,25 +113,25 @@ export const Sidebar: React.FC = () => {
           icon: Eye,
           requiredPermission: PERMISSIONS.YOLO.DETECT.key,
         },
-        {
-          label: 'Gán nhãn dataset YOLO',
-          href: ROUTES.ADMIN.YOLO_DATASET_LABELING.LIST.path,
-          icon: Tag,
-          requiredPermission: PERMISSIONS.YOLO.MANAGE_DATASET.key,
-        },
       ],
     },
     {
-      label: 'Quản lý Dataset YOLO',
-      href: ROUTES.ADMIN.YOLO_DATASETS.LIST.path,
+      label: 'Quản lý YOLO',
       icon: Tag,
-      requiredPermission: PERMISSIONS.YOLO.VIEW_DATASET.key,
-    },
-    {
-      label: 'Quản lý Model YOLO',
-      href: ROUTES.ADMIN.YOLO_MODELS.LIST.path,
-      icon: Package,
-      requiredPermission: PERMISSIONS.YOLO.VIEW_MODELS.key,
+      submenu: [
+        {
+          label: 'Dataset YOLO',
+          href: ROUTES.ADMIN.YOLO_DATASETS.LIST.path,
+          icon: Tag,
+          requiredPermission: PERMISSIONS.YOLO.VIEW_DATASET.key,
+        },
+        {
+          label: 'Model YOLO',
+          href: ROUTES.ADMIN.YOLO_MODELS.LIST.path,
+          icon: Package,
+          requiredPermission: PERMISSIONS.YOLO.VIEW_MODELS.key,
+        },
+      ],
     },
     {
       label: 'Quản lý kho',
