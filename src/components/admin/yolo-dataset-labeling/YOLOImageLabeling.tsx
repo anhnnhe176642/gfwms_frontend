@@ -1041,7 +1041,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
             className="gap-2"
           >
             <Save className="h-4 w-4" />
-            💾 {disabled ? 'Đang lưu...' : 'Lưu'} ({boxes.length})
+             {disabled ? 'Đang lưu...' : 'Lưu'} ({boxes.length})
           </Button>
           <Button 
             variant="default" 
