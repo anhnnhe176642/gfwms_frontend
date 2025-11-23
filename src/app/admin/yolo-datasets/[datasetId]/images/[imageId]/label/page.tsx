@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Lightbulb } from 'lucide-react';
 
 interface ImageLabelPageParams {
   datasetId: string;
@@ -263,35 +263,20 @@ const ImageLabelPage: React.FC = () => {
 
       {/* Instructions Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Hướng dẫn</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div>
-            <strong>1. Chọn class:</strong> Chọn class label từ dropdown trước khi vẽ box
-          </div>
-          <div>
-            <strong>2. Vẽ bounding box:</strong> Click và kéo chuột để vẽ box xung quanh đối tượng
-          </div>
-          <div>
-            <strong>3. Chỉnh sửa:</strong> Kéo góc/cạnh để resize, kéo bên trong để di chuyển
-          </div>
-          <div>
-            <strong>4. Thay đổi class:</strong> Chọn class khác từ dropdown trong danh sách boxes
-          </div>
-          <div>
-            <strong>5. Xóa:</strong> Chọn box và nhấn <kbd className="px-1.5 py-0.5 bg-muted rounded border text-xs">Delete</kbd>
-          </div>
-          <div>
-            <strong>6. Undo/Redo:</strong> <kbd className="px-1.5 py-0.5 bg-muted rounded border text-xs">Ctrl+Z</kbd> / <kbd className="px-1.5 py-0.5 bg-muted rounded border text-xs">Ctrl+Shift+Z</kbd>
-          </div>
-          <div>
-            <strong>7. Zoom:</strong> <kbd className="px-1.5 py-0.5 bg-muted rounded border text-xs">Ctrl+Scroll</kbd> để zoom
-          </div>
-          <div>
-            <strong>8. Lưu:</strong> Click "Lưu labels" để lưu annotations về database
-          </div>
-        </CardContent>
+        <div className="text-sm p-3 rounded-md mt-4 flex gap-2">
+              <Lightbulb className="w-5 h-5 shrink-0 mt-0.5" />
+              <div>
+                <strong>Hướng dẫn:</strong>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Chọn class label trước khi vẽ box</li>
+                  <li>Kéo chuột để vẽ bounding box xung quanh đối tượng</li>
+                  <li>Click vào box để chọn, kéo cạnh/góc để resize, kéo bên trong để di chuyển</li>
+                  <li>Nhấn Delete để xóa, Ctrl+Z để undo</li>
+                  <li>Ctrl+Scroll để zoom in/out, hoặc dùng nút +/- trên thanh zoom</li>
+                  <li>Khi zoom &gt; 100%, kéo trên canvas để pan (di chuyển ảnh)</li>
+                </ul>
+              </div>
+            </div>
       </Card>
     </div>
   );

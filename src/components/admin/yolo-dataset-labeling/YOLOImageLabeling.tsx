@@ -896,21 +896,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                 className="border-2 border-dashed border-primary rounded-md cursor-crosshair"
               />
             </div>
-
-            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md mt-4 flex gap-2">
-              <Lightbulb className="w-5 h-5 shrink-0 mt-0.5" />
-              <div>
-                <strong>Hướng dẫn:</strong>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Chọn class label trước khi vẽ box</li>
-                  <li>Kéo chuột để vẽ bounding box xung quanh đối tượng</li>
-                  <li>Click vào box để chọn, kéo cạnh/góc để resize, kéo bên trong để di chuyển</li>
-                  <li>Nhấn Delete để xóa, Ctrl+Z để undo</li>
-                  <li>Ctrl+Scroll để zoom in/out, hoặc dùng nút +/- trên thanh zoom</li>
-                  <li>Khi zoom &gt; 100%, kéo trên canvas để pan (di chuyển ảnh)</li>
-                </ul>
-              </div>
-            </div>
           </div>
 
           <div style={{ width: '25%' }} className="flex flex-col overflow-hidden">
