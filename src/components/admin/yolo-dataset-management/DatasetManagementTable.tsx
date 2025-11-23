@@ -88,10 +88,10 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
   };
 
   /**
-   * Handle labeling
+   * Handle view images
    */
-  const handleLabelClick = (datasetId: string | number) => {
-    router.push(`/admin/yolo-datasets/${datasetId}/label`);
+  const handleViewImagesClick = (datasetId: string | number) => {
+    router.push(`/admin/yolo-datasets/${datasetId}/images`);
   };
 
   /**
@@ -150,7 +150,7 @@ export function DatasetManagementTable({ initialParams }: DatasetManagementTable
     onDelete: hasPermission(PERMISSIONS.YOLO.MANAGE_DATASET.key) ? handleDeleteClick : undefined,
     onEdit: hasPermission(PERMISSIONS.YOLO.MANAGE_DATASET.key) ? handleEditClick : undefined,
     onView: hasPermission(PERMISSIONS.YOLO.VIEW_DATASET.key) ? handleViewClick : undefined,
-    onLabel: hasPermission(PERMISSIONS.YOLO.MANAGE_DATASET.key) ? handleLabelClick : undefined,
+    onViewImages: hasPermission(PERMISSIONS.YOLO.VIEW_DATASET.key) ? handleViewImagesClick : undefined,
   });
 
   if (loading && datasets.length === 0) {

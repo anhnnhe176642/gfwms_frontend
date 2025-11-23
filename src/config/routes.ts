@@ -223,11 +223,6 @@ export const ROUTES = {
         name: 'Chỉnh sửa Dataset YOLO',
         requiredPermission: PERMISSIONS.YOLO.MANAGE_DATASET.key,
       },
-      LABEL: {
-        path: '/admin/yolo-datasets/:id/label',
-        name: 'Gán nhãn ảnh',
-        requiredPermission: PERMISSIONS.YOLO.MANAGE_DATASET.key,
-      },
     },
 
     // Warehouse Management

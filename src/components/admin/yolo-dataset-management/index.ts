@@ -9,3 +9,4 @@ export { createDatasetImageColumns } from './datasetImageColumns';
 export type { DatasetImageColumnActions } from './datasetImageColumns';
 export { UploadImageForm } from './UploadImageForm';
 export type { UploadImageFormProps } from './UploadImageForm';
+export { EditImageStatusDialog } from './EditImageStatusDialog';

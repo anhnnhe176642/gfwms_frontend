@@ -3,12 +3,20 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { IMAGE_STATUS_CONFIG } from '@/constants/yolo-dataset';
 import { SortButton } from '@/components/admin/table/SortButton';
 import { CheckboxFilterHeader } from '@/components/admin/table/CheckboxFilterHeader';
 import { DateRangeFilterHeader } from '@/components/admin/table/DateRangeFilterHeader';
 import type { DatasetImage } from '@/types/yolo-dataset';
-import { Eye, Download, ImageOff } from 'lucide-react';
+import { Eye, Download, ImageOff, MoreHorizontal, Tag, Trash2, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 
 const IMAGE_STATUS_OPTIONS = [
@@ -21,6 +29,9 @@ const IMAGE_STATUS_OPTIONS = [
 export type DatasetImageColumnActions = {
   onView?: (imageId: string) => void;
   onDownload?: (imageId: string) => void;
+  onLabel?: (imageId: string) => void;
+  onUpdateStatus?: (imageId: string) => void;
+  onDelete?: (imageId: string) => void;
 };
 
 export function createDatasetImageColumns(
@@ -175,30 +186,71 @@ export function createDatasetImageColumns(
       meta: {
         title: 'Hành động',
       },
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          {actions?.onView && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => actions.onView?.(row.original.id)}
-              title="Xem chi tiết"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          )}
-          {actions?.onDownload && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => actions.onDownload?.(row.original.id)}
-              title="Tải xuống"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const image = row.original;
+
+        return (
+          <div className="flex items-center gap-2">
+            {actions?.onView && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => actions.onView?.(image.id)}
+                title="Xem chi tiết"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Mở menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                {actions?.onLabel && (
+                  <DropdownMenuItem onClick={() => actions.onLabel?.(image.id)}>
+                    <Tag className="h-4 w-4 mr-2" />
+                    Gán nhãn ảnh
+                  </DropdownMenuItem>
+                )}
+
+                {actions?.onUpdateStatus && (
+                  <DropdownMenuItem onClick={() => actions.onUpdateStatus?.(image.id)}>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Cập nhật trạng thái
+                  </DropdownMenuItem>
+                )}
+
+                {actions?.onDownload && (
+                  <DropdownMenuItem onClick={() => actions.onDownload?.(image.id)}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Tải xuống
+                  </DropdownMenuItem>
+                )}
+
+                {actions?.onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => actions.onDelete?.(image.id)}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Xóa ảnh
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
     },
   ];
 }

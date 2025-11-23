@@ -75,6 +75,7 @@ export type DatasetImage = {
   imageUrl?: string;
   objectCount: number;
   status: DatasetImageStatus;
+  notes?: string;
   uploadedByUser: {
     id: string;
     fullname: string;
@@ -98,4 +99,25 @@ export type DatasetImageListParams = {
   order?: string;
   createdFrom?: string;
   createdTo?: string;
+};
+
+export type DatasetImageAnnotation = {
+  class_id: number;
+  class_name: string;
+  confidence: number;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+};
+
+export type UpdateDatasetImagePayload = {
+  notes?: string;
+  status?: DatasetImageStatus;
+  annotations?: DatasetImageAnnotation[];
+};
+
+export type UpdateDatasetImageResponse = {
+  message: string;
+  data: DatasetImage;
 };

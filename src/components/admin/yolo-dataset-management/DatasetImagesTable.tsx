@@ -7,12 +7,14 @@ import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
 import { createDatasetImageColumns } from './datasetImageColumns';
 import { UploadImageForm } from './UploadImageForm';
+import { EditImageStatusDialog } from './EditImageStatusDialog';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { useServerTable } from '@/hooks/useServerTable';
@@ -30,6 +32,10 @@ export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTabl
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [editStatusDialogOpen, setEditStatusDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Use custom hook for table state and data fetching
   const {
@@ -71,11 +77,45 @@ export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTabl
     },
   });
 
+  /**
+   * Handle confirm delete image
+   */
+  const handleConfirmDelete = async () => {
+    if (!selectedImageId) return;
+
+    setActionLoading(true);
+    try {
+      await yoloDatasetService.deleteImage(selectedImageId);
+      toast.success('Xóa ảnh thành công');
+      setDeleteDialogOpen(false);
+      setSelectedImageId(null);
+      await refresh();
+    } catch (err) {
+      const message = getServerErrorMessage(err) || 'Không thể xóa ảnh';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const columns = useMemo(
     () =>
       createDatasetImageColumns({
         onView: (imageId) => {
           onViewImage?.(imageId);
+        },
+        onLabel: (imageId) => {
+          setSelectedImageId(imageId);
+          // TODO: Implement label functionality
+          toast.info('Chức năng gán nhãn sẽ được phát triển');
+        },
+        onUpdateStatus: (imageId) => {
+          setSelectedImageId(imageId);
+          setEditStatusDialogOpen(true);
+        },
+        onDelete: (imageId) => {
+          setSelectedImageId(imageId);
+          setDeleteDialogOpen(true);
         },
       }),
     [onViewImage]
@@ -173,6 +213,44 @@ export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTabl
             onSuccess={handleUploadSuccess}
             onClose={() => setUploadDialogOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Image Status Dialog */}
+      {selectedImageId && (
+        <EditImageStatusDialog
+          open={editStatusDialogOpen}
+          onOpenChange={setEditStatusDialogOpen}
+          imageId={selectedImageId}
+          onSuccess={() => refresh()}
+        />
+      )}
+
+      {/* Delete Image Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa ảnh</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa ảnh này? Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={actionLoading}
+            >
+              {actionLoading ? 'Đang xóa...' : 'Xóa'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

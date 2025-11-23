@@ -12,6 +12,8 @@ import type {
   UpdateDatasetResponse,
   DatasetImageListResponse,
   DatasetImageListParams,
+  UpdateDatasetImagePayload,
+  UpdateDatasetImageResponse,
 } from '@/types/yolo-dataset';
 
 const BASE_PATH = '/v1/yolo/datasets';
@@ -73,6 +75,14 @@ export const yoloDatasetService = {
   },
 
   /**
+   * Lấy thông tin chi tiết một ảnh
+   */
+  getImageById: async (imageId: string): Promise<any> => {
+    const response = await api.get(`/v1/yolo/datasets/images/${imageId}`);
+    return response.data.data;
+  },
+
+  /**
    * Tải ảnh lên dataset
    */
   uploadImage: async (datasetId: string | number, file: File, notes?: string): Promise<any> => {
@@ -88,5 +98,23 @@ export const yoloDatasetService = {
       },
     });
     return response.data;
+  },
+
+  /**
+   * Cập nhật thông tin ảnh (gán nhãn, cập nhật trạng thái, ghi chú)
+   */
+  updateImage: async (imageId: string, payload: UpdateDatasetImagePayload): Promise<any> => {
+    const response = await api.patch<UpdateDatasetImageResponse>(
+      `/v1/yolo/datasets/images/${imageId}`,
+      payload
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Xóa ảnh từ dataset
+   */
+  deleteImage: async (imageId: string): Promise<void> => {
+    await api.delete(`/v1/yolo/datasets/images/${imageId}`);
   },
 };

@@ -26,7 +26,7 @@ export type DatasetColumnActions = {
   onView?: (datasetId: string | number) => void
   onEdit?: (datasetId: string | number) => void
   onDelete?: (datasetId: string | number) => void
-  onLabel?: (datasetId: string | number) => void
+  onViewImages?: (datasetId: string | number) => void
 }
 
 export const createDatasetColumns = (
@@ -172,54 +172,58 @@ export const createDatasetColumns = (
       const dataset = row.original
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Mở menu</span>
-              <MoreHorizontal className="h-4 w-4" />
+        <div className="flex items-center gap-2">
+          {actions.onViewImages && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => actions.onViewImages?.(dataset.id)}
+              className="h-8 px-2 text-xs"
+            >
+              Xem ảnh
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            
-            {actions.onLabel && (
-              <DropdownMenuItem
-                onClick={() => actions.onLabel?.(dataset.id)}
-              >
-                Gán nhãn ảnh
-              </DropdownMenuItem>
-            )}
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Mở menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+              <DropdownMenuSeparator />
 
-            {actions.onView && (
-              <DropdownMenuItem
-                onClick={() => actions.onView?.(dataset.id)}
-              >
-                Xem chi tiết
-              </DropdownMenuItem>
-            )}
-
-            {actions.onEdit && (
-              <DropdownMenuItem
-                onClick={() => actions.onEdit?.(dataset.id)}
-              >
-                Chỉnh sửa
-              </DropdownMenuItem>
-            )}
-            
-            {actions.onDelete && (
-              <>
-                <DropdownMenuSeparator />
+              {actions.onView && (
                 <DropdownMenuItem
-                  onClick={() => actions.onDelete?.(dataset.id)}
-                  className="text-red-600"
+                  onClick={() => actions.onView?.(dataset.id)}
                 >
-                  Xóa
+                  Xem chi tiết
                 </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              )}
+
+              {actions.onEdit && (
+                <DropdownMenuItem
+                  onClick={() => actions.onEdit?.(dataset.id)}
+                >
+                  Chỉnh sửa
+                </DropdownMenuItem>
+              )}
+              
+              {actions.onDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => actions.onDelete?.(dataset.id)}
+                    className="text-red-600"
+                  >
+                    Xóa
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )
     },
   },
