@@ -65,3 +65,36 @@ export type UpdateDatasetResponse = {
   message: string;
   data: DatasetDetail;
 };
+
+export type DatasetImageStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
+export type DatasetImage = {
+  id: string;
+  filename: string;
+  imagePath?: string;
+  objectCount: number;
+  status: DatasetImageStatus;
+  uploadedByUser: {
+    id: string;
+    fullname: string;
+  };
+  createdAt: string;
+};
+
+export type DatasetImageListResponse = {
+  success: boolean;
+  message: string;
+  data: DatasetImage[];
+  pagination: PaginationState;
+};
+
+export type DatasetImageListParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  sortBy?: string;
+  order?: string;
+  createdFrom?: string;
+  createdTo?: string;
+};

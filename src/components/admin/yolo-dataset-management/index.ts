@@ -4,3 +4,6 @@ export { DatasetDetailView } from './DatasetDetailView';
 export { UpdateDatasetForm } from './UpdateDatasetForm';
 export { createDatasetColumns } from './datasetColumns';
 export type { DatasetColumnActions } from './datasetColumns';
+export { DatasetImagesTable } from './DatasetImagesTable';
+export { createDatasetImageColumns } from './datasetImageColumns';
+export type { DatasetImageColumnActions } from './datasetImageColumns';

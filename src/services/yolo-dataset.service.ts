@@ -10,6 +10,8 @@ import type {
   UpdateDatasetPayload,
   CreateDatasetResponse,
   UpdateDatasetResponse,
+  DatasetImageListResponse,
+  DatasetImageListParams,
 } from '@/types/yolo-dataset';
 
 const BASE_PATH = '/v1/yolo/datasets';
@@ -60,5 +62,13 @@ export const yoloDatasetService = {
   updateDatasetStatus: async (datasetId: string | number, status: DatasetStatus): Promise<DatasetDetail> => {
     const response = await api.patch<UpdateDatasetResponse>(`${BASE_PATH}/${datasetId}`, { status });
     return response.data.data;
+  },
+
+  /**
+   * Lấy danh sách ảnh trong dataset
+   */
+  getDatasetImages: async (datasetId: string | number, params?: DatasetImageListParams): Promise<DatasetImageListResponse> => {
+    const response = await api.get<DatasetImageListResponse>(`${BASE_PATH}/${datasetId}/images`, { params });
+    return response.data;
   },
 };
