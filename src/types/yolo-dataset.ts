@@ -72,6 +72,7 @@ export type DatasetImage = {
   id: string;
   filename: string;
   imagePath?: string;
+  imageUrl?: string;
   objectCount: number;
   status: DatasetImageStatus;
   uploadedByUser: {

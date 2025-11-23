@@ -6,11 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
 import { createDatasetImageColumns } from './datasetImageColumns';
+import { UploadImageForm } from './UploadImageForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { useServerTable } from '@/hooks/useServerTable';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import type { DatasetImage, DatasetImageListParams } from '@/types/yolo-dataset';
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export type DatasetImagesTableProps = {
@@ -21,6 +29,7 @@ export type DatasetImagesTableProps = {
 export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTableProps) {
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   // Use custom hook for table state and data fetching
   const {
@@ -92,6 +101,10 @@ export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTabl
     }
   };
 
+  const handleUploadSuccess = async () => {
+    await refresh();
+  };
+
   return (
     <div className="space-y-4">
       {/* Search and Action Bar */}
@@ -118,6 +131,13 @@ export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTabl
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
+        <Button 
+          onClick={() => setUploadDialogOpen(true)}
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Tải ảnh lên
+        </Button>
       </div>
 
       {/* Data Table */}
@@ -138,6 +158,23 @@ export function DatasetImagesTable({ datasetId, onViewImage }: DatasetImagesTabl
         pageSize={pagination.limit}
         onPaginationChange={handlePaginationChange}
       />
+
+      {/* Upload Image Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tải ảnh lên</DialogTitle>
+            <DialogDescription>
+              Tải ảnh lên dataset để bắt đầu gán nhãn
+            </DialogDescription>
+          </DialogHeader>
+          <UploadImageForm
+            datasetId={datasetId}
+            onSuccess={handleUploadSuccess}
+            onClose={() => setUploadDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

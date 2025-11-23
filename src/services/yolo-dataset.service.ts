@@ -71,4 +71,22 @@ export const yoloDatasetService = {
     const response = await api.get<DatasetImageListResponse>(`${BASE_PATH}/${datasetId}/images`, { params });
     return response.data;
   },
+
+  /**
+   * Tải ảnh lên dataset
+   */
+  uploadImage: async (datasetId: string | number, file: File, notes?: string): Promise<any> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    if (notes) {
+      formData.append('notes', notes);
+    }
+
+    const response = await api.post(`${BASE_PATH}/${datasetId}/images`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };

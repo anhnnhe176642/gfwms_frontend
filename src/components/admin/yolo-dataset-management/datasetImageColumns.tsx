@@ -28,14 +28,14 @@ export function createDatasetImageColumns(
 ): ColumnDef<DatasetImage>[] {
   return [
     {
-      accessorKey: 'imagePath',
+      accessorKey: 'imageUrl',
       header: ({ column }) => (
         <div className="font-medium">Ảnh xem trước</div>
       ),
       cell: ({ row }) => {
-        const imagePath = row.getValue('imagePath') as string | undefined;
-        
-        if (!imagePath) {
+        const imageUrl = row.getValue('imageUrl') as string | undefined;
+
+        if (!imageUrl) {
           return (
             <div className="flex items-center justify-center w-16 h-16 bg-muted rounded">
               <ImageOff className="h-4 w-4 text-muted-foreground" />
@@ -44,9 +44,9 @@ export function createDatasetImageColumns(
         }
 
         return (
-          <div className="relative w-16 h-16 rounded overflow-hidden bg-muted">
+          <div className="relative w-16 h-16 rounded overflow-hidden bg-muted shrink-0">
             <Image
-              src={imagePath}
+              src={imageUrl}
               alt="preview"
               fill
               className="object-cover"

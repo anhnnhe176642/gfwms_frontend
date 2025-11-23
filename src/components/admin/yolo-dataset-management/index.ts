@@ -7,3 +7,5 @@ export type { DatasetColumnActions } from './datasetColumns';
 export { DatasetImagesTable } from './DatasetImagesTable';
 export { createDatasetImageColumns } from './datasetImageColumns';
 export type { DatasetImageColumnActions } from './datasetImageColumns';
+export { UploadImageForm } from './UploadImageForm';
+export type { UploadImageFormProps } from './UploadImageForm';
