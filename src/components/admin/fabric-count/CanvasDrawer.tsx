@@ -209,13 +209,13 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
       const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
 
       if (distance <= radius) {
-        // Click vào vòng tròn → xóa
+        // Click vào vòng tròn -> xóa
         deleteDetection(i);
         return;
       }
     }
 
-    // Không click vào vòng tròn nào → thêm vật thể mới
+    // Không click vào vòng tròn nào -> thêm vật thể mới
     addDetection(x, y);
   };
 

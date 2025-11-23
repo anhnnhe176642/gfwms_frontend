@@ -408,7 +408,7 @@ export const useBoundingBox = ({
   }, [activeBox, isDrawing, boxes, multipleBoxes, saveToHistory]);
 
   /**
-   * Auto-save history khi hoàn thành kéo/move/resize (isDrawing hoặc isMoving từ true → false)
+   * Auto-save history khi hoàn thành kéo/move/resize (isDrawing hoặc isMoving từ true -> false)
    * Không lưu mỗi frame mà chỉ lưu khi hoàn thành action
    */
   const isInteractingRef = useRef(false);
@@ -417,7 +417,7 @@ export const useBoundingBox = ({
     const isCurrentlyInteracting = isDrawing || isMoving;
     const wasInteracting = isInteractingRef.current;
 
-    // Nếu vừa kết thúc interact (từ true → false), lưu history
+    // Nếu vừa kết thúc interact (từ true -> false), lưu history
     if (wasInteracting && !isCurrentlyInteracting && !isApplyingHistoryRef.current) {
       // Xóa các states phía sau historyIndex (khi user đã undo rồi thực hiện action mới)
       historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);

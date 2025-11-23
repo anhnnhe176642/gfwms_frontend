@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
  * Hook để quản lý navigation đơn giản
  * - Quay lại parent path (xóa segment cuối cùng)
  * Ví dụ:
- *   /a/b/c → back → /a/b → back → /a
+ *   /a/b/c -> back -> /a/b -> back -> /a
  */
 export const useNavigation = () => {
   const router = useRouter();
@@ -20,9 +20,9 @@ export const useNavigation = () => {
 
   /**
    * Tính toán parent path bằng cách xóa segment cuối cùng
-   * VD: /admin/warehouses/123/shelves/456 → /admin/warehouses/123/shelves
-   * VD: /admin/warehouses/123/shelves → /admin/warehouses/123
-   * VD: /admin/warehouses/123 → /admin/warehouses
+   * VD: /admin/warehouses/123/shelves/456 -> /admin/warehouses/123/shelves
+   * VD: /admin/warehouses/123/shelves -> /admin/warehouses/123
+   * VD: /admin/warehouses/123 -> /admin/warehouses
    */
   const getParentPath = useCallback((path: string): string => {
     const segments = path.split('/').filter(Boolean);

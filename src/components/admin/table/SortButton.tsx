@@ -12,7 +12,7 @@ type SortButtonProps<TData> = {
 
 /**
  * Reusable sort button component
- * Click to toggle between: asc → desc → asc → ...
+ * Click to toggle between: asc -> desc -> asc -> ...
  * Small X button appears when sorted to clear sorting
  */
 export function SortButton<TData>({
