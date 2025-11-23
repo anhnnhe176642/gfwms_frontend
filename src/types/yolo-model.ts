@@ -36,6 +36,7 @@ export interface YoloModelListItem {
   metadata: YoloModelMetadata;
   createdAt: string;
   updatedAt: string;
+  isDefault?: boolean;
 }
 
 export interface YoloModelListResponse {

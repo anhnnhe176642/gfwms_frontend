@@ -76,11 +76,34 @@ export function ModelManagementTable({ initialParams }: ModelManagementTableProp
   const handleActivateClick = async (modelId: number) => {
     setActionLoading(true);
     try {
-      await yoloModelService.activateModel(modelId);
-      toast.success('Kích hoạt model thành công');
+      // Check if it's the default model (id = 0)
+      if (modelId === 0) {
+        await yoloModelService.useDefaultModel();
+        toast.success('Sử dụng model mặc định thành công');
+      } else {
+        await yoloModelService.activateModel(modelId);
+        toast.success('Kích hoạt model thành công');
+      }
       await refresh();
     } catch (err) {
       const message = getServerErrorMessage(err) || 'Không thể kích hoạt model';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  /**
+   * Handle deactivate model (clear isActive from current active model)
+   */
+  const handleDeactivateClick = async (modelId: number) => {
+    setActionLoading(true);
+    try {
+      await yoloModelService.useDefaultModel();
+      toast.success('Chuyển sang model mặc định thành công');
+      await refresh();
+    } catch (err) {
+      const message = getServerErrorMessage(err) || 'Không thể hủy kích hoạt model';
       toast.error(message);
     } finally {
       setActionLoading(false);
@@ -136,6 +159,7 @@ export function ModelManagementTable({ initialParams }: ModelManagementTableProp
     onView: handleViewClick,
     onDelete: hasPermission(PERMISSIONS.YOLO.DELETE_MODEL.key) ? handleDeleteClick : undefined,
     onActivate: hasPermission(PERMISSIONS.YOLO.ACTIVATE_MODEL.key) ? handleActivateClick : undefined,
+    onDeactivate: hasPermission(PERMISSIONS.YOLO.ACTIVATE_MODEL.key) ? handleDeactivateClick : undefined,
   };
 
   const columns = createModelColumns(columnActions);

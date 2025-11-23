@@ -44,6 +44,7 @@ export type YoloModelColumnActions = {
   onView?: (modelId: number) => void;
   onDelete?: (modelId: number) => void;
   onActivate?: (modelId: number) => void;
+  onDeactivate?: (modelId: number) => void;
 };
 
 export const createModelColumns = (
@@ -141,41 +142,56 @@ export const createModelColumns = (
   {
     id: 'actions',
     header: 'Hành động',
-    cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Mở menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {actions.onView && (
-            <DropdownMenuItem onClick={() => actions.onView?.(row.original.id)}>
-              Xem chi tiết
-            </DropdownMenuItem>
-          )}
-          {!row.original.isActive && actions.onActivate && (
-            <DropdownMenuItem onClick={() => actions.onActivate?.(row.original.id)}>
-              Kích hoạt
-            </DropdownMenuItem>
-          )}
-          {actions.onDelete && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => actions.onDelete?.(row.original.id)}
-                className="text-destructive"
-              >
-                Xóa
+    cell: ({ row }) => {
+      const isDefault = row.original.isDefault;
+      const isActive = row.original.isActive;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Mở menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {!isDefault && actions.onView && (
+              <DropdownMenuItem onClick={() => actions.onView?.(row.original.id)}>
+                Xem chi tiết
               </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+            )}
+            {isDefault && actions.onActivate && (
+              <DropdownMenuItem onClick={() => actions.onActivate?.(row.original.id)}>
+                Kích hoạt Model mặc định
+              </DropdownMenuItem>
+            )}
+            {!isDefault && !isActive && actions.onActivate && (
+              <DropdownMenuItem onClick={() => actions.onActivate?.(row.original.id)}>
+                Kích hoạt
+              </DropdownMenuItem>
+            )}
+            {!isDefault && isActive && actions.onDeactivate && (
+              <DropdownMenuItem onClick={() => actions.onDeactivate?.(row.original.id)}>
+                Hủy kích hoạt
+              </DropdownMenuItem>
+            )}
+            {!isDefault && actions.onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => actions.onDelete?.(row.original.id)}
+                  className="text-destructive"
+                >
+                  Xóa
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
     enableHiding: false,
   },
 ];

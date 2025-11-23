@@ -269,74 +269,54 @@ export function ModelDetailView({ modelId }: ModelDetailViewProps) {
       {/* Main Information Card */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Thông tin cơ bản</CardTitle>
-          <CardDescription>Thông tin chính của mô hình</CardDescription>
+          <CardTitle className="text-lg">Thông tin cơ bản</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-4 gap-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">ID Model</p>
-              <p className="text-base font-semibold">{model.id}</p>
+              <p className="text-xs font-medium text-muted-foreground">ID</p>
+              <p className="text-sm font-semibold">{model.id}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Trạng thái</p>
-              <div className="mt-1 flex items-center gap-2">
+              <p className="text-xs font-medium text-muted-foreground">Phiên bản</p>
+              <p className="text-sm font-semibold">{model.version}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Trạng thái</p>
+              <div className="mt-1">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig.className}`}>
                   {statusConfig.label}
                 </span>
-                {model.isActive && <span className="text-xs text-green-600">• Đang dùng</span>}
               </div>
             </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Tên Model</p>
-            <p className="text-base font-semibold">{model.name}</p>
-          </div>
-
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Phiên bản</p>
-            <p className="text-base font-semibold">{model.version}</p>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">File</p>
+              <p className="text-sm font-mono text-muted-foreground truncate">{model.fileName}</p>
+            </div>
           </div>
 
           {model.description && (
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Mô tả</p>
-              <p className="text-base whitespace-pre-wrap">{model.description}</p>
+              <p className="text-xs font-medium text-muted-foreground">Mô tả</p>
+              <p className="text-sm line-clamp-2">{model.description}</p>
             </div>
           )}
-        </CardContent>
-      </Card>
 
-      {/* File Information Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Thông tin file</CardTitle>
-          <CardDescription>Thông tin về file mô hình</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Tên file</p>
-            <p className="text-sm font-mono break-all">{model.fileName}</p>
-          </div>
-
-          <Separator />
-
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Đường dẫn</p>
-            <p className="text-sm font-mono break-all text-muted-foreground">{model.filePath}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Loại MIME</p>
-              <p className="text-sm">{model.metadata.mimetype}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Tên file gốc</p>
-              <p className="text-sm">{model.metadata.originalName}</p>
+          <div className="border-t pt-3 mt-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Lịch sử</p>
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                <p className="text-muted-foreground">Tạo</p>
+                <p className="font-medium">{new Date(model.createdAt).toLocaleDateString('vi-VN')}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Cập nhật</p>
+                <p className="font-medium">{new Date(model.updatedAt).toLocaleDateString('vi-VN')}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Tải lên</p>
+                <p className="font-medium">{new Date(model.metadata.uploadedAt).toLocaleDateString('vi-VN')}</p>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -374,30 +354,6 @@ export function ModelDetailView({ modelId }: ModelDetailViewProps) {
           </CardContent>
         </Card>
       )}
-
-      {/* Timeline Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Lịch sử</CardTitle>
-          <CardDescription>Thời gian tạo và cập nhật</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Ngày tạo</span>
-            <span>{new Date(model.createdAt).toLocaleString('vi-VN')}</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Cập nhật lần cuối</span>
-            <span>{new Date(model.updatedAt).toLocaleString('vi-VN')}</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Tải lên</span>
-            <span>{new Date(model.metadata.uploadedAt).toLocaleString('vi-VN')}</span>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Detection Logs Table */}
       <DetectionLogsTable
