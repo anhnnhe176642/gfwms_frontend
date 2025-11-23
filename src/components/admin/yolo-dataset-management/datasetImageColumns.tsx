@@ -92,25 +92,6 @@ export function createDatasetImageColumns(
       },
     },
     {
-      accessorKey: 'status',
-      header: ({ column }) => (
-        <CheckboxFilterHeader column={column} title="Trạng thái" options={IMAGE_STATUS_OPTIONS} />
-      ),
-      cell: ({ row }) => {
-        const status = row.getValue('status') as DatasetImage['status'];
-        return (
-          <Badge value={status} config={IMAGE_STATUS_CONFIG} />
-        );
-      },
-      filterFn: (row, id, value) => {
-        if (!value || value.length === 0) return true;
-        return value.includes(row.getValue(id));
-      },
-      meta: {
-        title: 'Trạng thái',
-      },
-    },
-    {
       accessorKey: 'objectCount',
       header: ({ column }) => (
         <div className="flex items-center gap-1">
@@ -145,6 +126,25 @@ export function createDatasetImageColumns(
       },
       meta: {
         title: 'Ghi chú',
+      },
+    },
+    {
+      accessorKey: 'status',
+      header: ({ column }) => (
+        <CheckboxFilterHeader column={column} title="Trạng thái" options={IMAGE_STATUS_OPTIONS} />
+      ),
+      cell: ({ row }) => {
+        const status = row.getValue('status') as DatasetImage['status'];
+        return (
+          <Badge value={status} config={IMAGE_STATUS_CONFIG} />
+        );
+      },
+      filterFn: (row, id, value) => {
+        if (!value || value.length === 0) return true;
+        return value.includes(row.getValue(id));
+      },
+      meta: {
+        title: 'Trạng thái',
       },
     },
     {
