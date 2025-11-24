@@ -220,6 +220,27 @@ export const FabricCountImageCropper: React.FC<FabricCountImageCropperProps> = (
     clearBoxes();
   };
 
+  // Reset cursor khi tắt chế độ cắt
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (!cropMode) {
+      // Khi tắt chế độ cắt, set cursor về default
+      canvas.style.cursor = 'default';
+
+      // Thêm listener để ngăn hook thay đổi cursor
+      const handleMouseMove = (e: MouseEvent) => {
+        canvas.style.cursor = 'default';
+      };
+
+      canvas.addEventListener('mousemove', handleMouseMove);
+      return () => {
+        canvas.removeEventListener('mousemove', handleMouseMove);
+      };
+    }
+  }, [cropMode]);
+
   const handleSkipCrop = async () => {
     if (!originalImage) return;
 
@@ -266,7 +287,9 @@ export const FabricCountImageCropper: React.FC<FabricCountImageCropperProps> = (
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            className="max-w-full h-auto border-2 border-dashed border-primary rounded-md cursor-crosshair"
+            className={`max-w-full h-auto border-2 border-dashed border-primary rounded-md ${
+              cropMode ? 'cursor-crosshair' : 'cursor-default'
+            }`}
           />
         </div>
 
