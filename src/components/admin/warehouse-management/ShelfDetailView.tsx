@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { warehouseService } from '@/services/warehouse.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
-import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Edit, Camera } from 'lucide-react';
 import { useNavigation } from '@/hooks/useNavigation';
 import type { ShelfDetail, WarehouseListItem } from '@/types/warehouse';
 import { FabricShelfCard } from '@/components/admin/warehouse-management/FabricShelfCard';
 import { EditShelfForm } from '@/components/admin/warehouse-management/EditShelfForm';
+import { FabricCountModal } from '@/components/admin/warehouse-management/FabricCountModal';
 
 export interface ShelfDetailViewProps {
   shelfId: string | number;
@@ -28,6 +29,7 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
   const [warehouse, setWarehouse] = useState<WarehouseListItem | null>(null);
   const [error, setError] = useState('');
   const [editShelfOpen, setEditShelfOpen] = useState(false);
+  const [fabricCountOpen, setFabricCountOpen] = useState(false);
 
   // Fetch shelf data
   useEffect(() => {
@@ -65,6 +67,10 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
     } else if (shelf) {
       setEditShelfOpen(true);
     }
+  };
+
+  const handleCheckQuantity = () => {
+    setFabricCountOpen(true);
   };
 
   if (isLoading) {
@@ -121,6 +127,15 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
               <CardDescription className="text-xs">Thông tin chính của kệ hàng</CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleCheckQuantity}
+                size="sm"
+                className="gap-2"
+              >
+                <Camera className="h-4 w-4" />
+                Kiểm số lượng
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleGoBack}
@@ -210,29 +225,38 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
 
       {/* Edit Shelf Form Dialog */}
       {shelf && warehouseId && (
-        <EditShelfForm
-          shelf={shelf}
-          warehouseId={Number(warehouseId)}
-          open={editShelfOpen}
-          onOpenChange={setEditShelfOpen}
-          onSuccess={() => {
-            setEditShelfOpen(false);
-            // Reload shelf data without full page reload
-            const fetchShelf = async () => {
-              try {
-                const data = await warehouseService.getShelfById(shelfId);
-                setShelf(data);
-              } catch (err) {
-                const message = getServerErrorMessage(err) || 'Không thể tải lại dữ liệu kệ';
-                toast.error(message);
-              }
-            };
-            fetchShelf();
-          }}
-        />
+        <>
+          <EditShelfForm
+            shelf={shelf}
+            warehouseId={Number(warehouseId)}
+            open={editShelfOpen}
+            onOpenChange={setEditShelfOpen}
+            onSuccess={() => {
+              setEditShelfOpen(false);
+              // Reload shelf data without full page reload
+              const fetchShelf = async () => {
+                try {
+                  const data = await warehouseService.getShelfById(shelfId);
+                  setShelf(data);
+                } catch (err) {
+                  const message = getServerErrorMessage(err) || 'Không thể tải lại dữ liệu kệ';
+                  toast.error(message);
+                }
+              };
+              fetchShelf();
+            }}
+          />
+
+          {/* Fabric Count Modal */}
+          <FabricCountModal
+            isOpen={fabricCountOpen}
+            onClose={() => setFabricCountOpen(false)}
+            currentQuantity={shelf.currentQuantity}
+            maxQuantity={shelf.maxQuantity}
+            shelfCode={shelf.code}
+          />
+        </>
       )}
     </div>
   );
 }
-
-export default ShelfDetailView;

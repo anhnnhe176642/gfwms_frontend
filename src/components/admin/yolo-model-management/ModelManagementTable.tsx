@@ -220,7 +220,7 @@ export function ModelManagementTable({ initialParams }: ModelManagementTableProp
       {/* Info bar */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Tổng: <span className="font-medium">{pagination.total}</span> model
+          Tổng: <span className="font-medium">{pagination.total+1}</span> model
         </p>
       </div>
 
