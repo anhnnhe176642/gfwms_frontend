@@ -19,6 +19,7 @@ import { CanvasDrawer } from '@/components/admin/fabric-count/CanvasDrawer';
 import { ImageCropper } from '@/components/admin/fabric-count/ImageCropper';
 import { ConfidenceFilter } from '@/components/admin/fabric-count/ConfidenceFilter';
 import { CameraCapture } from '@/components/admin/fabric-count/CameraCapture';
+import { SubmitDatasetModal } from '@/components/admin/fabric-count/SubmitDatasetModal';
 
 export const FabricCountForm: React.FC = () => {
   const [formData, setFormData] = useState<Partial<YoloDetectFormData>>({
@@ -37,6 +38,7 @@ export const FabricCountForm: React.FC = () => {
   const [tempImageSrc, setTempImageSrc] = useState<string>('');
   const [confidenceThreshold, setConfidenceThreshold] = useState<number>(0.5);
   const [showCameraCapture, setShowCameraCapture] = useState(false);
+  const [showSubmitDatasetModal, setShowSubmitDatasetModal] = useState(false);
 
   // Lọc detections dựa trên confidence threshold
   const filteredDetections = React.useMemo(() => {
@@ -189,6 +191,24 @@ export const FabricCountForm: React.FC = () => {
         onCapture={handleCameraCapture}
       />
 
+      {/* Submit Dataset Modal */}
+      <SubmitDatasetModal
+        isOpen={showSubmitDatasetModal}
+        onClose={() => setShowSubmitDatasetModal(false)}
+        imageFile={formData.image as File | null}
+        detections={editedDetections || detectionResult?.data.detections || []}
+        imageInfo={
+          detectionResult?.data.image_info || { width: 0, height: 0 }
+        }
+        onSuccess={() => {
+          // Reset form after successful submission
+          setFormData({ image: undefined, confidence: 0.5 });
+          setPreview('');
+          setDetectionResult(null);
+          setEditedDetections(null);
+        }}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Đếm vải</CardTitle>
@@ -266,6 +286,14 @@ export const FabricCountForm: React.FC = () => {
                     />
                   }
                 />
+
+                {/* Submit to Dataset Button */}
+                <Button
+                  onClick={() => setShowSubmitDatasetModal(true)}
+                  className="w-full"
+                >
+                  Gửi vào Dataset để cải thiện
+                </Button>
               </div>
             )}
           </div>
