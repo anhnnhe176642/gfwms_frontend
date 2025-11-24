@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useCallback, useState, useEffect } from 'react';
+import React, { memo, useCallback, useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,7 +19,7 @@ export interface BoxItemProps {
 
 /**
  * Memoized component cho từng box item
- * Chỉ re-render khi props của chính nó thay đổi, không bị ảnh hưởng từ activeBox change
+ * Deep comparison dựa trên box properties để tránh re-render không cần thiết
  */
 const BoxItem = memo<BoxItemProps>(({
   box,
@@ -31,15 +31,13 @@ const BoxItem = memo<BoxItemProps>(({
   onChangeBoxLabel,
   getColorForClass,
 }) => {
-  const [selectedLabel, setSelectedLabel] = useState(box.label || classes[0]);
+  // Memoize box color
+  const boxColor = useMemo(() => 
+    box.label ? getColorForClass(box.label) : '#4ECDC4',
+    [box.label, getColorForClass]
+  );
   
-  // Sync internal state khi box.label thay đổi
-  useEffect(() => {
-    setSelectedLabel(box.label || classes[0]);
-  }, [box.label, classes]);
-  
-  const boxColor = box.label ? getColorForClass(box.label) : '#4ECDC4';
-  
+  // Memoize handlers - chỉ update khi box.id thay đổi
   const handleSelect = useCallback(() => {
     onSelectBox(box);
   }, [box, onSelectBox]);
@@ -50,9 +48,16 @@ const BoxItem = memo<BoxItemProps>(({
   }, [box.id, onDeleteBox]);
 
   const handleLabelChange = useCallback((value: string) => {
-    setSelectedLabel(value);
     onChangeBoxLabel(box.id!, value);
   }, [box.id, onChangeBoxLabel]);
+
+  // Memoize dimensions để tránh recalculate
+  const dimensions = useMemo(() => ({
+    width: Math.round(Math.abs(box.endX - box.startX)),
+    height: Math.round(Math.abs(box.endY - box.startY)),
+    x: Math.round(Math.min(box.startX, box.endX)),
+    y: Math.round(Math.min(box.startY, box.endY)),
+  }), [box.startX, box.endX, box.startY, box.endY]);
 
   return (
     <div
@@ -82,8 +87,7 @@ const BoxItem = memo<BoxItemProps>(({
       </div>
 
       <Select
-        key={`select-${box.id}-${box.label}`}
-        value={selectedLabel}
+        value={box.label || classes[0] || ''}
         onValueChange={handleLabelChange}
       >
         <SelectTrigger className="h-7 text-xs bg-background border-border/50">
@@ -108,17 +112,29 @@ const BoxItem = memo<BoxItemProps>(({
         <div className="flex justify-between">
           <span>Size:</span>
           <span className="font-mono text-foreground">
-            {Math.round(Math.abs(box.endX - box.startX))} × {Math.round(Math.abs(box.endY - box.startY))}
+            {dimensions.width} × {dimensions.height}
           </span>
         </div>
         <div className="flex justify-between">
           <span>Pos:</span>
           <span className="font-mono text-foreground">
-            ({Math.round(Math.min(box.startX, box.endX))}, {Math.round(Math.min(box.startY, box.endY))})
+            ({dimensions.x}, {dimensions.y})
           </span>
         </div>
       </div>
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison: re-render chỉ khi có thay đổi thực tế
+  return (
+    prevProps.box.id === nextProps.box.id &&
+    prevProps.box.startX === nextProps.box.startX &&
+    prevProps.box.startY === nextProps.box.startY &&
+    prevProps.box.endX === nextProps.box.endX &&
+    prevProps.box.endY === nextProps.box.endY &&
+    prevProps.box.label === nextProps.box.label &&
+    prevProps.isActive === nextProps.isActive &&
+    prevProps.index === nextProps.index
   );
 });
 
@@ -135,6 +151,88 @@ export interface BoxesListProps {
 }
 
 /**
+ * Optimized list renderer - renders items in chunks
+ * Prevents rendering 200+ items at once by using a virtual scroll approach
+ */
+const VirtualizedBoxesList = memo<BoxesListProps>(({
+  boxes,
+  activeBox,
+  classes,
+  onSelectBox,
+  onDeleteBox,
+  onChangeBoxLabel,
+  getColorForClass,
+}) => {
+  const [visibleRange, setVisibleRange] = useState({ start: 0, end: 20 });
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const ITEM_HEIGHT = 145; // Approximate height of each box item
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const scrollTop = container.scrollTop;
+    const containerHeight = container.clientHeight;
+    
+    const start = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - 2); // Buffer 2 items
+    const end = Math.min(boxes.length, Math.ceil((scrollTop + containerHeight) / ITEM_HEIGHT) + 2);
+    
+    setVisibleRange({ start, end });
+  }, [boxes.length]);
+
+  // Memoize visible boxes
+  const visibleBoxes = useMemo(
+    () => boxes.slice(visibleRange.start, visibleRange.end),
+    [boxes, visibleRange]
+  );
+
+  // Memoize offset styles
+  const offsetStyle = useMemo(() => ({
+    paddingTop: visibleRange.start * ITEM_HEIGHT,
+  }), [visibleRange.start]);
+
+  return (
+    <div className="flex flex-col bg-muted/20 rounded-md p-4 overflow-hidden h-full">
+      <div className="mb-3">
+        <Label className="text-sm font-semibold">Danh sách boxes ({boxes.length}):</Label>
+      </div>
+
+      {boxes.length > 0 ? (
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto"
+          onScroll={handleScroll}
+        >
+          <div className="space-y-2" style={offsetStyle}>
+            {visibleBoxes.map((box, index) => (
+              <BoxItem
+                key={box.id}
+                box={box}
+                index={visibleRange.start + index}
+                isActive={activeBox?.id === box.id}
+                classes={classes}
+                onSelectBox={onSelectBox}
+                onDeleteBox={onDeleteBox}
+                onChangeBoxLabel={onChangeBoxLabel}
+                getColorForClass={getColorForClass}
+              />
+            ))}
+          </div>
+          {/* Spacer to maintain scroll height */}
+          <div style={{ height: Math.max(0, (boxes.length - visibleRange.end) * ITEM_HEIGHT) }} />
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-muted-foreground text-xs">Chưa có boxes</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+VirtualizedBoxesList.displayName = 'VirtualizedBoxesList';
+
+/**
  * Memoized component để render danh sách boxes
  * Tách từng box thành component riêng để tránh re-render toàn bộ khi activeBox thay đổi
  */
@@ -147,6 +245,21 @@ export const BoxesList = memo<BoxesListProps>(({
   onChangeBoxLabel,
   getColorForClass,
 }) => {
+  // Use virtualized list cho > 50 items, regular list cho <= 50 items
+  if (boxes.length > 50) {
+    return (
+      <VirtualizedBoxesList
+        boxes={boxes}
+        activeBox={activeBox}
+        classes={classes}
+        onSelectBox={onSelectBox}
+        onDeleteBox={onDeleteBox}
+        onChangeBoxLabel={onChangeBoxLabel}
+        getColorForClass={getColorForClass}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col bg-muted/20 rounded-md p-4 overflow-hidden h-full">
       <div className="mb-3">
@@ -179,12 +292,28 @@ export const BoxesList = memo<BoxesListProps>(({
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Chỉ re-render BoxesList nếu boxes array thay đổi
-  // Bỏ qua activeBox để từng BoxItem handle riêng
-  return (
-    prevProps.boxes.length === nextProps.boxes.length &&
-    prevProps.boxes.every((box, i) => box.id === nextProps.boxes[i]?.id)
-  );
+  // Only re-render if boxes structure or activeBox changes significantly
+  // This prevents unnecessary re-renders when only activeBox changes
+  if (prevProps.boxes.length !== nextProps.boxes.length) return false;
+  if (prevProps.activeBox?.id !== nextProps.activeBox?.id) return false;
+  
+  // Check if any box data changed
+  for (let i = 0; i < prevProps.boxes.length; i++) {
+    const prev = prevProps.boxes[i];
+    const next = nextProps.boxes[i];
+    if (
+      prev.id !== next.id ||
+      prev.label !== next.label ||
+      prev.startX !== next.startX ||
+      prev.startY !== next.startY ||
+      prev.endX !== next.endX ||
+      prev.endY !== next.endY
+    ) {
+      return false;
+    }
+  }
+  
+  return true;
 });
 
 BoxesList.displayName = 'BoxesList';

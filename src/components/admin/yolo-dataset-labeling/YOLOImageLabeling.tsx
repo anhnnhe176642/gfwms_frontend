@@ -621,14 +621,14 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     toast.success(`Đã lưu ${labels.length} labels`);
   };
 
-  const handleDeleteBox = (boxId: string) => {
+  const handleDeleteBox = useCallback((boxId: string) => {
     removeBox(boxId);
     toast.success('Đã xóa box');
-  };
+  }, [removeBox]);
 
-  const handleChangeBoxLabel = (boxId: string, newLabel: string) => {
+  const handleChangeBoxLabel = useCallback((boxId: string, newLabel: string) => {
     updateBox(boxId, { label: newLabel });
-  };
+  }, [updateBox]);
 
   const handleSaveDraft = async () => {
     if (!originalImage) return;
