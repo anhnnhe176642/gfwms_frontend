@@ -247,7 +247,7 @@ export default function TrainingPage({
                   </li>
                   <li className="flex gap-3">
                     <span className="font-semibold text-primary min-w-6">2.</span>
-                    <span>Nhấn nút "Sao chép" để sao chép đường dẫn tải xuống</span>
+                    <span>Nhấn nút "Sao chép" để sao chép token</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="font-semibold text-primary min-w-6">3.</span>
@@ -270,7 +270,7 @@ export default function TrainingPage({
                     </li>
                     <li className="flex gap-3">
                       <span className="font-semibold text-primary min-w-6">3.</span>
-                      <span>Dán đường dẫn vào thẻ <strong>URL</strong> → ấn <strong>"Bắt đầu huấn luyện"</strong></span>
+                      <span>Dán token vào thẻ <strong>TOKEN URL</strong> → ấn <strong>"Bắt đầu huấn luyện"</strong></span>
                     </li>
                   </ol>
                 </div>
