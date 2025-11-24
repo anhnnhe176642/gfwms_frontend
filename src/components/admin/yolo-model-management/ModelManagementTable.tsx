@@ -16,13 +16,14 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { createModelColumns, type YoloModelColumnActions } from './modelColumns';
+import { ModelUploadDialog } from './ModelUploadDialog';
 import { yoloModelService } from '@/services/yolo-model.service';
 import { useServerTable } from '@/hooks/useServerTable';
 import { useAuth } from '@/hooks/useAuth';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { PERMISSIONS } from '@/constants/permissions';
 import type { YoloModelListItem, YoloModelListParams } from '@/types/yolo-model';
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, Upload as UploadIcon } from 'lucide-react';
 
 export type ModelManagementTableProps = {
   initialParams?: YoloModelListParams;
@@ -34,6 +35,7 @@ export function ModelManagementTable({ initialParams }: ModelManagementTableProp
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [modelToDelete, setModelToDelete] = useState<number | null>(null);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
@@ -207,6 +209,12 @@ export function ModelManagementTable({ initialParams }: ModelManagementTableProp
           <Search className="h-4 w-4 mr-2" />
           Tìm kiếm
         </Button>
+        {hasPermission(PERMISSIONS.YOLO.UPLOAD_MODEL?.key || 'YOLO_UPLOAD_MODEL') && (
+          <Button onClick={() => setUploadDialogOpen(true)} variant="default">
+            <UploadIcon className="h-4 w-4 mr-2" />
+            Tải lên Model
+          </Button>
+        )}
       </div>
 
       {/* Info bar */}
@@ -262,6 +270,13 @@ export function ModelManagementTable({ initialParams }: ModelManagementTableProp
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Model upload dialog */}
+      <ModelUploadDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onSuccess={() => refresh()}
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import type {
   YoloDetectionLogsResponse,
   YoloDetectionLogsParams,
   YoloModelStatsResponse,
+  YoloModelListItem,
 } from '@/types/yolo-model';
 
 const BASE_PATH = '/v1/yolo/models';
@@ -127,6 +128,33 @@ export const yoloModelService = {
    */
   getDetectionLogs: async (modelId: number, params?: YoloDetectionLogsParams): Promise<YoloDetectionLogsResponse> => {
     const response = await api.get<YoloDetectionLogsResponse>(`${BASE_PATH}/${modelId}/logs`, { params });
+    return response.data;
+  },
+
+  /**
+   * Upload YOLO model file (.pt)
+   */
+  uploadModel: async (
+    file: File,
+    name?: string,
+    description?: string,
+    version?: string
+  ): Promise<{ success: boolean; message: string; data: YoloModelListItem }> => {
+    const formData = new FormData();
+    formData.append('model', file);
+    if (name) formData.append('name', name);
+    if (description) formData.append('description', description);
+    if (version) formData.append('version', version);
+
+    const response = await api.post<{
+      success: boolean;
+      message: string;
+      data: YoloModelListItem;
+    }>(`${BASE_PATH}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 };
