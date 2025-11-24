@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { useBoundingBox } from '@/hooks/useBoundingBox';
 import { drawBoundingBox, drawDimOverlay } from '@/lib/canvasHelpers';
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, Scissors } from 'lucide-react';
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -26,6 +26,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   const [scale, setScale] = useState(1);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
+  const [cropMode, setCropMode] = useState(false);
 
   const MAX_DISPLAY_WIDTH = 800;
   const MAX_DISPLAY_HEIGHT = 600;
@@ -42,7 +43,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     clearBoxes,
   } = useBoundingBox({
     canvasRef,
-    enabled: imageLoaded,
+    enabled: imageLoaded && cropMode,
     multipleBoxes: false, // Chỉ cho phép 1 crop box
     edgeThreshold: 15, // Tăng vùng resize để dễ kéo cạnh
     zoomLevel: scaleRef.current, // Dùng ref để hook luôn có scale chính xác
@@ -258,7 +259,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
       <CardHeader>
         <CardTitle>Cắt ảnh</CardTitle>
         <CardDescription>
-          Khoanh vùng ảnh để chọn phần cần gửi. Kéo chuột để vẽ hộp cắt.
+          {cropMode ? 'Khoanh vùng ảnh để chọn phần cần gửi. Kéo chuột để vẽ hộp cắt.' : 'Chế độ cắt được tắt. Nhấn "Gửi" để gửi ảnh gốc.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -275,7 +276,15 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
         <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md flex gap-2 items-start">
           <Lightbulb className="w-5 h-5 shrink-0 mt-0.5" />
           <div>
-            <strong>Hướng dẫn:</strong> Kéo chuột để vẽ hộp cắt. Sau khi vẽ xong, kéo các cạnh/góc để điều chỉnh kích thước hoặc kéo bên trong hộp để di chuyển.
+            {cropMode ? (
+              <>
+                <strong>Hướng dẫn:</strong> Kéo chuột để vẽ hộp cắt. Sau khi vẽ xong, kéo các cạnh/góc để điều chỉnh kích thước hoặc kéo bên trong hộp để di chuyển.
+              </>
+            ) : (
+              <>
+                <strong>Chế độ cắt đã tắt:</strong> Ảnh sẽ được gửi nguyên gốc mà không cắt.
+              </>
+            )}
           </div>
         </div>
 
@@ -283,21 +292,21 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
           <Button variant="outline" onClick={onCancel}>
             Hủy
           </Button>
-          {cropBox && (
-            <Button variant="outline" onClick={handleReset}>
-              ↻ Chọn lại
-            </Button>
-          )}
-          {onSkipCrop && (
-            <Button variant="outline" onClick={handleSkipCrop}>
-              ➜ Gửi không cắt
-            </Button>
-          )}
-          <Button
-            onClick={handleCrop}
-            disabled={!cropBox || cropBox.startX === cropBox.endX || cropBox.startY === cropBox.endY}
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setCropMode(!cropMode);
+              clearBoxes();
+            }}
           >
-            ✓ Xác nhận cắt
+            <Scissors className="w-4 h-4 mr-2" />
+            {cropMode ? 'Tắt cắt' : 'Bật cắt'}
+          </Button>
+          <Button
+            onClick={cropMode ? handleCrop : handleSkipCrop}
+            disabled={cropMode && (!cropBox || cropBox.startX === cropBox.endX || cropBox.startY === cropBox.endY)}
+          >
+            Gửi
           </Button>
         </div>
       </CardContent>

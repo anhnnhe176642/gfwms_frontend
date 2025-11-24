@@ -444,14 +444,14 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     if (imageLoaded && baseScaleReady) {
       drawCanvas();
     }
-  }, [imageLoaded, baseScaleReady, baseScale, zoomLevel, containerSize]);
+  }, [imageLoaded, baseScaleReady, baseScale, zoomLevel, containerSize, showLabelsOnCanvas]);
 
   // Redraw canvas when boxes or activeBox change
   useEffect(() => {
     if (imageLoaded && originalImage) {
       drawCanvas();
     }
-  }, [boxes, activeBox, imageLoaded, originalImage]);
+  }, [boxes, activeBox, imageLoaded, originalImage, showLabelsOnCanvas]);
 
   useEffect(() => {
     if (activeBox && !activeBox.label && selectedClass) {
