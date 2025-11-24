@@ -276,7 +276,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     //  Pattern 2: Batch draw all boxes
     ctx.save();
 
-    renderedBoxes.forEach((box: any) => {
+    renderedBoxes.forEach((box: any, boxIndex: number) => {
       const isActive = box.id === activeBox?.id;
       const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
 
@@ -294,11 +294,12 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       ctx.lineWidth = isActive ? 3 : 2;
       ctx.strokeRect(x1, y1, width, height);
 
-      // Label
+      // Label with index
       if (box.label && showLabelsOnCanvas) {
         ctx.fillStyle = color;
         ctx.font = 'bold 14px Arial';
-        const labelMetrics = ctx.measureText(box.label);
+        const indexLabel = `#${boxIndex + 1} ${box.label}`;
+        const labelMetrics = ctx.measureText(indexLabel);
         const labelPadding = 6;
         const labelHeight = 20;
 
@@ -310,7 +311,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         );
 
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillText(box.label, x1 + labelPadding, y1 - labelPadding - 2);
+        ctx.fillText(indexLabel, x1 + labelPadding, y1 - labelPadding - 2);
       }
 
       // Handles (only for active box)
