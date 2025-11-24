@@ -231,6 +231,31 @@ export const ROUTES = {
       },
     },
 
+    // Store Management
+    STORES: {
+      LIST: {
+        path: '/admin/stores',
+        name: 'Quản lý cửa hàng',
+        description: 'Danh sách cửa hàng',
+        requiredPermission: PERMISSIONS.STORES.VIEW_LIST.key,
+      },
+      DETAIL: {
+        path: '/admin/stores/:id',
+        name: 'Chi tiết cửa hàng',
+        requiredPermission: PERMISSIONS.STORES.VIEW_DETAIL.key,
+      },
+      CREATE: {
+        path: '/admin/stores/create',
+        name: 'Tạo cửa hàng mới',
+        requiredPermission: PERMISSIONS.STORES.CREATE.key,
+      },
+      EDIT: {
+        path: '/admin/stores/:id/edit',
+        name: 'Chỉnh sửa cửa hàng',
+        requiredPermission: PERMISSIONS.STORES.UPDATE.key,
+      },
+    },
+
     // Warehouse Management
     WAREHOUSES: {
       LIST: {

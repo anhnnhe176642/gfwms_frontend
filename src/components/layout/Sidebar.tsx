@@ -166,6 +166,12 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
+      label: 'Quản lý cửa hàng',
+      href: ROUTES.ADMIN.STORES.LIST.path,
+      icon: Package,
+      requiredPermission: PERMISSIONS.STORES.VIEW_LIST.key,
+    },
+    {
       label: 'Đăng ký tín dụng',
       href: ROUTES.ADMIN.CREDITS.LIST.path,
       icon: CreditCard,

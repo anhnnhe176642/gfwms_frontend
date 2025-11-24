@@ -48,6 +48,20 @@ export const warehouseService = {
   },
 
   /**
+   * Lấy danh sách warehouse cho infinite scroll (transform response)
+   */
+  getWarehousesForInfiniteScroll: async (params?: WarehouseListParams): Promise<{ data: WarehouseListItem[]; pagination: { hasNext: boolean } }> => {
+    const response = await api.get<WarehouseListResponse>(BASE_PATH, { params });
+    const apiData = response.data;
+    return {
+      data: apiData.data,
+      pagination: {
+        hasNext: apiData.pagination.hasNext ?? false,
+      },
+    };
+  },
+
+  /**
    * Lấy thông tin chi tiết một warehouse
    */
   getWarehouseById: async (id: string | number): Promise<WarehouseListItem> => {
