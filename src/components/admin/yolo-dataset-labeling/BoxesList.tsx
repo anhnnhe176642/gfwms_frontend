@@ -6,6 +6,42 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BoundingBox } from '@/hooks/useBoundingBox';
 
+const ITEM_HEIGHT = 145; // Height of each box item
+
+/**
+ * Helper function to auto-scroll container to show active box
+ */
+const scrollToActiveBox = (
+  scrollContainer: HTMLDivElement | null,
+  activeBox: BoundingBox | null,
+  boxes: BoundingBox[]
+) => {
+  if (!activeBox || !scrollContainer) return;
+
+  const activeIndex = boxes.findIndex((b) => b.id === activeBox.id);
+  if (activeIndex === -1) return;
+
+  const scrollTop = scrollContainer.scrollTop;
+  const containerHeight = scrollContainer.clientHeight;
+  const itemTop = activeIndex * ITEM_HEIGHT;
+  const itemBottom = itemTop + ITEM_HEIGHT;
+
+  // Scroll up if item is above visible area
+  if (itemTop < scrollTop) {
+    scrollContainer.scrollTo({
+      top: itemTop,
+      behavior: 'smooth',
+    });
+  }
+  // Scroll down if item is below visible area
+  else if (itemBottom > scrollTop + containerHeight) {
+    scrollContainer.scrollTo({
+      top: itemBottom - containerHeight,
+      behavior: 'smooth',
+    });
+  }
+};
+
 export interface BoxItemProps {
   box: BoundingBox;
   index: number;
@@ -165,7 +201,6 @@ const VirtualizedBoxesList = memo<BoxesListProps>(({
 }) => {
   const [visibleRange, setVisibleRange] = useState({ start: 0, end: 20 });
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const ITEM_HEIGHT = 145; // Approximate height of each box item
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
@@ -177,6 +212,11 @@ const VirtualizedBoxesList = memo<BoxesListProps>(({
     
     setVisibleRange({ start, end });
   }, [boxes.length]);
+
+  // Auto-scroll to active box
+  useEffect(() => {
+    scrollToActiveBox(scrollContainerRef.current, activeBox, boxes);
+  }, [activeBox, boxes]);
 
   // Memoize visible boxes
   const visibleBoxes = useMemo(
@@ -245,6 +285,13 @@ export const BoxesList = memo<BoxesListProps>(({
   onChangeBoxLabel,
   getColorForClass,
 }) => {
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to active box
+  useEffect(() => {
+    scrollToActiveBox(scrollContainerRef.current, activeBox, boxes);
+  }, [activeBox, boxes]);
+
   // Use virtualized list cho > 50 items, regular list cho <= 50 items
   if (boxes.length > 50) {
     return (
@@ -267,7 +314,7 @@ export const BoxesList = memo<BoxesListProps>(({
       </div>
 
       {boxes.length > 0 ? (
-        <div className="flex-1 overflow-y-auto space-y-2">
+        <div className="flex-1 overflow-y-auto space-y-2" ref={scrollContainerRef}>
           {boxes.map((box, index) => (
             <BoxItem
               key={box.id}
