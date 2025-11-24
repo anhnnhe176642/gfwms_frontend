@@ -3,6 +3,7 @@ import type { PaginationState } from './common';
 export type FabricColorListItem = {
   id: string;
   name: string;
+  hexCode?: string;
   createdAt: string;
   updatedAt: string;
 };
