@@ -266,18 +266,16 @@ export const useBoundingBox = ({
         }
       }
 
-      // Vẽ box mới (chỉ nếu multipleBoxes=true hoặc chưa có box nào)
-      if (multipleBoxes || boxes.length === 0) {
-        const newBox: BoundingBox = {
-          startX: x,
-          startY: y,
-          endX: x,
-          endY: y,
-          id: `box-${Date.now()}`,
-        };
-        setActiveBox(newBox);
-        setIsDrawing(true);
-      }
+      // Vẽ box mới - luôn cho phép nếu click ngoài box hiện tại
+      const newBox: BoundingBox = {
+        startX: x,
+        startY: y,
+        endX: x,
+        endY: y,
+        id: `box-${Date.now()}`,
+      };
+      setActiveBox(newBox);
+      setIsDrawing(true);
     },
     [
       canvasRef,
