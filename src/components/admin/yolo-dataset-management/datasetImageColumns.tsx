@@ -62,6 +62,7 @@ export function createDatasetImageColumns(
               fill
               className="object-cover"
               sizes="64px"
+              loading="lazy"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
