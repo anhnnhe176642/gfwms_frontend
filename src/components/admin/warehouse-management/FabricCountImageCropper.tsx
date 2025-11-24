@@ -320,7 +320,7 @@ export const FabricCountImageCropper: React.FC<FabricCountImageCropperProps> = (
             }}
           >
             <Scissors className="w-4 h-4 mr-2" />
-            {cropMode ? 'Tắt cắt' : 'Bật cắt'}
+            {cropMode ? 'Huỷ cắt' : 'Cắt ảnh'}
           </Button>
           <Button
             onClick={cropMode ? handleCrop : handleSkipCrop}
