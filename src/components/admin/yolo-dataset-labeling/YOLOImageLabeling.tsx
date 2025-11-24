@@ -276,8 +276,15 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     //  Pattern 2: Batch draw all boxes
     ctx.save();
 
-    renderedBoxes.forEach((box: any, boxIndex: number) => {
-      const isActive = box.id === activeBox?.id;
+    // Tách non-active boxes và active box
+    const activeBoxIndex = renderedBoxes.findIndex((box: any) => box.id === activeBox?.id);
+    const nonActiveBoxes = renderedBoxes.filter((box: any) => box.id !== activeBox?.id);
+    const activeBoxToRender = renderedBoxes.find((box: any) => box.id === activeBox?.id);
+
+    // Vẽ non-active boxes trước
+    nonActiveBoxes.forEach((box: any) => {
+      // Tìm index gốc của box này trong renderedBoxes
+      const originalIndex = renderedBoxes.findIndex((b: any) => b.id === box.id);
       const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
 
       const x1 = box.x;
@@ -291,14 +298,54 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
       // Stroke
       ctx.strokeStyle = color;
-      ctx.lineWidth = isActive ? 3 : 2;
+      ctx.lineWidth = 2;
       ctx.strokeRect(x1, y1, width, height);
 
       // Label with index
       if (box.label && showLabelsOnCanvas) {
         ctx.fillStyle = color;
         ctx.font = 'bold 14px Arial';
-        const indexLabel = `#${boxIndex + 1} ${box.label}`;
+        const indexLabel = `#${originalIndex + 1} ${box.label}`;
+        const labelMetrics = ctx.measureText(indexLabel);
+        const labelPadding = 6;
+        const labelHeight = 20;
+
+        ctx.fillRect(
+          x1,
+          y1 - labelHeight - labelPadding,
+          labelMetrics.width + labelPadding * 2,
+          labelHeight + labelPadding
+        );
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(indexLabel, x1 + labelPadding, y1 - labelPadding - 2);
+      }
+    });
+
+    // Vẽ active box cuối cùng (để nó nổi lên trên)
+    if (activeBoxToRender) {
+      const box = activeBoxToRender;
+      const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
+
+      const x1 = box.x;
+      const y1 = box.y;
+      const width = box.width;
+      const height = box.height;
+
+      // Fill
+      ctx.fillStyle = `${color}33`;
+      ctx.fillRect(x1, y1, width, height);
+
+      // Stroke
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x1, y1, width, height);
+
+      // Label with index - dùng activeBoxIndex từ renderedBoxes gốc
+      if (box.label && showLabelsOnCanvas) {
+        ctx.fillStyle = color;
+        ctx.font = 'bold 14px Arial';
+        const indexLabel = `#${activeBoxIndex + 1} ${box.label}`;
         const labelMetrics = ctx.measureText(indexLabel);
         const labelPadding = 6;
         const labelHeight = 20;
@@ -315,31 +362,29 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       }
 
       // Handles (only for active box)
-      if (isActive) {
-        ctx.fillStyle = color;
-        const handleSize = 8;
-        const edgeSize = 6;
+      ctx.fillStyle = color;
+      const handleSize = 8;
+      const edgeSize = 6;
 
-        // Draw corner handles
-        const halfHandle = handleSize / 2;
-        ctx.fillRect(x1 - halfHandle, y1 - halfHandle, handleSize, handleSize);
-        ctx.fillRect(x1 + width - halfHandle, y1 - halfHandle, handleSize, handleSize);
-        ctx.fillRect(x1 - halfHandle, y1 + height - halfHandle, handleSize, handleSize);
-        ctx.fillRect(
-          x1 + width - halfHandle,
-          y1 + height - halfHandle,
-          handleSize,
-          handleSize
-        );
+      // Draw corner handles
+      const halfHandle = handleSize / 2;
+      ctx.fillRect(x1 - halfHandle, y1 - halfHandle, handleSize, handleSize);
+      ctx.fillRect(x1 + width - halfHandle, y1 - halfHandle, handleSize, handleSize);
+      ctx.fillRect(x1 - halfHandle, y1 + height - halfHandle, handleSize, handleSize);
+      ctx.fillRect(
+        x1 + width - halfHandle,
+        y1 + height - halfHandle,
+        handleSize,
+        handleSize
+      );
 
-        // Draw edge handles
-        const halfEdge = edgeSize / 2;
-        ctx.fillRect(x1 + width / 2 - halfEdge, y1 - halfEdge, edgeSize, edgeSize);
-        ctx.fillRect(x1 + width / 2 - halfEdge, y1 + height - halfEdge, edgeSize, edgeSize);
-        ctx.fillRect(x1 - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
-        ctx.fillRect(x1 + width - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
-      }
-    });
+      // Draw edge handles
+      const halfEdge = edgeSize / 2;
+      ctx.fillRect(x1 + width / 2 - halfEdge, y1 - halfEdge, edgeSize, edgeSize);
+      ctx.fillRect(x1 + width / 2 - halfEdge, y1 + height - halfEdge, edgeSize, edgeSize);
+      ctx.fillRect(x1 - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
+      ctx.fillRect(x1 + width - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
+    }
 
     ctx.restore();
   }, [originalImage, baseScale, zoomLevel, getColorForClass, showLabelsOnCanvas]);

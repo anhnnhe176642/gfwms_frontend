@@ -215,15 +215,25 @@ export const useBoundingBox = ({
 
   /**
    * Tìm box tại điểm click - optimized
-   * Vẫn O(n) vì cần duyệt toàn bộ vì thứ tự Z (overlap detection)
-   * Nhưng dùng early return + reverse iteration để nhanh hơn
+   * Ưu tiên active box nếu điểm nằm trong active box
+   * Nếu không thì duyệt ngược mảng để ưu tiên box vẽ sau (trên cùng)
    */
   const findBoxAtPoint = useCallback(
     (x: number, y: number): BoundingBox | null => {
+      // Ưu tiên active box nếu điểm nằm trong active box
+      if (activeBox) {
+        const edge = detectEdgeAtPoint(x, y, activeBox);
+        if (edge || isPointInsideBox(x, y, activeBox)) {
+          return activeBox;
+        }
+      }
+
       // Duyệt ngược để ưu tiên box vẽ sau (trên cùng)
-      // Early return khi tìm thấy - O(1) trong trường hợp tốt (hover trên box cùng)
       for (let i = boxes.length - 1; i >= 0; i--) {
         const box = boxes[i];
+        // Bỏ qua active box vì đã check trên
+        if (activeBox && box.id === activeBox.id) continue;
+        
         // Kiểm tra edge trước (nhỏ hơn) rồi mới kiểm tra inside (lớn hơn)
         if (detectEdgeAtPoint(x, y, box) || isPointInsideBox(x, y, box)) {
           return box;
@@ -231,7 +241,7 @@ export const useBoundingBox = ({
       }
       return null;
     },
-    [boxes, isPointInsideBox, detectEdgeAtPoint]
+    [boxes, activeBox, isPointInsideBox, detectEdgeAtPoint]
   );
 
   /**
@@ -322,6 +332,7 @@ export const useBoundingBox = ({
           endY: newY1 + height,
         };
 
+        // Cập nhật cả activeBox state và boxes array để UI được re-render
         setActiveBox(updatedBox);
         setBoxes((prev) => {
           const idx = prev.findIndex((b) => b.id === activeBox.id);
@@ -432,6 +443,7 @@ export const useBoundingBox = ({
 
   /**
    * Cập nhật cursor dựa trên vị trí - throttled
+   * Chỉ cho phép resize/move trên active box
    */
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -447,7 +459,13 @@ export const useBoundingBox = ({
 
       const hoveredBox = findBoxAtPoint(x, y);
 
-      if (!hoveredBox) {
+      if (!hoveredBox || !activeBox) {
+        canvas.style.cursor = 'crosshair';
+        return;
+      }
+
+      // Chỉ cho phép cursor move/resize nếu hover trên active box
+      if (hoveredBox.id !== activeBox.id) {
         canvas.style.cursor = 'crosshair';
         return;
       }
@@ -483,6 +501,7 @@ export const useBoundingBox = ({
     canvasRef,
     enabled,
     boxes,
+    activeBox,
     findBoxAtPoint,
     detectEdgeAtPoint,
     isPointInsideBox,
