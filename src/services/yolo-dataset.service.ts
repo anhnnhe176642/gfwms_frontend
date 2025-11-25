@@ -236,13 +236,15 @@ export const yoloDatasetService = {
   /**
    * Tạo export token để huấn luyện mô hình
    * @param datasetId - ID của dataset
+   * @param expiresIn - Thời gian hết hạn token (e.g., "1h", "5h", "24h")
    */
-  createExportToken: async (datasetId: string | number): Promise<{ token: string; expiresIn: string }> => {
+  createExportToken: async (datasetId: string | number, expiresIn?: string): Promise<{ token: string; expiresIn: string }> => {
+    const payload = expiresIn ? { expiresIn } : {};
     const response = await api.post<{
       success: boolean;
       message: string;
       data: { token: string; expiresIn: string };
-    }>(`${BASE_PATH}/${datasetId}/export-token`);
+    }>(`${BASE_PATH}/${datasetId}/export-token`, payload);
     return response.data.data;
   },
 };

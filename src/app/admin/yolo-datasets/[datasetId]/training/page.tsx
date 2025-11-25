@@ -5,13 +5,30 @@ import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ROUTES } from '@/config/routes';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
+import { formatExpirationTime } from '@/lib/formatters';
 import { ArrowLeft, Loader, Copy, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const COLAB_NOTEBOOK_URL = 'https://colab.research.google.com/github/anhnnhe176642/GFWMS_backend/blob/AnhNN/Train_YOLO_Models.ipynb';
+
+const EXPIRATION_OPTIONS = [
+  { value: '1h', label: '1 giờ' },
+  { value: '5h', label: '5 giờ' },
+  { value: '12h', label: '12 giờ' },
+  { value: '24h', label: '1 ngày' },
+  { value: '72h', label: '3 ngày' },
+];
 
 export default function TrainingPage({
   params,
@@ -25,6 +42,7 @@ export default function TrainingPage({
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [expiresIn, setExpiresIn] = useState<string>('');
+  const [selectedExpiration, setSelectedExpiration] = useState<string>('5h');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -52,7 +70,7 @@ export default function TrainingPage({
 
     setIsGeneratingToken(true);
     try {
-      const result = await yoloDatasetService.createExportToken(datasetId);
+      const result = await yoloDatasetService.createExportToken(datasetId, selectedExpiration);
       setToken(result.token);
       setExpiresIn(result.expiresIn);
       toast.success('Token được tạo thành công');
@@ -143,15 +161,32 @@ export default function TrainingPage({
             {/* Export Token Card */}
             <Card>
               <CardHeader>
+                <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-base">Bước 1: Tạo Token</CardTitle>
+                  <Select value={selectedExpiration} onValueChange={setSelectedExpiration} disabled={!!token}>
+                    <SelectTrigger id="expiration-select" size='xs'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXPIRATION_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value} className="text-xs">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  Tạo token để tải xuống dataset (hiệu lực 1 giờ)
-                </p>
+                  <p className="text-xs text-muted-foreground">
+                    {token && expiresIn
+                      ? `Tạo token để tải xuống dataset (Hiệu lực ${formatExpirationTime(expiresIn)})`
+                      : 'Tạo token để tải xuống dataset'}
+                  </p>
+                
                 <Button
                   onClick={handleGenerateToken}
-                  disabled={isGeneratingToken}
+                  disabled={isGeneratingToken || !!token}
                   className="w-full"
                   size="sm"
                 >
@@ -243,7 +278,7 @@ export default function TrainingPage({
                 <ol className="space-y-3 text-sm">
                   <li className="flex gap-3">
                     <span className="font-semibold text-primary min-w-6">1.</span>
-                    <span>Nhấn nút "Tạo Token" để tạo token xuất dataset (hiệu lực 1 giờ)</span>
+                    <span>Nhấn nút "Tạo Token" để tạo token xuất dataset</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="font-semibold text-primary min-w-6">2.</span>
