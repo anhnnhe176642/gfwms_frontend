@@ -15,22 +15,16 @@ import { createRoleSchema, type CreateRoleFormData } from '@/schemas/role.schema
 import { roleService } from '@/services/role.service';
 import { geminiService } from '@/services/gemini.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
-import { PermissionsSection } from './PermissionsSection';
-import type { Permission } from '@/types/role';
-
-type PermissionGroup = {
-  group: string;
-  permissions: Permission[];
-};
+import { PermissionTree } from './PermissionTree';
+import { getAllPermissions, addParentPermissions } from '@/constants/permissions';
 
 export function CreateRoleForm() {
   const router = useRouter();
   const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingPermissions, setIsFetchingPermissions] = useState(true);
+  const [isFetchingPermissions, setIsFetchingPermissions] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [serverError, setServerError] = useState('');
-  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
 
   // Form validation and state management
   const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors, setFieldValue } =
@@ -41,7 +35,9 @@ export function CreateRoleForm() {
         setServerError('');
 
         try {
-          await roleService.createRole(data);
+          // Auto-add parent permissions to ensure hierarchy is valid
+          const validPermissions = addParentPermissions(data.permissions);
+          await roleService.createRole({ ...data, permissions: validPermissions });
           toast.success('Tạo vai trò thành công');
           handleGoBack();
         } catch (err) {
@@ -58,91 +54,29 @@ export function CreateRoleForm() {
       }
     );
 
-  // Fetch permissions khi component mount
-  useEffect(() => {
-    const fetchPermissions = async () => {
-      try {
-        setIsFetchingPermissions(true);
-        const response = await roleService.getPermissions();
-        
-        // Nhóm permissions theo resource (phần đầu của key, ví dụ: "warehouse")
-        const grouped = response.data.reduce((acc, permission) => {
-          // Tách group từ key (vd: "warehouse:view_list" -> "warehouse")
-          const [group] = permission.key.split(':');
-          const groupName = group.charAt(0).toUpperCase() + group.slice(1);
-          
-          const existingGroup = acc.find(g => g.group === groupName);
-          if (existingGroup) {
-            existingGroup.permissions.push(permission);
-          } else {
-            acc.push({
-              group: groupName,
-              permissions: [permission],
-            });
-          }
-          
-          return acc;
-        }, [] as PermissionGroup[]);
+  // Permissions are now hardcoded in constants, no need to fetch
 
-        // Sắp xếp mỗi group theo key
-        grouped.forEach(group => {
-          group.permissions.sort((a, b) => a.key.localeCompare(b.key));
-        });
-
-        // Sắp xếp các group
-        grouped.sort((a, b) => a.group.localeCompare(b.group));
-
-        setPermissionGroups(grouped);
-      } catch (err) {
-        const message = getServerErrorMessage(err);
-        setServerError(message || 'Không thể lấy danh sách quyền');
-        toast.error(message || 'Không thể lấy danh sách quyền');
-      } finally {
-        setIsFetchingPermissions(false);
-      }
-    };
-
-    fetchPermissions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const togglePermission = (permissionId: number) => {
+  const togglePermission = (permissionKey: string) => {
     const current = values.permissions || [];
-    const updated = current.includes(permissionId)
-      ? current.filter(id => id !== permissionId)
-      : [...current, permissionId];
+    const updated = current.includes(permissionKey)
+      ? current.filter(key => key !== permissionKey)
+      : [...current, permissionKey];
     
     setFieldValue('permissions', updated);
   };
 
-  const toggleGroupPermissions = (group: PermissionGroup) => {
-    const current = values.permissions || [];
-    const groupPermissionIds = group.permissions.map(p => p.id);
-    const allGroupSelected = groupPermissionIds.every(id => current.includes(id));
-    
-    if (allGroupSelected) {
-      // Deselect all in group
-      const updated = current.filter(id => !groupPermissionIds.includes(id));
-      setFieldValue('permissions', updated);
-    } else {
-      // Select all in group
-      const updated = [...new Set([...current, ...groupPermissionIds])];
-      setFieldValue('permissions', updated);
-    }
-  };
-
   const handleGenerateSummary = async () => {
-    const selectedPermissionIds = values.permissions || [];
-    if (selectedPermissionIds.length === 0) {
+    const selectedPermissionKeys = values.permissions || [];
+    if (selectedPermissionKeys.length === 0) {
       toast.error('Vui lòng chọn ít nhất một quyền để tóm tắt');
       return;
     }
 
     // Lấy các permission descriptions từ các permissions được chọn
-    const permissionDescriptions = permissionGroups
-      .flatMap(group => group.permissions)
-      .filter(p => selectedPermissionIds.includes(p.id))
-      .map(p => p.description);
+    const allPerms = getAllPermissions();
+    const permissionDescriptions = selectedPermissionKeys
+      .map(key => allPerms.find(p => p.key === key)?.description)
+      .filter(Boolean);
 
     const permissionsText = permissionDescriptions.join(', ');
 
@@ -290,14 +224,12 @@ export function CreateRoleForm() {
         </Card>
 
         {/* Permissions Section */}
-        <PermissionsSection
-          permissionGroups={permissionGroups}
+        <PermissionTree
           selectedPermissions={values.permissions || []}
           isFetching={isFetchingPermissions}
           errors={errors.permissions}
           touched={touched.permissions}
           onTogglePermission={togglePermission}
-          onToggleGroup={toggleGroupPermissions}
         />
 
         {/* Action Buttons */}

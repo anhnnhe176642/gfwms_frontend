@@ -2,6 +2,7 @@ import * as yup from 'yup';
 
 /**
  * Schema xác thực tạo role mới
+ * permissions: Mảng các permission keys (strings)
  */
 export const createRoleSchema = yup.object().shape({
   name: yup
@@ -21,7 +22,7 @@ export const createRoleSchema = yup.object().shape({
     .max(500, 'Mô tả không được quá 500 ký tự'),
   permissions: yup
     .array()
-    .of(yup.number().required())
+    .of(yup.string().required())
     .required('Vui lòng chọn ít nhất một quyền')
     .min(1, 'Vui lòng chọn ít nhất một quyền'),
 });
@@ -30,6 +31,7 @@ export type CreateRoleFormData = yup.InferType<typeof createRoleSchema>;
 
 /**
  * Schema xác thực cập nhật role
+ * permissions: Mảng các permission keys (strings)
  */
 export const updateRoleSchema = yup.object().shape({
   name: yup.string().default(''),
@@ -43,7 +45,7 @@ export const updateRoleSchema = yup.object().shape({
     .typeError('Mô tả phải là chuỗi'),
   permissions: yup
     .array()
-    .of(yup.number().required())
+    .of(yup.string().required())
     .required('Vui lòng chọn ít nhất một quyền')
     .min(1, 'Vui lòng chọn ít nhất một quyền'),
 });

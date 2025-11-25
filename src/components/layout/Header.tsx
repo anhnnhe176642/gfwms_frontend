@@ -37,7 +37,7 @@ export const Header: React.FC = () => {
           
           {isAuthenticated && user ? (
             <>
-              {user?.permissionKeys?.includes('system:config') && (
+              {user?.permissionKeys?.includes('system:admin') && (
                 <Button asChild variant="default" size="sm">
                   <Link href={ROUTES.ADMIN.DASHBOARD.path} className="flex items-center gap-2">
                     <LayoutDashboard className="h-4 w-4" />

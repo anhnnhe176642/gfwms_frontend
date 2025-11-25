@@ -3,7 +3,7 @@ import { createEnumConfig, configToOptions } from '@/lib/configFactory';
 /**
  * Store isActive status configurations
  */
-export const STORE_ACTIVE_STATUS_CONFIG = createEnumConfig<boolean>({
+export const STORE_ACTIVE_STATUS_CONFIG = createEnumConfig<'true' | 'false'>({
   true: {
     label: 'Hoạt động',
     className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',

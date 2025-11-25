@@ -15,13 +15,9 @@ import { updateRoleSchema, type UpdateRoleFormData } from '@/schemas/role.schema
 import { roleService } from '@/services/role.service';
 import { geminiService } from '@/services/gemini.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
-import { PermissionsSection } from './PermissionsSection';
-import type { Permission, RoleDetail } from '@/types/role';
-
-type PermissionGroup = {
-  group: string;
-  permissions: Permission[];
-};
+import { PermissionTree } from './PermissionTree';
+import { getAllPermissions, addParentPermissions, getAllDescendants } from '@/constants/permissions';
+import type { RoleDetail } from '@/types/role';
 
 export type EditRoleFormProps = {
   roleId: number | string;
@@ -34,8 +30,8 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [serverError, setServerError] = useState('');
-  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
   const [roleDetail, setRoleDetail] = useState<RoleDetail | null>(null);
+  const [initialPermissions, setInitialPermissions] = useState<string[]>([]);
 
   // Form validation and state management
   const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors, setFieldValue } =
@@ -46,7 +42,9 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
         setServerError('');
 
         try {
-          await roleService.updateRole(roleId, data);
+          // Auto-add parent permissions to ensure hierarchy is valid
+          const validPermissions = addParentPermissions(data.permissions);
+          await roleService.updateRole(roleId, { ...data, permissions: validPermissions });
           toast.success('Cập nhật vai trò thành công');
           handleGoBack();
         } catch (err) {
@@ -63,7 +61,7 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
       }
     );
 
-  // Fetch role details and permissions khi component mount
+  // Fetch role details khi component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -73,41 +71,13 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
         const roleResponse = await roleService.getRoleDetail(roleId);
         setRoleDetail(roleResponse.data);
 
-        // Fetch permissions
-        const permissionsResponse = await roleService.getPermissions();
-        
-        // Nhóm permissions theo resource
-        const grouped = permissionsResponse.data.reduce((acc, permission) => {
-          const [group] = permission.key.split(':');
-          const groupName = group.charAt(0).toUpperCase() + group.slice(1);
-          
-          const existingGroup = acc.find(g => g.group === groupName);
-          if (existingGroup) {
-            existingGroup.permissions.push(permission);
-          } else {
-            acc.push({
-              group: groupName,
-              permissions: [permission],
-            });
-          }
-          
-          return acc;
-        }, [] as PermissionGroup[]);
-
-        // Sắp xếp
-        grouped.forEach(group => {
-          group.permissions.sort((a, b) => a.key.localeCompare(b.key));
-        });
-        grouped.sort((a, b) => a.group.localeCompare(b.group));
-
-        setPermissionGroups(grouped);
-
-        // Set form values - extract permission IDs từ rolePermissions
-        const rolePermissionIds = roleResponse.data.rolePermissions?.map(rp => rp.permission.id) || [];
+        // Set form values - extract permission keys từ rolePermissions
+        const rolePermissionKeys = roleResponse.data.rolePermissions?.map(rp => rp.permission.key) || [];
+        setInitialPermissions(rolePermissionKeys);
         setFieldValue('name', roleResponse.data.name);
         setFieldValue('fullName', roleResponse.data.fullName);
         setFieldValue('description', roleResponse.data.description || '');
-        setFieldValue('permissions', rolePermissionIds);
+        setFieldValue('permissions', rolePermissionKeys);
       } catch (err) {
         const message = getServerErrorMessage(err);
         setServerError(message || 'Không thể tải dữ liệu');
@@ -121,41 +91,48 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleId]);
 
-  const togglePermission = (permissionId: number) => {
+  const togglePermission = (permissionKey: string) => {
     const current = values.permissions || [];
-    const updated = current.includes(permissionId)
-      ? current.filter((id: number) => id !== permissionId)
-      : [...current, permissionId];
+    const allPermissions = getAllPermissions();
     
-    setFieldValue('permissions', updated);
-  };
-
-  const toggleGroupPermissions = (group: PermissionGroup) => {
-    const current = values.permissions || [];
-    const groupPermissionIds = group.permissions.map(p => p.id);
-    const allGroupSelected = groupPermissionIds.every(id => current.includes(id));
-    
-    if (allGroupSelected) {
-      const updated = current.filter((id: number) => !groupPermissionIds.includes(id));
+    // If currently selected, we're toggling OFF
+    if (current.includes(permissionKey)) {
+      // Get ALL descendants of this permission
+      const descendantsToRemove = getAllDescendants(permissionKey);
+      const descendantKeys = new Set(descendantsToRemove.map((p) => p.key));
+      
+      // Remove the parent and all its descendants
+      const updated = current.filter(
+        (key: string) => key !== permissionKey && !descendantKeys.has(key)
+      );
+      
       setFieldValue('permissions', updated);
     } else {
-      const updated = [...new Set([...current, ...groupPermissionIds])];
-      setFieldValue('permissions', updated);
+      // If toggling ON, check if parent exists and auto-add if needed
+      const perm = allPermissions.find(p => p.key === permissionKey);
+      if (perm?.parentPermissionKey && !current.includes(perm.parentPermissionKey)) {
+        // Auto-add all parent permissions
+        const withParents = addParentPermissions([...current, permissionKey]);
+        setFieldValue('permissions', withParents);
+      } else {
+        // Just add it
+        setFieldValue('permissions', [...current, permissionKey]);
+      }
     }
   };
 
   const handleGenerateSummary = async () => {
-    const selectedPermissionIds = values.permissions || [];
-    if (selectedPermissionIds.length === 0) {
+    const selectedPermissionKeys = values.permissions || [];
+    if (selectedPermissionKeys.length === 0) {
       toast.error('Vui lòng chọn ít nhất một quyền để tóm tắt');
       return;
     }
 
     // Lấy các permission descriptions từ các permissions được chọn
-    const permissionDescriptions = permissionGroups
-      .flatMap(group => group.permissions)
-      .filter(p => selectedPermissionIds.includes(p.id))
-      .map(p => p.description);
+    const allPerms = getAllPermissions();
+    const permissionDescriptions = selectedPermissionKeys
+      .map((key: string) => allPerms.find(p => p.key === key)?.description)
+      .filter(Boolean);
 
     const permissionsText = permissionDescriptions.join(', ');
 
@@ -304,14 +281,12 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
         </Card>
 
         {/* Permissions Section */}
-        <PermissionsSection
-          permissionGroups={permissionGroups}
+        <PermissionTree
           selectedPermissions={values.permissions || []}
-          isFetching={false}
+          isFetching={isFetchingData}
           errors={errors.permissions}
           touched={touched.permissions}
           onTogglePermission={togglePermission}
-          onToggleGroup={toggleGroupPermissions}
         />
 
         {/* Action Buttons */}

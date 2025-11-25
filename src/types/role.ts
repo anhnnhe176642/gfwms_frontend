@@ -44,7 +44,7 @@ export type CreateRoleRequest = {
   name: string;
   fullName: string;
   description: string;
-  permissions: number[]; // Mảng các permission ID
+  permissions: string[]; // Mảng các permission keys
 };
 
 export type CreateRoleResponse = {
@@ -71,7 +71,7 @@ export type RoleDetailResponse = {
 export type UpdateRoleRequest = {
   fullName?: string;
   description?: string;
-  permissions: number[]; // Mảng các permission ID
+  permissions: string[]; // Mảng các permission keys
 };
 
 export type UpdateRoleResponse = {
