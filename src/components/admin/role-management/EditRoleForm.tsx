@@ -11,12 +11,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { updateRoleSchema, type UpdateRoleFormData } from '@/schemas/role.schema';
 import { roleService } from '@/services/role.service';
-import { geminiService } from '@/services/gemini.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
 import { PermissionTree } from './PermissionTree';
-import { getAllPermissions, addParentPermissions, getAllDescendants } from '@/constants/permissions';
+import { addParentPermissions } from '@/constants/permissions';
 import type { RoleDetail } from '@/types/role';
 
 export type EditRoleFormProps = {
@@ -91,67 +91,21 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleId]);
 
+  // Use role permissions hook
+  const { togglePermission: handleTogglePermission, generateDescriptionFromPermissions } =
+    useRolePermissions(setFieldValue);
+
   const togglePermission = (permissionKey: string) => {
-    const current = values.permissions || [];
-    const allPermissions = getAllPermissions();
-    
-    // If currently selected, we're toggling OFF
-    if (current.includes(permissionKey)) {
-      // Get ALL descendants of this permission
-      const descendantsToRemove = getAllDescendants(permissionKey);
-      const descendantKeys = new Set(descendantsToRemove.map((p) => p.key));
-      
-      // Remove the parent and all its descendants
-      const updated = current.filter(
-        (key: string) => key !== permissionKey && !descendantKeys.has(key)
-      );
-      
-      setFieldValue('permissions', updated);
-    } else {
-      // If toggling ON, check if parent exists and auto-add if needed
-      const perm = allPermissions.find(p => p.key === permissionKey);
-      if (perm?.parentPermissionKey && !current.includes(perm.parentPermissionKey)) {
-        // Auto-add all parent permissions
-        const withParents = addParentPermissions([...current, permissionKey]);
-        setFieldValue('permissions', withParents);
-      } else {
-        // Just add it
-        setFieldValue('permissions', [...current, permissionKey]);
-      }
-    }
+    handleTogglePermission(permissionKey, values.permissions || []);
   };
 
   const handleGenerateSummary = async () => {
-    const selectedPermissionKeys = values.permissions || [];
-    if (selectedPermissionKeys.length === 0) {
-      toast.error('Vui lòng chọn ít nhất một quyền để tóm tắt');
-      return;
-    }
-
-    // Lấy các permission descriptions từ các permissions được chọn
-    const allPerms = getAllPermissions();
-    const permissionDescriptions = selectedPermissionKeys
-      .map((key: string) => allPerms.find(p => p.key === key)?.description)
-      .filter(Boolean);
-
-    const permissionsText = permissionDescriptions.join(', ');
-
-    const prompt = `Vai trò có các quyền: ${permissionsText}. Hãy giải thích vai trò này có thể làm được những gì, dựa trên các quyền được liệt kê ở trên. Tóm tắt dưới 255 kí tự.`;
-
+    setIsGeneratingSummary(true);
     try {
-      setIsGeneratingSummary(true);
-      const response = await geminiService.prompt({
-        prompt,
-        model: 'gemini-2.5-flash',
-        temperature: 0.7,
-        maxTokens: 2000,
-      });
-
-      setFieldValue('description', response.data.text);
-      toast.success('Tóm tắt mô tả thành công');
-    } catch (err) {
-      const message = getServerErrorMessage(err);
-      toast.error(message || 'Không thể tóm tắt mô tả');
+      const success = await generateDescriptionFromPermissions(values.permissions || []);
+      if (!success) {
+        // Error already toasted in hook
+      }
     } finally {
       setIsGeneratingSummary(false);
     }

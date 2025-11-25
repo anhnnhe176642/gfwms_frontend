@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { ChevronDown, CheckCircle2, Circle, MinusCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   buildPermissionTree,
   addParentPermissions,
   validatePermissionHierarchy,
   findPermissionByKey,
+  getPermissionState,
   type PermissionTreeNode,
 } from '@/constants/permissions';
 
@@ -38,14 +39,11 @@ function PermissionTreeItem({
   isParentDisabled: boolean;
 }) {
   const isExpanded = expandedNodes.has(node.key);
-  const isSelected = selectedPermissions.has(node.key);
   const hasChildren = node.children.length > 0;
 
-  // Check if all children are selected (for partial selection indicator)
-  const selectedChildCount = node.children.filter(child =>
-    selectedPermissions.has(child.key)
-  ).length;
-  const isPartiallySelected = selectedChildCount > 0 && selectedChildCount < node.children.length;
+  // Get permission state (none, partial, full)
+  const selectedArray = Array.from(selectedPermissions);
+  const permissionState = getPermissionState(node.key, selectedArray);
 
   // Parent is disabled if it doesn't exist in selected permissions and has a parent
   const isDisabled = node.parentKey && !selectedPermissions.has(node.parentKey);
@@ -89,13 +87,10 @@ function PermissionTreeItem({
         {/* Checkbox Display */}
         <div className="flex items-center shrink-0">
           <div className="relative h-5 w-5">
-            {isSelected ? (
+            {permissionState === 'full' ? (
               <CheckCircle2 className="h-5 w-5 text-primary" />
-            ) : isPartiallySelected ? (
-              <>
-                <Circle className="h-5 w-5 text-border" />
-                <div className="absolute inset-1.5 bg-primary/50 rounded-full" />
-              </>
+            ) : permissionState === 'partial' ? (
+              <MinusCircle className="h-5 w-5 text-amber-500" />
             ) : (
               <Circle className="h-5 w-5 text-border" />
             )}

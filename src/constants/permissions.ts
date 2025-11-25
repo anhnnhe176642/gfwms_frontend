@@ -789,3 +789,36 @@ export const buildPermissionTree = (selectedKeys: string[] = []): PermissionTree
 
   return roots.map(buildNode);
 };
+
+/**
+ * Helper: Xác định trạng thái của một permission
+ * 'none' - không được chọn
+ * 'partial' - được chọn nhưng chưa đầy đủ (một số con chưa chọn)
+ * 'full' - được chọn đầy đủ (chính nó và tất cả con được chọn)
+ */
+export type PermissionState = 'none' | 'partial' | 'full';
+
+export const getPermissionState = (
+  permissionKey: string,
+  selectedKeys: string[]
+): PermissionState => {
+  const selectedSet = new Set(selectedKeys);
+  const isSelected = selectedSet.has(permissionKey);
+
+  if (!isSelected) {
+    return 'none';
+  }
+
+  // Lấy tất cả descendants
+  const descendants = getAllDescendants(permissionKey);
+
+  if (descendants.length === 0) {
+    // Leaf node - nếu được chọn thì full
+    return 'full';
+  }
+
+  // Kiểm tra xem tất cả descendants có được chọn không
+  const allDescendantsSelected = descendants.every(d => selectedSet.has(d.key));
+
+  return allDescendantsSelected ? 'full' : 'partial';
+};

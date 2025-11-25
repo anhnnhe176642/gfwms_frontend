@@ -11,18 +11,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { createRoleSchema, type CreateRoleFormData } from '@/schemas/role.schema';
 import { roleService } from '@/services/role.service';
-import { geminiService } from '@/services/gemini.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
 import { PermissionTree } from './PermissionTree';
-import { getAllPermissions, addParentPermissions } from '@/constants/permissions';
+import { addParentPermissions } from '@/constants/permissions';
 
 export function CreateRoleForm() {
   const router = useRouter();
   const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingPermissions, setIsFetchingPermissions] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -54,48 +53,21 @@ export function CreateRoleForm() {
       }
     );
 
-  // Permissions are now hardcoded in constants, no need to fetch
+  // Use role permissions hook
+  const { togglePermission: handleTogglePermission, generateDescriptionFromPermissions } =
+    useRolePermissions(setFieldValue);
 
   const togglePermission = (permissionKey: string) => {
-    const current = values.permissions || [];
-    const updated = current.includes(permissionKey)
-      ? current.filter(key => key !== permissionKey)
-      : [...current, permissionKey];
-    
-    setFieldValue('permissions', updated);
+    handleTogglePermission(permissionKey, values.permissions || []);
   };
 
   const handleGenerateSummary = async () => {
-    const selectedPermissionKeys = values.permissions || [];
-    if (selectedPermissionKeys.length === 0) {
-      toast.error('Vui lòng chọn ít nhất một quyền để tóm tắt');
-      return;
-    }
-
-    // Lấy các permission descriptions từ các permissions được chọn
-    const allPerms = getAllPermissions();
-    const permissionDescriptions = selectedPermissionKeys
-      .map(key => allPerms.find(p => p.key === key)?.description)
-      .filter(Boolean);
-
-    const permissionsText = permissionDescriptions.join(', ');
-
-    const prompt = `Vai trò có các quyền: ${permissionsText}. Hãy giải thích vai trò này có thể làm được những gì, dựa trên các quyền được liệt kê ở trên. Tóm tắt dưới 255 kí tự.`;
-
+    setIsGeneratingSummary(true);
     try {
-      setIsGeneratingSummary(true);
-      const response = await geminiService.prompt({
-        prompt,
-        model: 'gemini-2.5-flash',
-        temperature: 0.7,
-        maxTokens: 2000,
-      });
-
-      setFieldValue('description', response.data.text);
-      toast.success('Tóm tắt mô tả thành công');
-    } catch (err) {
-      const message = getServerErrorMessage(err);
-      toast.error(message || 'Không thể tóm tắt mô tả');
+      const success = await generateDescriptionFromPermissions(values.permissions || []);
+      if (!success) {
+        // Error already toasted in hook
+      }
     } finally {
       setIsGeneratingSummary(false);
     }
@@ -150,7 +122,7 @@ export function CreateRoleForm() {
                 value={values.name ?? ''}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                disabled={isLoading || isFetchingPermissions}
+                disabled={isLoading}
                 className={errors.name && touched.name ? 'border-destructive' : ''}
               />
               {errors.name && touched.name && (
@@ -170,7 +142,7 @@ export function CreateRoleForm() {
                 value={values.fullName ?? ''}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                disabled={isLoading || isFetchingPermissions}
+                disabled={isLoading}
                 className={errors.fullName && touched.fullName ? 'border-destructive' : ''}
               />
               {errors.fullName && touched.fullName && (
@@ -189,7 +161,7 @@ export function CreateRoleForm() {
                   variant="outline"
                   size="sm"
                   onClick={handleGenerateSummary}
-                  disabled={isLoading || isFetchingPermissions || isGeneratingSummary || (values.permissions?.length ?? 0) === 0}
+                  disabled={isLoading || isGeneratingSummary || (values.permissions?.length ?? 0) === 0}
                   className="gap-2"
                 >
                   {isGeneratingSummary ? (
@@ -212,7 +184,7 @@ export function CreateRoleForm() {
                 value={values.description ?? ''}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                disabled={isLoading || isFetchingPermissions}
+                disabled={isLoading}
                 className={errors.description && touched.description ? 'border-destructive' : ''}
                 rows={3}
               />
@@ -226,7 +198,7 @@ export function CreateRoleForm() {
         {/* Permissions Section */}
         <PermissionTree
           selectedPermissions={values.permissions || []}
-          isFetching={isFetchingPermissions}
+          isFetching={false}
           errors={errors.permissions}
           touched={touched.permissions}
           onTogglePermission={togglePermission}
@@ -238,13 +210,13 @@ export function CreateRoleForm() {
             type="button"
             variant="outline"
             onClick={handleGoBack}
-            disabled={isLoading || isFetchingPermissions}
+            disabled={isLoading}
           >
             Hủy
           </Button>
           <Button
             type="submit"
-            disabled={isLoading || isFetchingPermissions}
+            disabled={isLoading}
           >
             {isLoading && <Loader className="mr-2 h-4 w-4 animate-spin" />}
             {isLoading ? 'Đang tạo...' : 'Tạo vai trò'}
