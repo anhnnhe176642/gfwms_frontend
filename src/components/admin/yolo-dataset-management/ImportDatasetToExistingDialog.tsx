@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { FileUp, Upload } from 'lucide-react';
 import { IMAGE_STATUS_CONFIG } from '@/constants/yolo-dataset';
+import type { DatasetImageStatus } from '@/types/yolo-dataset';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export type ImportDatasetToExistingDialogProps = {
@@ -38,7 +39,7 @@ export function ImportDatasetToExistingDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
-  const [imageStatus, setImageStatus] = useState<'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'>('PENDING');
+  const [imageStatus, setImageStatus] = useState<DatasetImageStatus>('PENDING');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,6 +66,14 @@ export function ImportDatasetToExistingDialog({
 
     setIsLoading(true);
     try {
+      // runtime guard to ensure only allowed values are passed
+      const allowedImageStatuses = Object.keys(IMAGE_STATUS_CONFIG) as DatasetImageStatus[];
+      if (!allowedImageStatuses.includes(imageStatus)) {
+        toast.error('Trạng thái ảnh không hợp lệ');
+        setIsLoading(false);
+        return;
+      }
+
       const result = await yoloDatasetService.importDatasetToExisting(datasetId, selectedFile, imageStatus);
 
       toast.success(result.message || 'Import thành công');
@@ -106,9 +115,16 @@ export function ImportDatasetToExistingDialog({
       setFileName('');
       setSelectedFile(null);
       setServerError('');
+      setImageStatus('PENDING');
     }
     onOpenChange(newOpen);
   };
+
+  useEffect(() => {
+    if (open) {
+      setImageStatus('PENDING');
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -160,7 +176,7 @@ export function ImportDatasetToExistingDialog({
             />
             <div className="mt-2">
               <Label htmlFor="imageStatus">Trạng thái ảnh khi import</Label>
-            <Select value={imageStatus} onValueChange={(val: string) => setImageStatus(val as any)}>
+            <Select value={imageStatus} onValueChange={(val: DatasetImageStatus) => setImageStatus(val)}>
               <SelectTrigger id="imageStatus" className="w-full mt-1">
                   <SelectValue placeholder="PENDING" />
                 </SelectTrigger>

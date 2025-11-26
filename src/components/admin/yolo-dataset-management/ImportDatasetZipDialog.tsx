@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { importDatasetZipSchema, type ImportDatasetZipFormData } from '@/schemas/yolo-dataset.schema';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { IMAGE_STATUS_CONFIG } from '@/constants/yolo-dataset';
+import type { DatasetImageStatus } from '@/types/yolo-dataset';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +43,11 @@ export function ImportDatasetZipDialog({
   const { values, errors, touched, isLoading, handleChange, handleBlur, handleSubmit, setFieldValue, setTouched, resetForm } =
     useFormValidation<ImportDatasetZipFormData>(importDatasetZipSchema, async (data: ImportDatasetZipFormData) => {
       try {
+        const allowed = Object.keys(IMAGE_STATUS_CONFIG) as DatasetImageStatus[];
+        if (data.imageStatus && !allowed.includes(data.imageStatus as DatasetImageStatus)) {
+          throw new Error('Trạng thái ảnh không hợp lệ');
+        }
+
         const result = await yoloDatasetService.importZipDataset(
           data.zipFile,
           data.name,
@@ -108,9 +114,20 @@ export function ImportDatasetZipDialog({
       setFileName('');
       setSelectedFile(null);
       setServerError('');
+    } else {
+      // ensure default imageStatus is present so it is sent even if user does not change the Select
+      setFieldValue('imageStatus', 'PENDING' as any);
     }
     onOpenChange(newOpen);
   };
+
+  // also guard for open prop being true on mount or changes (in case the dialog is opened by parent)
+  useEffect(() => {
+    if (open) {
+      setFieldValue('imageStatus', (values.imageStatus as any) || 'PENDING');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSubmitWithTouched = async (e: React.FormEvent<HTMLFormElement>) => {
     setTouched((prev) => ({
@@ -221,8 +238,8 @@ export function ImportDatasetZipDialog({
             <Label htmlFor="imageStatus">Trạng thái ảnh khi import</Label>
             <Select
               value={(values.imageStatus as string) || 'PENDING'}
-              onValueChange={(val: string) => {
-                setFieldValue('imageStatus', val as any);
+              onValueChange={(val: DatasetImageStatus) => {
+                setFieldValue('imageStatus', val);
                 setTouched((prev) => ({ ...prev, imageStatus: true }));
                 // Validate field explicitly
               }}
