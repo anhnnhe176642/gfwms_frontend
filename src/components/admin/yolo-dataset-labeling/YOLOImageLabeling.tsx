@@ -97,6 +97,8 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     setActiveBox,
     updateBox,
     addBox,
+    isDrawing,
+    isMoving,
     undo,
     redo,
     canUndo,
@@ -121,10 +123,55 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     boxesRef.current = boxes;
   }, [boxes]);
 
+  
+
   useEffect(() => {
     activeBoxRef.current = activeBox;
   }, [activeBox]);
   const [isAutoLabeling, setIsAutoLabeling] = useState(false);
+  // Auto-label review states
+  const [autoLabelResults, setAutoLabelResults] = useState<Array<any>>([]);
+  const [autoReviewIndex, setAutoReviewIndex] = useState<number>(0);
+  const [isReviewingAutoLabels, setIsReviewingAutoLabels] = useState(false);
+  // Ref for autoLabelResults to draw preview boxes without causing effect loops
+  const autoLabelResultsRef = useRef<any[]>([]);
+  useEffect(() => {
+    autoLabelResultsRef.current = autoLabelResults;
+  }, [autoLabelResults]);
+
+  // Track which preview boxes have been added to canvas (so we can remove them if unconfirmed)
+  const previewAddedIdsRef = useRef<Set<string>>(new Set());
+
+  const ensurePreviewAdded = useCallback((item: any) => {
+    if (!item || !item.id) return;
+    if (boxesRef.current.some((b) => b.id === item.id)) return; // already present
+    // Add box with preview flag
+    const previewBox: BoundingBox = { ...item.canvas, label: item.className, isAutoPreview: true };
+    addBox(previewBox);
+    previewAddedIdsRef.current.add(item.id);
+  }, [addBox]);
+
+  const removePreviewIfPresent = useCallback((item: any) => {
+    if (!item || !item.id) return;
+    if (previewAddedIdsRef.current.has(item.id)) {
+      removeBox(item.id);
+      previewAddedIdsRef.current.delete(item.id);
+    }
+  }, [removeBox]);
+
+  const prunePreviewsExcept = useCallback((keepId?: string | null) => {
+    const ids = Array.from(previewAddedIdsRef.current);
+    ids.forEach((id) => {
+      if (id === keepId) return;
+      // If it's still present in boxes, remove it
+      if (boxesRef.current.some((b) => b.id === id)) {
+        removeBox(id);
+      }
+      previewAddedIdsRef.current.delete(id);
+    });
+  }, [removeBox]);
+  // Track when user manually selects a box (so we don't override with review focus)
+  const userSelectedBoxRef = useRef(false);
 
   // Sync refs với state - chỉ update ref, không trigger re-render
   useEffect(() => {
@@ -206,7 +253,10 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     }
   }, [existingLabels, classes, originalImage, baseScale, baseScaleReady, initialBoxesLoaded, clearBoxes, addBox]);
 
-  const handleMouseDown = hookMouseDown;
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    userSelectedBoxRef.current = true;
+    return hookMouseDown(e);
+  }, [hookMouseDown]);
   const handleMouseMove = hookMouseMove;
   const handleMouseUp = hookMouseUp;
 
@@ -243,6 +293,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       startY: box.startY,
       endX: box.endX,
       endY: box.endY,
+      isAutoPreview: (box as any).isAutoPreview,
     }));
 
     // Clear canvas
@@ -265,6 +316,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         startY: activeBox.startY,
         endX: activeBox.endX,
         endY: activeBox.endY,
+        isAutoPreview: (activeBox as any).isAutoPreview,
       };
 
       const existsInRender = boxesToRender.some((b: any) => b.id === activeBox.id);
@@ -292,8 +344,8 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       const width = box.width;
       const height = box.height;
 
-      // Fill
-      ctx.fillStyle = `${color}33`;
+      // Fill (dashed/transparent if preview)
+      ctx.fillStyle = box.isAutoPreview ? `${color}22` : `${color}33`;
       ctx.fillRect(x1, y1, width, height);
 
       // Stroke
@@ -386,8 +438,53 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       ctx.fillRect(x1 + width - halfEdge, y1 + height / 2 - halfEdge, edgeSize, edgeSize);
     }
 
+    // Draw auto-label preview boxes (if in review mode)
+    if (isReviewingAutoLabels && autoLabelResultsRef.current.length > 0) {
+      const previewItems = autoLabelResultsRef.current;
+      previewItems.forEach((item: any, idx: number) => {
+        // Skip if already confirmed in boxes
+        if (boxes.some((b) => b.id === item.id)) return;
+
+        const box = item.canvas;
+        const x = Math.min(box.startX, box.endX) * zoomLevel;
+        const y = Math.min(box.startY, box.endY) * zoomLevel;
+        const width = Math.abs(box.endX - box.startX) * zoomLevel;
+        const height = Math.abs(box.endY - box.startY) * zoomLevel;
+
+        // Dimmed fill for preview
+        ctx.fillStyle = `${getColorForClass(item.className) || '#4ECDC4'}22`;
+        ctx.fillRect(x, y, width, height);
+
+        // Dashed stroke for preview
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = getColorForClass(item.className) || '#4ECDC4';
+        ctx.lineWidth = idx === autoReviewIndex ? 3 : 2;
+        ctx.strokeRect(x, y, width, height);
+        ctx.restore();
+
+        if (showLabelsOnCanvas) {
+          ctx.fillStyle = getColorForClass(item.className) || '#4ECDC4';
+          ctx.font = 'bold 14px Arial';
+          const indexLabel = `#${idx + 1} ${item.className}`;
+          const labelMetrics = ctx.measureText(indexLabel);
+          const labelPadding = 6;
+          const labelHeight = 20;
+
+          ctx.fillRect(
+            x,
+            y - labelHeight - labelPadding,
+            labelMetrics.width + labelPadding * 2,
+            labelHeight + labelPadding
+          );
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText(indexLabel, x + labelPadding, y - labelPadding - 2);
+        }
+      });
+    }
+
     ctx.restore();
-  }, [originalImage, baseScale, zoomLevel, getColorForClass, showLabelsOnCanvas]);
+  }, [originalImage, baseScale, zoomLevel, getColorForClass, showLabelsOnCanvas, isReviewingAutoLabels, autoReviewIndex]);
 
   // Zoom handlers
   const handleZoomIn = () => {
@@ -490,14 +587,14 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     if (imageLoaded && baseScaleReady) {
       drawCanvas();
     }
-  }, [imageLoaded, baseScaleReady, baseScale, zoomLevel, containerSize, showLabelsOnCanvas]);
+  }, [imageLoaded, baseScaleReady, baseScale, zoomLevel, containerSize, showLabelsOnCanvas, autoLabelResults, autoReviewIndex, isReviewingAutoLabels]);
 
   // Redraw canvas when boxes or activeBox change
   useEffect(() => {
     if (imageLoaded && originalImage) {
       drawCanvas();
     }
-  }, [boxes, activeBox, imageLoaded, originalImage, showLabelsOnCanvas]);
+  }, [boxes, activeBox, imageLoaded, originalImage, showLabelsOnCanvas, autoLabelResults, autoReviewIndex, isReviewingAutoLabels]);
 
   useEffect(() => {
     if (activeBox && !activeBox.label && selectedClass) {
@@ -505,6 +602,148 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       setActiveBox(updatedBox);
     }
   }, [activeBox, selectedClass]);
+
+  // If user starts drawing/moving/resizing on canvas, treat it as a manual selection
+  useEffect(() => {
+    if (isDrawing || isMoving) {
+      userSelectedBoxRef.current = true;
+    }
+  }, [isDrawing, isMoving]);
+
+  const isSameBox = useCallback((a: BoundingBox | null | undefined, b: BoundingBox | null | undefined) => {
+    if (!a || !b) return false;
+    return (
+      a.id === b.id &&
+      a.startX === b.startX &&
+      a.startY === b.startY &&
+      a.endX === b.endX &&
+      a.endY === b.endY &&
+      a.label === b.label
+    );
+  }, []);
+
+  // When reviewing auto labels, update activeBox to the current review item.
+  // Do NOT override if the user manually selected another box (tracked by userSelectedBoxRef).
+  useEffect(() => {
+    if (!isReviewingAutoLabels) return;
+    if (!autoLabelResults || autoLabelResults.length === 0) return;
+    const idx = Math.max(0, Math.min(autoReviewIndex, autoLabelResults.length - 1));
+    const item = autoLabelResults[idx];
+    if (!item) return;
+    const found = boxesRef.current.find((b) => b.id === item.id);
+    const currentActive = activeBoxRef.current;
+
+    // If user manually selected another box, do not override their selection
+    if (userSelectedBoxRef.current) {
+      // If user manually selected the current review item, ensure we focus the saved one when available
+      if (currentActive && currentActive.id === item.id && found && !isSameBox(currentActive, found)) {
+        setActiveBox(found);
+      }
+      return;
+    }
+
+    // Otherwise, set active box to review item (saved box if exists, otherwise preview canvas box)
+    // Ensure the current preview box exists in the canvas list and is editable
+    ensurePreviewAdded(item);
+    prunePreviewsExcept(item.id);
+
+    if (found) {
+      if (!isSameBox(currentActive, found)) setActiveBox(found);
+    } else {
+      const preview = { ...item.canvas, label: item.className };
+      if (!isSameBox(currentActive, preview)) setActiveBox(preview);
+    }
+    // Intentionally only depend on review-specific state to avoid loops from boxes/activeBox changes
+  }, [isReviewingAutoLabels, autoLabelResults, autoReviewIndex, isSameBox, setActiveBox]);
+
+  // Helpers to control review flow
+  const confirmCurrentAutoLabel = useCallback(() => {
+    if (!isReviewingAutoLabels || !autoLabelResults || autoLabelResults.length === 0) return;
+    const idx = autoReviewIndex;
+    const item = autoLabelResults[idx];
+    if (!item) return;
+    const toSave = activeBox && activeBox.id === item.id ? { ...activeBox } : { ...item.canvas, label: item.className };
+    // If the box already exists (e.g. user resized and mouseup auto-added it), update instead of adding to avoid duplicate ids
+    const existing = boxes.find((b) => b.id === item.id);
+    if (existing) {
+      updateBox(existing.id!, { ...toSave, isAutoPreview: false });
+      // Mark as confirmed (no longer preview)
+      previewAddedIdsRef.current.delete(item.id);
+    } else {
+      // Add but mark as confirmed (remove preview flag)
+      addBox({ ...toSave, isAutoPreview: false });
+    }
+    if (idx + 1 < autoLabelResults.length) {
+      userSelectedBoxRef.current = false; // move focus to next review item
+      setAutoReviewIndex(idx + 1);
+      const nextItem = autoLabelResults[idx + 1];
+      prunePreviewsExcept(nextItem?.id);
+    } else {
+      setIsReviewingAutoLabels(false);
+      setAutoLabelResults([]);
+      setAutoReviewIndex(0);
+      setActiveBox(null);
+      toast.success('Hoàn tất kiểm tra tự động label');
+    }
+  }, [isReviewingAutoLabels, autoLabelResults, autoReviewIndex, activeBox, addBox, boxes, updateBox]);
+
+  const skipCurrentAutoLabel = useCallback(() => {
+    if (!isReviewingAutoLabels) return;
+    const idx = autoReviewIndex;
+    if (idx + 1 < autoLabelResults.length) {
+      // remove preview for current if we previously added it
+      const item = autoLabelResults[idx];
+      removePreviewIfPresent(item);
+      userSelectedBoxRef.current = false; // next review item should take control
+      setAutoReviewIndex(idx + 1);
+      // also prune other previews so only next one remains
+      const nextItem = autoLabelResults[idx + 1];
+      prunePreviewsExcept(nextItem?.id);
+    } else {
+      setIsReviewingAutoLabels(false);
+      setAutoLabelResults([]);
+      setAutoReviewIndex(0);
+      setActiveBox(null);
+      toast.success('Hoàn tất kiểm tra tự động label');
+    }
+  }, [isReviewingAutoLabels, autoLabelResults, autoReviewIndex]);
+
+  const prevAutoLabel = useCallback(() => {
+    if (!isReviewingAutoLabels) return;
+    if (autoReviewIndex > 0) {
+      userSelectedBoxRef.current = false;
+      const nextIndex = autoReviewIndex - 1;
+      setAutoReviewIndex((i) => i - 1);
+      // ensure preview updated and prune others
+      const prevItem = autoLabelResults[nextIndex];
+      if (prevItem) {
+        ensurePreviewAdded(prevItem);
+        prunePreviewsExcept(prevItem.id);
+      }
+    }
+  }, [isReviewingAutoLabels, autoReviewIndex]);
+
+  const cancelAutoLabelReview = useCallback(() => {
+    setIsReviewingAutoLabels(false);
+    setAutoLabelResults([]);
+    setAutoReviewIndex(0);
+    setActiveBox(null);
+    userSelectedBoxRef.current = false;
+    // Remove any preview boxes that were added
+    previewAddedIdsRef.current.forEach((id) => {
+      // only remove if still exists and is marked preview
+      const found = boxesRef.current.find((b) => b.id === id);
+      if (found && found.isAutoPreview) removeBox(id);
+    });
+    previewAddedIdsRef.current.clear();
+    toast('Hủy chế độ kiểm tra tự động label', { duration: 2000 });
+  }, [setActiveBox]);
+
+  // Handle user manual selection from BoxesList — mark a flag so we don't override by review effect
+  const handleSelectBox = useCallback((box: BoundingBox) => {
+    userSelectedBoxRef.current = true;
+    setActiveBox(box);
+  }, [setActiveBox]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -580,13 +819,10 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       const detections = result.data.detections;
       console.log('Detections received:', detections);
 
-      // Clear existing boxes
+      // Clear existing boxes and prepare detections for review (do not add yet)
       clearBoxes();
 
-      // Convert detections to boxes and add to canvas
-      const addedBoxes: BoundingBox[] = [];
-      
-      detections.forEach((detection, index) => {
+      const results: Array<any> = detections.map((detection: any, index: number) => {
         // Detection format from API has bbox: {x1, y1, x2, y2} in PIXEL coordinates (not normalized!)
         // API returns actual pixel coordinates matching the image dimensions
         const x1 = detection.bbox.x1;
@@ -607,12 +843,31 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
             : (classes.length > 0 ? classes[0] : 'Object'),
         };
 
-        addBox(box);
-        addedBoxes.push(box);
-        console.log(`Box ${index}:`, { pixel: { x1, y1, x2, y2 }, canvas: box });
+        console.log(`Prepared box ${index}:`, { pixel: { x1, y1, x2, y2 }, canvas: box });
+        return {
+          id: box.id,
+          pixel: { x1, y1, x2, y2 },
+          canvas: box,
+          className: detection.class_name && classes.includes(detection.class_name) ? detection.class_name : (classes.length > 0 ? classes[0] : 'Object'),
+        };
       });
 
-      toast.success(`Phát hiện và tự động label ${addedBoxes.length} vật thể`);
+      // Save results for step-by-step review
+      setAutoLabelResults(results);
+      setAutoReviewIndex(0);
+      if (results.length > 0) {
+        userSelectedBoxRef.current = false; // reset manual selection when starting review
+        setIsReviewingAutoLabels(true);
+        setAutoReviewIndex(0);
+        // Add the first preview box immediately so it's on canvas and in the list
+        setTimeout(() => {
+          // schedule after setState resolves to avoid sync update conflict
+          ensurePreviewAdded(results[0]);
+          prunePreviewsExcept(results[0].id);
+          setActiveBox({ ...results[0].canvas, label: results[0].className });
+        }, 0);
+      }
+      toast.success(`Phát hiện ${results.length} vật thể — kiểm tra trước khi thêm`) ;
     } catch (error: any) {
       const message = error?.response?.data?.message || error?.message || 'Lỗi khi tự động label';
       console.error('Auto-label error:', error);
@@ -846,7 +1101,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={handleAutoLabel}
-                  disabled={isAutoLabeling || !imageLoaded}
+                  disabled={isAutoLabeling || !imageLoaded || isReviewingAutoLabels}
                   title="Tự động label bằng AI"
                   className="gap-2"
                 >
@@ -855,7 +1110,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                   ) : (
                     <Wand2 className="h-4 w-4" />
                   )}
-                  {isAutoLabeling ? 'Đang phát hiện...' : 'Tự động label'}
+                  {isAutoLabeling ? 'Đang phát hiện...' : isReviewingAutoLabels ? `Đang kiểm tra (${autoReviewIndex+1}/${autoLabelResults.length || 0})` : 'Tự động label'}
                 </Button>
 
                 {/* Separator */}
@@ -934,11 +1189,54 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
           </div>
 
           <div style={{ width: '25%' }} className="flex flex-col overflow-hidden">
+            {isReviewingAutoLabels && (
+              <div className="p-3 rounded-md bg-muted/50 border mb-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold">Đang kiểm tra tự động</div>
+                    <div className="text-xs text-muted-foreground">{`Kết quả: ${autoLabelResults.length} — Đang xem ${autoReviewIndex + 1}/${autoLabelResults.length}`}</div>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={prevAutoLabel} disabled={autoReviewIndex === 0}>Trước</Button>
+                  <Button size="sm" variant="outline" onClick={skipCurrentAutoLabel}>Tiếp</Button>
+                  <Button size="sm" variant="default" onClick={confirmCurrentAutoLabel}>Xác nhận & Tiếp</Button>
+                  <Button size="sm" variant="ghost" onClick={cancelAutoLabelReview}>Hủy</Button>
+                </div>
+                <div className="mt-3">
+                  <Label className="text-sm">Class cho object</Label>
+                  <Select value={activeBox?.label || selectedClass} onValueChange={(val) => {
+                    userSelectedBoxRef.current = true;
+                    if (activeBox) {
+                      setActiveBox({ ...activeBox, label: val });
+                      // If preview exists in boxes, update it as well
+                      if (activeBox.id && boxes.some((b) => b.id === activeBox.id)) {
+                        updateBox(activeBox.id, { label: val });
+                      }
+                    }
+                  }}>
+                    <SelectTrigger className="w-full max-w-xs">
+                      <SelectValue placeholder="Chọn class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((cls) => (
+                        <SelectItem key={cls} value={cls}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded" style={{ backgroundColor: getColorForClass(cls) }} />
+                            {cls}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
             <BoxesList 
               boxes={boxes}
               activeBox={activeBox}
               classes={classes}
-              onSelectBox={setActiveBox}
+              onSelectBox={handleSelectBox}
               onDeleteBox={handleDeleteBox}
               onChangeBoxLabel={handleChangeBoxLabel}
               getColorForClass={getColorForClass}

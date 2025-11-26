@@ -7,6 +7,7 @@ export interface BoundingBox {
   endY: number;
   id?: string;
   label?: string;
+  isAutoPreview?: boolean; // transient preview flag for auto-detected boxes
 }
 
 // Patch op types used for history
@@ -707,13 +708,30 @@ export const useBoundingBox = ({
   const addBox = useCallback((box: BoundingBox) => {
     if (isApplyingHistoryRef.current) {
       // If history is being applied, just set without pushing
-      setBoxes((prev) => [...prev, box]);
+      setBoxes((prev) => {
+        // Avoid duplicates — if id exists, replace
+        const idx = prev.findIndex((b) => b.id === box.id);
+        if (idx >= 0) {
+          const newBoxes = [...prev];
+          newBoxes[idx] = box;
+          return newBoxes;
+        }
+        return [...prev, box];
+      });
       return;
     }
     setBoxes((prev) => {
-      const idx = prev.length;
+      const idx = prev.findIndex((b) => b.id === box.id);
+      if (idx >= 0) {
+        // If id already exists, update instead of adding
+        const prevBox = prev[idx];
+        const next = prev.map((b, i) => (i === idx ? box : b));
+        pushOperation({ type: 'update', id: box.id!, prev: { ...prevBox }, next: { ...box } });
+        return next;
+      }
+      const idxNew = prev.length;
       const next = [...prev, box];
-      pushOperation({ type: 'add', box, index: idx });
+      pushOperation({ type: 'add', box, index: idxNew });
       return next;
     });
   }, [pushOperation]);
