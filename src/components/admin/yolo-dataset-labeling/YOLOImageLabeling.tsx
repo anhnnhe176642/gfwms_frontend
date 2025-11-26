@@ -695,23 +695,31 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const skipCurrentAutoLabel = useCallback(() => {
     if (!isReviewingAutoLabels) return;
     const idx = autoReviewIndex;
+    const item = autoLabelResults[idx];
+    // Always remove preview for current item if it was added
+    removePreviewIfPresent(item);
     if (idx + 1 < autoLabelResults.length) {
-      // remove preview for current if we previously added it
-      const item = autoLabelResults[idx];
-      removePreviewIfPresent(item);
       userSelectedBoxRef.current = false; // next review item should take control
       setAutoReviewIndex(idx + 1);
       // also prune other previews so only next one remains
       const nextItem = autoLabelResults[idx + 1];
       prunePreviewsExcept(nextItem?.id);
     } else {
+      // Final item skipped — end review and cleanup
       setIsReviewingAutoLabels(false);
       setAutoLabelResults([]);
       setAutoReviewIndex(0);
       setActiveBox(null);
+      // Remove any remaining preview boxes
+      previewAddedIdsRef.current.forEach((id) => {
+        const found = boxesRef.current.find((b) => b.id === id);
+        if (found && found.isAutoPreview) removeBox(id);
+      });
+      previewAddedIdsRef.current.clear();
+      // Do not restore pre-auto snapshot on skip; only cancel restores snapshot
       toast.success('Hoàn tất kiểm tra tự động label');
     }
-  }, [isReviewingAutoLabels, autoLabelResults, autoReviewIndex]);
+  }, [isReviewingAutoLabels, autoLabelResults, autoReviewIndex, removePreviewIfPresent, prunePreviewsExcept]);
 
   const prevAutoLabel = useCallback(() => {
     if (!isReviewingAutoLabels) return;
