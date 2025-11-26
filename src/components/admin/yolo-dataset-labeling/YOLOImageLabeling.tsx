@@ -11,7 +11,6 @@ import { useBoundingBox, BoundingBox } from '@/hooks/useBoundingBox';
 import { yoloService } from '@/services/yolo.service';
 import { BoxesList } from './BoxesList';
 import { 
-  boundingBoxToYOLO,
   isValidBoundingBox,
   normalizeBoundingBox,
 } from '@/lib/canvasHelpers';
@@ -877,6 +876,37 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     }
   };
 
+  // Start a review session for current labels (boxes) instead of auto-detection
+  const handleReviewExisting = useCallback(() => {
+    const currentBoxes = boxesRef.current;
+    if (!currentBoxes || currentBoxes.length === 0) {
+      toast.error('Không có nhãn nào để duyệt');
+      return;
+    }
+
+    const results = currentBoxes.map((b: BoundingBox, i: number) => ({
+      id: b.id,
+      pixel: {
+        x1: Math.min(b.startX, b.endX) / baseScale,
+        y1: Math.min(b.startY, b.endY) / baseScale,
+        x2: Math.max(b.startX, b.endX) / baseScale,
+        y2: Math.max(b.startY, b.endY) / baseScale,
+      },
+      canvas: { ...b },
+      className: b.label || '',
+    }));
+
+    setAutoLabelResults(results);
+    setAutoReviewIndex(0);
+    setIsReviewingAutoLabels(true);
+    userSelectedBoxRef.current = false;
+    // Focus first box in the list
+    const first = results[0];
+    if (first) {
+      setActiveBox({ ...first.canvas, label: first.className });
+    }
+  }, [baseScale, setActiveBox]);
+
   const handleSave = () => {
     if (!originalImage) return;
 
@@ -1113,6 +1143,19 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                   {isAutoLabeling ? 'Đang phát hiện...' : isReviewingAutoLabels ? `Đang kiểm tra (${autoReviewIndex+1}/${autoLabelResults.length || 0})` : 'Tự động label'}
                 </Button>
 
+                {/* Review existing labels button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleReviewExisting()}
+                  disabled={isReviewingAutoLabels || boxes.length === 0}
+                  title="Duyệt nhãn hiện tại"
+                  className="gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Duyệt nhãn
+                </Button>
+
                 {/* Separator */}
                 <div className="w-px h-6 bg-border" />
 
@@ -1193,7 +1236,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
               <div className="p-3 rounded-md bg-muted/50 border mb-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-semibold">Đang kiểm tra tự động</div>
+                    <div className="text-sm font-semibold">Duyệt kết quả</div>
                     <div className="text-xs text-muted-foreground">{`Kết quả: ${autoLabelResults.length} — Đang xem ${autoReviewIndex + 1}/${autoLabelResults.length}`}</div>
                   </div>
                 </div>
