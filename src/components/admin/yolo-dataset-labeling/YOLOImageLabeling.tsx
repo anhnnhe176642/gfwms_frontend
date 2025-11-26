@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Button } from "@/components/ui/button";
-import { Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw, Wand2, Loader2, Save, CheckCircle2, FileText, Lightbulb } from "lucide-react";
+import { Undo2, Redo2, ZoomIn, ZoomOut, RotateCcw, Wand2, Loader2, Save, CheckCircle2, FileText, Lightbulb, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -132,6 +132,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   const [autoLabelResults, setAutoLabelResults] = useState<Array<any>>([]);
   const [autoReviewIndex, setAutoReviewIndex] = useState<number>(0);
   const [isReviewingAutoLabels, setIsReviewingAutoLabels] = useState(false);
+  const [reviewOrigin, setReviewOrigin] = useState<'auto' | 'existing' | null>(null);
   // Ref for autoLabelResults to draw preview boxes without causing effect loops
   const autoLabelResultsRef = useRef<any[]>([]);
   useEffect(() => {
@@ -140,6 +141,8 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
   // Track which preview boxes have been added to canvas (so we can remove them if unconfirmed)
   const previewAddedIdsRef = useRef<Set<string>>(new Set());
+  // Snapshot of boxes before starting auto-label (used to restore on cancel)
+  const preAutoLabelBoxesRef = useRef<BoundingBox[] | null>(null);
 
   const ensurePreviewAdded = useCallback((item: any) => {
     if (!item || !item.id) return;
@@ -683,6 +686,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       setAutoReviewIndex(0);
       setActiveBox(null);
       toast.success('Hoàn tất kiểm tra tự động label');
+      // Clear pre-auto snapshot on finish
+      preAutoLabelBoxesRef.current = null;
+      setReviewOrigin(null);
     }
   }, [isReviewingAutoLabels, autoLabelResults, autoReviewIndex, activeBox, addBox, boxes, updateBox]);
 
@@ -735,8 +741,23 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       if (found && found.isAutoPreview) removeBox(id);
     });
     previewAddedIdsRef.current.clear();
-    toast('Hủy chế độ kiểm tra tự động label', { duration: 2000 });
-  }, [setActiveBox]);
+    // If review originated from auto-label, restore pre-snapshot
+    if (reviewOrigin === 'auto' && preAutoLabelBoxesRef.current) {
+      // Clear whatever current boxes are now
+      clearBoxes();
+      // Restore previous boxes
+      preAutoLabelBoxesRef.current.forEach((b) => {
+        addBox({ ...b, isAutoPreview: false });
+      });
+      preAutoLabelBoxesRef.current = null;
+    }
+    setReviewOrigin(null);
+    if (reviewOrigin === 'auto') {
+      toast('Hủy tự động label — đã phục hồi nhãn trước đó', { duration: 2000 });
+    } else {
+      toast('Hủy chế độ kiểm tra', { duration: 2000 });
+    }
+  }, [setActiveBox, addBox, removeBox, clearBoxes, reviewOrigin]);
 
   // Handle user manual selection from BoxesList — mark a flag so we don't override by review effect
   const handleSelectBox = useCallback((box: BoundingBox) => {
@@ -818,6 +839,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       const detections = result.data.detections;
       console.log('Detections received:', detections);
 
+      // Snapshot existing boxes before auto-label run so we can restore on cancel
+      preAutoLabelBoxesRef.current = boxesRef.current.map((b) => ({ ...b }));
+      setReviewOrigin('auto');
       // Clear existing boxes and prepare detections for review (do not add yet)
       clearBoxes();
 
@@ -899,6 +923,8 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     setAutoLabelResults(results);
     setAutoReviewIndex(0);
     setIsReviewingAutoLabels(true);
+    setReviewOrigin('existing');
+    preAutoLabelBoxesRef.current = null;
     userSelectedBoxRef.current = false;
     // Focus first box in the list
     const first = results[0];
@@ -1154,6 +1180,19 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                 >
                   <FileText className="h-4 w-4" />
                   Duyệt nhãn
+                </Button>
+
+                {/* Cancel review (global) */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={cancelAutoLabelReview}
+                  hidden={!isReviewingAutoLabels}
+                  title="Hủy kiểm tra"
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Hủy
                 </Button>
 
                 {/* Separator */}
