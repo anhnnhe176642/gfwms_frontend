@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useBoundingBox, BoundingBox } from '@/hooks/useBoundingBox';
 import { yoloService } from '@/services/yolo.service';
 import { BoxesList } from './BoxesList';
+import ReviewPanel from './ReviewPanel';
 import { 
   isValidBoundingBox,
   normalizeBoundingBox,
@@ -175,6 +176,27 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   }, [removeBox]);
   // Track when user manually selects a box (so we don't override with review focus)
   const userSelectedBoxRef = useRef(false);
+
+  // isPanelFloating is managed in the parent for layout/placeholder purposes
+  const [isPanelFloating, setIsPanelFloating] = useState(false);
+
+  // load saved floating state
+  useEffect(() => {
+    const savedFloating = localStorage.getItem('yoloReviewPanelFloating');
+    if (savedFloating) {
+      try {
+        const val = JSON.parse(savedFloating);
+        if (typeof val === 'boolean') setIsPanelFloating(val);
+      } catch {}
+    }
+  }, []);
+
+  // persist floating state
+  useEffect(() => {
+    try {
+      localStorage.setItem('yoloReviewPanelFloating', JSON.stringify(isPanelFloating));
+    } catch (e) {}
+  }, [isPanelFloating]);
 
   // Sync refs với state - chỉ update ref, không trigger re-render
   useEffect(() => {
@@ -1311,46 +1333,27 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
           <div style={{ width: '25%' }} className="flex flex-col">
             {isReviewingAutoLabels && (
-              <div className="p-3 rounded-md bg-muted/50 border mb-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold">Duyệt kết quả</div>
-                    <div className="text-xs text-muted-foreground">{`Kết quả: ${autoLabelResults.length} — Đang xem ${autoReviewIndex + 1}/${autoLabelResults.length}`}</div>
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={prevAutoLabel} disabled={autoReviewIndex === 0}>Trước</Button>
-                  <Button size="sm" variant="outline" onClick={skipCurrentAutoLabel}>Tiếp</Button>
-                  <Button size="sm" variant="default" onClick={confirmCurrentAutoLabel}>Xác nhận & Tiếp</Button>
-                </div>
-                <div className="mt-3">
-                  <Label className="text-sm">Class cho object</Label>
-                  <Select value={activeBox?.label || selectedClass} onValueChange={(val) => {
-                    userSelectedBoxRef.current = true;
-                    if (activeBox) {
-                      setActiveBox({ ...activeBox, label: val });
-                      // If preview exists in boxes, update it as well
-                      if (activeBox.id && boxes.some((b) => b.id === activeBox.id)) {
-                        updateBox(activeBox.id, { label: val });
-                      }
-                    }
-                  }}>
-                    <SelectTrigger className="w-full max-w-xs">
-                      <SelectValue placeholder="Chọn class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map((cls) => (
-                        <SelectItem key={cls} value={cls}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded" style={{ backgroundColor: getColorForClass(cls) }} />
-                            {cls}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <ReviewPanel
+                isPanelFloating={isPanelFloating}
+                setIsPanelFloating={setIsPanelFloating}
+                autoLabelResults={autoLabelResults}
+                autoReviewIndex={autoReviewIndex}
+                activeBox={activeBox}
+                selectedClass={selectedClass}
+                classes={classes}
+                boxes={boxes}
+                setActiveBox={setActiveBox}
+                updateBox={updateBox}
+                prevAutoLabel={prevAutoLabel}
+                skipCurrentAutoLabel={skipCurrentAutoLabel}
+                confirmCurrentAutoLabel={confirmCurrentAutoLabel}
+                getColorForClass={getColorForClass}
+                userSelectedBoxRef={userSelectedBoxRef}
+              />
+            )}
+            {/* Reserve layout space when panel is floating to avoid layout jump */}
+            {isPanelFloating && (
+              <div className="w-full h-56" aria-hidden />
             )}
             <BoxesList 
               boxes={boxes}
