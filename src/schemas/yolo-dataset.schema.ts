@@ -98,6 +98,11 @@ export const importDatasetZipSchema = yup.object().shape({
     .optional()
     .default('')
     .max(1000, 'Mô tả không được vượt quá 1000 ký tự'),
+  imageStatus: yup
+    .string()
+    .optional()
+    .oneOf(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'], 'Trạng thái không hợp lệ')
+    .default('PENDING'),
 });
 
 export type ImportDatasetZipFormData = yup.InferType<typeof importDatasetZipSchema>;

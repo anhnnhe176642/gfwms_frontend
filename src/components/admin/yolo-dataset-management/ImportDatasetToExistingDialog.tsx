@@ -15,6 +15,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { FileUp, Upload } from 'lucide-react';
+import { IMAGE_STATUS_CONFIG } from '@/constants/yolo-dataset';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export type ImportDatasetToExistingDialogProps = {
   open: boolean;
@@ -36,6 +38,7 @@ export function ImportDatasetToExistingDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [imageStatus, setImageStatus] = useState<'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'>('PENDING');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,7 +65,7 @@ export function ImportDatasetToExistingDialog({
 
     setIsLoading(true);
     try {
-      const result = await yoloDatasetService.importDatasetToExisting(datasetId, selectedFile);
+      const result = await yoloDatasetService.importDatasetToExisting(datasetId, selectedFile, imageStatus);
 
       toast.success(result.message || 'Import thành công');
 
@@ -155,6 +158,19 @@ export function ImportDatasetToExistingDialog({
               className="hidden"
               disabled={isLoading}
             />
+            <div className="mt-2">
+              <Label htmlFor="imageStatus">Trạng thái ảnh khi import</Label>
+            <Select value={imageStatus} onValueChange={(val: string) => setImageStatus(val as any)}>
+              <SelectTrigger id="imageStatus" className="w-full mt-1">
+                  <SelectValue placeholder="PENDING" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(IMAGE_STATUS_CONFIG).map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 

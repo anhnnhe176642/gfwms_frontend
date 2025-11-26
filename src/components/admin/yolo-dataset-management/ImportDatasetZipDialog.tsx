@@ -14,6 +14,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { IMAGE_STATUS_CONFIG } from '@/constants/yolo-dataset';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,7 +45,8 @@ export function ImportDatasetZipDialog({
         const result = await yoloDatasetService.importZipDataset(
           data.zipFile,
           data.name,
-          data.description
+          data.description,
+          data.imageStatus
         );
 
         toast.success(result.message || `Dataset "${data.name}" được import thành công`);
@@ -115,6 +118,7 @@ export function ImportDatasetZipDialog({
       zipFile: true,
       name: true,
       description: true,
+      imageStatus: true,
     }));
     return handleSubmit(e);
   };
@@ -122,6 +126,7 @@ export function ImportDatasetZipDialog({
   const zipFileError = touched.zipFile ? (errors.zipFile as string) : undefined;
   const nameError = touched.name ? (errors.name as string) : undefined;
   const descriptionError = touched.description ? (errors.description as string) : undefined;
+  const statusError = touched.imageStatus ? (errors.imageStatus as string) : undefined;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -208,6 +213,31 @@ export function ImportDatasetZipDialog({
             />
             {descriptionError && (
               <p className="text-sm text-red-600">{descriptionError}</p>
+            )}
+          </div>
+
+          {/* Status Input */}
+          <div className="space-y-2">
+            <Label htmlFor="imageStatus">Trạng thái ảnh khi import</Label>
+            <Select
+              value={(values.imageStatus as string) || 'PENDING'}
+              onValueChange={(val: string) => {
+                setFieldValue('imageStatus', val as any);
+                setTouched((prev) => ({ ...prev, imageStatus: true }));
+                // Validate field explicitly
+              }}
+            >
+              <SelectTrigger id="imageStatus" className={`w-full ${statusError ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="PENDING" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(IMAGE_STATUS_CONFIG).map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {statusError && (
+              <p className="text-sm text-red-600">{statusError}</p>
             )}
           </div>
 

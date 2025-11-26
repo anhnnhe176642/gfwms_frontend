@@ -2,7 +2,6 @@ import api from '@/lib/api';
 import type {
   DatasetListResponse,
   DatasetListParams,
-  DatasetListItem,
   DatasetStatus,
   DatasetDetail,
   GetDatasetResponse,
@@ -18,7 +17,7 @@ import type {
   GetImageDetailResponse,
   ImportDatasetFromZipResponse,
   ImportDatasetToExistingResponse,
-  ExportDatasetResponse,
+  DatasetImageStatus,
 } from '@/types/yolo-dataset';
 
 const BASE_PATH = '/v1/yolo/datasets';
@@ -176,13 +175,17 @@ export const yoloDatasetService = {
   importZipDataset: async (
     zipFile: File,
     name: string,
-    description?: string
+    description?: string,
+    imageStatus?: DatasetImageStatus
   ): Promise<ImportDatasetFromZipResponse> => {
     const formData = new FormData();
     formData.append('zipFile', zipFile);
     formData.append('name', name);
     if (description) {
       formData.append('description', description);
+    }
+    if (imageStatus) {
+      formData.append('imageStatus', imageStatus);
     }
 
     const response = await api.post<ImportDatasetFromZipResponse>(
@@ -204,10 +207,14 @@ export const yoloDatasetService = {
    */
   importDatasetToExisting: async (
     datasetId: string | number,
-    zipFile: File
+    zipFile: File,
+    imageStatus?: DatasetImageStatus
   ): Promise<ImportDatasetToExistingResponse> => {
     const formData = new FormData();
     formData.append('zipFile', zipFile);
+    if (imageStatus) {
+      formData.append('imageStatus', imageStatus);
+    }
 
     const response = await api.post<ImportDatasetToExistingResponse>(
       `${BASE_PATH}/${datasetId}/import`,

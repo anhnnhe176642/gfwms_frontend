@@ -191,6 +191,12 @@ export type ImportZipDatasetPayload = {
   zipFile: File;
   name: string;
   description?: string;
+  imageStatus?: DatasetImageStatus;
+};
+
+export type ImportDatasetToExistingPayload = {
+  zipFile: File;
+  imageStatus?: DatasetImageStatus;
 };
 
 export type ImportDatasetToExistingResponse = {
