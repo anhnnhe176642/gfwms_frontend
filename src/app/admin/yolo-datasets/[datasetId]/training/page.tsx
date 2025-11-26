@@ -44,6 +44,7 @@ export default function TrainingPage({
   const [expiresIn, setExpiresIn] = useState<string>('');
   const [selectedExpiration, setSelectedExpiration] = useState<string>('5h');
   const [copied, setCopied] = useState(false);
+  const [remainingTime, setRemainingTime] = useState<number>(0);
 
   useEffect(() => {
     const initPage = async () => {
@@ -65,6 +66,52 @@ export default function TrainingPage({
     initPage();
   }, [params]);
 
+  // Parse expiration time and set countdown
+  useEffect(() => {
+    if (!expiresIn) return;
+
+    const match = expiresIn.match(/^(\d+)([a-z]+)$/i);
+    if (match) {
+      const [, value, unit] = match;
+      const numValue = parseInt(value, 10);
+      let seconds = 0;
+
+      switch (unit.toLowerCase()) {
+        case 'h':
+          seconds = numValue * 3600;
+          break;
+        case 'd':
+          seconds = numValue * 86400;
+          break;
+        case 'm':
+          seconds = numValue * 60;
+          break;
+        case 's':
+          seconds = numValue;
+          break;
+      }
+
+      setRemainingTime(seconds);
+    }
+  }, [expiresIn]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (remainingTime <= 0) return;
+
+    const timer = setInterval(() => {
+      setRemainingTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [remainingTime]);
+
   const handleGenerateToken = async () => {
     if (!datasetId) return;
 
@@ -73,6 +120,32 @@ export default function TrainingPage({
       const result = await yoloDatasetService.createExportToken(datasetId, selectedExpiration);
       setToken(result.token);
       setExpiresIn(result.expiresIn);
+      
+      // Calculate remaining time immediately
+      const match = result.expiresIn.match(/^(\d+)([a-z]+)$/i);
+      if (match) {
+        const [, value, unit] = match;
+        const numValue = parseInt(value, 10);
+        let seconds = 0;
+
+        switch (unit.toLowerCase()) {
+          case 'h':
+            seconds = numValue * 3600;
+            break;
+          case 'd':
+            seconds = numValue * 86400;
+            break;
+          case 'm':
+            seconds = numValue * 60;
+            break;
+          case 's':
+            seconds = numValue;
+            break;
+        }
+
+        setRemainingTime(seconds);
+      }
+      
       toast.success('Token được tạo thành công');
     } catch (err) {
       const message = getServerErrorMessage(err) || 'Không thể tạo token';
@@ -163,7 +236,7 @@ export default function TrainingPage({
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-base">Bước 1: Tạo Token</CardTitle>
-                  <Select value={selectedExpiration} onValueChange={setSelectedExpiration} disabled={!!token}>
+                  <Select value={selectedExpiration} onValueChange={setSelectedExpiration}>
                     <SelectTrigger id="expiration-select" size='xs'>
                       <SelectValue />
                     </SelectTrigger>
@@ -186,7 +259,7 @@ export default function TrainingPage({
                 
                 <Button
                   onClick={handleGenerateToken}
-                  disabled={isGeneratingToken || !!token}
+                  disabled={isGeneratingToken}
                   className="w-full"
                   size="sm"
                 >
@@ -195,6 +268,8 @@ export default function TrainingPage({
                       <Loader className="h-3 w-3 mr-2 animate-spin" />
                       Đang tạo...
                     </>
+                  ) : token ? (
+                    'Tạo Token Mới'
                   ) : (
                     'Tạo Token'
                   )}
@@ -202,9 +277,16 @@ export default function TrainingPage({
 
                 {token && (
                   <div className="space-y-2 mt-3 p-3 bg-muted rounded-lg border">
-                    <div className="flex items-center gap-2 text-xs">
-                      <CheckCircle2 className="h-3 w-3 text-green-600" />
-                      <span className="font-medium">Tạo thành công</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-xs">
+                        <CheckCircle2 className="h-3 w-3 text-green-600" />
+                        <span className="font-medium">Tạo thành công</span>
+                      </div>
+                      <span className={`text-xs font-semibold ${remainingTime > 0 && remainingTime <= 600 ? 'text-red-600' : remainingTime === 0 ? 'text-red-600' : ''}`}>
+                        {remainingTime > 0
+                          ? `${Math.floor(remainingTime / 3600)}:${String(Math.floor((remainingTime % 3600) / 60)).padStart(2, '0')}:${String(remainingTime % 60).padStart(2, '0')}`
+                          : 'Hết hạn'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <input
