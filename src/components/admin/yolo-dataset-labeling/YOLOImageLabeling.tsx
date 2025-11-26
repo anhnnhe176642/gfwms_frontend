@@ -14,6 +14,7 @@ import {
   isValidBoundingBox,
   normalizeBoundingBox,
 } from '@/lib/canvasHelpers';
+import { setupCanvasDPR } from '@/lib/canvasUtils';
 
 interface YOLOImageLabelingProps {
   imageSrc: string;
@@ -180,6 +181,35 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     boxesRef.current = boxes;
   }, [boxes]);
 
+  // Adjust existing boxes when baseScale changes (e.g., container resized)
+  const prevBaseScaleRef = useRef<number>(baseScale);
+  useEffect(() => {
+    const prevBaseScale = prevBaseScaleRef.current;
+    if (!originalImage) {
+      prevBaseScaleRef.current = baseScale;
+      return;
+    }
+    if (prevBaseScale <= 0 || Math.abs(prevBaseScale - baseScale) < 1e-6) {
+      prevBaseScaleRef.current = baseScale;
+      return;
+    }
+
+    // Scale all boxes from previous baseScale to new baseScale
+    const ratio = baseScale / prevBaseScale;
+    if (boxesRef.current && boxesRef.current.length > 0) {
+      boxesRef.current.forEach((b) => {
+        if (!b || b.id == null) return;
+        updateBox(b.id!, {
+          startX: b.startX * ratio,
+          startY: b.startY * ratio,
+          endX: b.endX * ratio,
+          endY: b.endY * ratio,
+        });
+      });
+    }
+    prevBaseScaleRef.current = baseScale;
+  }, [baseScale, updateBox, originalImage]);
+
   useEffect(() => {
     activeBoxRef.current = activeBox;
   }, [activeBox]);
@@ -267,15 +297,16 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     const canvas = canvasRef.current;
     if (!canvas || !originalImage || baseScale === 0) return;
 
-    // Canvas size = baseScale * zoomLevel
-    // Zoom baked into canvas resolution
+    // Canvas display size in CSS pixels (logical units)
     const displayWidth = originalImage.width * baseScale * zoomLevel;
     const displayHeight = originalImage.height * baseScale * zoomLevel;
 
-    canvas.width = displayWidth;
-    canvas.height = displayHeight;
-
+    // Setup canvas pixel size for DPR and get device pixel ratio
+    const dpr = setupCanvasDPR(canvas, displayWidth, displayHeight);
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    // Reset transform and scale for DPR: we will draw using CSS pixels coordinates
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (!ctx) return;
 
     // Use refs instead of closure to get latest boxes without dependency
@@ -301,7 +332,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     // Clear canvas
     ctx.clearRect(0, 0, displayWidth, displayHeight);
 
-    // Draw image with zoom
+    // Draw image with zoom (use CSS pixel-based sizes; ctx is scaled by DPR)
     ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
 
     // Merge active box with visible boxes for rendering
@@ -685,7 +716,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       setAutoLabelResults([]);
       setAutoReviewIndex(0);
       setActiveBox(null);
-      toast.success('Hoàn tất kiểm tra tự động label');
+      toast.success('Hoàn tất kiểm tra Tự động dán nhãn');
       // Clear pre-auto snapshot on finish
       preAutoLabelBoxesRef.current = null;
       setReviewOrigin(null);
@@ -717,7 +748,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       });
       previewAddedIdsRef.current.clear();
       // Do not restore pre-auto snapshot on skip; only cancel restores snapshot
-      toast.success('Hoàn tất kiểm tra tự động label');
+      toast.success('Hoàn tất kiểm tra Tự động dán nhãn');
     }
   }, [isReviewingAutoLabels, autoLabelResults, autoReviewIndex, removePreviewIfPresent, prunePreviewsExcept]);
 
@@ -761,7 +792,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     }
     setReviewOrigin(null);
     if (reviewOrigin === 'auto') {
-      toast('Hủy tự động label — đã phục hồi nhãn trước đó', { duration: 2000 });
+      toast('Hủy Tự động dán nhãn — đã phục hồi nhãn trước đó', { duration: 2000 });
     } else {
       toast('Hủy chế độ kiểm tra', { duration: 2000 });
     }
@@ -817,7 +848,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
   }, [handleWheel]);
 
   /**
-   * Tự động label bằng cách gọi YOLO detect API
+   * Tự động dán nhãn bằng cách gọi YOLO detect API
    */
   const handleAutoLabel = async () => {
     if (!originalImage || !imageSrc) {
@@ -900,7 +931,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       }
       toast.success(`Phát hiện ${results.length} vật thể — kiểm tra trước khi thêm`) ;
     } catch (error: any) {
-      const message = error?.response?.data?.message || error?.message || 'Lỗi khi tự động label';
+      const message = error?.response?.data?.message || error?.message || 'Lỗi khi Tự động dán nhãn';
       console.error('Auto-label error:', error);
       toast.error(message);
     } finally {
@@ -1166,7 +1197,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                   size="sm"
                   onClick={handleAutoLabel}
                   disabled={isAutoLabeling || !imageLoaded || isReviewingAutoLabels}
-                  title="Tự động label bằng AI"
+                  title="Tự động dán nhãn bằng AI"
                   className="gap-2"
                 >
                   {isAutoLabeling ? (
@@ -1174,7 +1205,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                   ) : (
                     <Wand2 className="h-4 w-4" />
                   )}
-                  {isAutoLabeling ? 'Đang phát hiện...' : isReviewingAutoLabels ? `Đang kiểm tra (${autoReviewIndex+1}/${autoLabelResults.length || 0})` : 'Tự động label'}
+                  {isAutoLabeling ? 'Đang phát hiện...' : isReviewingAutoLabels ? `Đang kiểm tra (${autoReviewIndex+1}/${autoLabelResults.length || 0})` : 'Tự động dán nhãn'}
                 </Button>
 
                 {/* Review existing labels button */}
@@ -1278,7 +1309,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
             </div>
           </div>
 
-          <div style={{ width: '25%' }} className="flex flex-col overflow-hidden">
+          <div style={{ width: '25%' }} className="flex flex-col">
             {isReviewingAutoLabels && (
               <div className="p-3 rounded-md bg-muted/50 border mb-2">
                 <div className="flex items-center justify-between">
@@ -1291,7 +1322,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                   <Button size="sm" variant="outline" onClick={prevAutoLabel} disabled={autoReviewIndex === 0}>Trước</Button>
                   <Button size="sm" variant="outline" onClick={skipCurrentAutoLabel}>Tiếp</Button>
                   <Button size="sm" variant="default" onClick={confirmCurrentAutoLabel}>Xác nhận & Tiếp</Button>
-                  <Button size="sm" variant="ghost" onClick={cancelAutoLabelReview}>Hủy</Button>
                 </div>
                 <div className="mt-3">
                   <Label className="text-sm">Class cho object</Label>

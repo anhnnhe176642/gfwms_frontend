@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useBoundingBox } from '@/hooks/useBoundingBox';
+import { setupCanvasDPR } from '@/lib/canvasUtils';
 import { drawBoundingBox, drawDimOverlay } from '@/lib/canvasHelpers';
 import { Lightbulb, Scissors } from 'lucide-react';
 
@@ -69,17 +70,13 @@ export const FabricCountImageCropper: React.FC<FabricCountImageCropperProps> = (
 
     const newDisplayWidth = originalImage.width * calculatedScale;
     const newDisplayHeight = originalImage.height * calculatedScale;
+    const dpr = setupCanvasDPR(canvas, newDisplayWidth, newDisplayHeight);
+    setDisplayWidth(newDisplayWidth);
+    setDisplayHeight(newDisplayHeight);
+    setScale(calculatedScale);
 
-    // Chỉ update canvas nếu kích thước thay đổi
-    if (canvas.width !== newDisplayWidth || canvas.height !== newDisplayHeight) {
-      canvas.width = newDisplayWidth;
-      canvas.height = newDisplayHeight;
-      setDisplayWidth(newDisplayWidth);
-      setDisplayHeight(newDisplayHeight);
-      setScale(calculatedScale);
-    }
-
-    // Vẽ ảnh gốc
+    // Adjust for DPR and draw using CSS pixel coordinates
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.drawImage(originalImage, 0, 0, newDisplayWidth, newDisplayHeight);
 
     // Vẽ crop box nếu có

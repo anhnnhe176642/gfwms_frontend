@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useBoundingBox } from '@/hooks/useBoundingBox';
+import { setupCanvasDPR } from '@/lib/canvasUtils';
 import { drawBoundingBox, drawDimOverlay } from '@/lib/canvasHelpers';
 import { Lightbulb, Scissors } from 'lucide-react';
 
@@ -46,7 +47,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     enabled: imageLoaded && cropMode,
     multipleBoxes: false, // Chỉ cho phép 1 crop box
     edgeThreshold: 15, // Tăng vùng resize để dễ kéo cạnh
-    zoomLevel: scaleRef.current, // Dùng ref để hook luôn có scale chính xác
+    zoomLevel: scale, // zoomLevel must be reactive, pass state
     // Truyền kích thước ảnh gốc
     canvasLogicalWidth: originalImage?.width || 0,
     canvasLogicalHeight: originalImage?.height || 0,
@@ -71,14 +72,14 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     const displayWidth = originalImage.width * calculatedScale;
     const displayHeight = originalImage.height * calculatedScale;
 
-    canvas.width = displayWidth;
-    canvas.height = displayHeight;
+    const dpr = setupCanvasDPR(canvas, displayWidth, displayHeight);
     
-    // Cập nhật ref để hook dùng scale chính xác
+    // Cập nhật ref/state để hook dùng scale chính xác
     scaleRef.current = calculatedScale;
     setScale(calculatedScale);
 
-    // Vẽ ảnh gốc
+    // Adjust for DPR and draw with CSS pixel coordinates
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
 
     // Vẽ crop box nếu có

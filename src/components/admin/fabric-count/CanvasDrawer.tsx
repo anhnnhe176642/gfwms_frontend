@@ -7,6 +7,7 @@ import { CanvasControlBar } from './CanvasControlBar';
 import { CanvasDisplay } from './CanvasDisplay';
 import { EditModeControls } from './EditModeControls';
 import { SizeControlPanel } from './SizeControlPanel';
+import { setupCanvasDPR, mapClientToLogicalPoint } from '@/lib/canvasUtils';
 
 interface CanvasDrawerProps {
   imageUrl: string;
@@ -81,6 +82,8 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
       canvas.width = displayWidth;
       canvas.height = displayHeight;
+        const dpr = setupCanvasDPR(canvas, displayWidth, displayHeight);
+        canvas.getContext('2d')?.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const ctx = canvas.getContext('2d');
       if (!ctx) {
@@ -191,20 +194,18 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
     if (!isEditMode || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
     
     // Tính toán tọa độ click chính xác với device pixel ratio
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    const p = mapClientToLogicalPoint(e.clientX, e.clientY, canvas, calculateScale());
+    const x = p.x; // original image pixel coordinates
+    const y = p.y;
 
     // Kiểm tra xem click có nằm trong vòng tròn nào không
     for (let i = 0; i < currentDetections.length; i++) {
       const detection = currentDetections[i];
-      const centerX = detection.center.x * scale;
-      const centerY = detection.center.y * scale;
-      const radius = (Math.min(detection.dimensions.width, detection.dimensions.height) * scale) / 2;
+      const centerX = detection.center.x; // original image pixel coordinates
+      const centerY = detection.center.y;
+      const radius = (Math.min(detection.dimensions.width, detection.dimensions.height)) / 2;
 
       const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
 
@@ -231,9 +232,9 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   };
 
   const addDetection = (x: number, y: number) => {
-    // Chuyển đổi pixel sang tọa độ gốc
-    const originalX = x / scale;
-    const originalY = y / scale;
+    // x and y are original image pixel coordinates
+    const originalX = x;
+    const originalY = y;
 
     // Tạo vật thể mới với kích thước từ slider
     const newDetection: Detection = {

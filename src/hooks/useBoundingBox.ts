@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { mapClientToLogicalPoint } from '@/lib/canvasUtils';
 
 export interface BoundingBox {
   startX: number;
@@ -99,33 +100,13 @@ export const useBoundingBox = ({
    */
   const getScaledCoordinates = useCallback(
     (clientX: number, clientY: number, canvas: HTMLCanvasElement, event?: MouseEvent | React.MouseEvent) => {
-      let domX: number;
-      let domY: number;
+      // Delegate to shared utility for consistent mapping across codebase
+      const p = mapClientToLogicalPoint(clientX, clientY, canvas, zoomLevel || 1);
+      const { x, y } = p;
       
-      // Prefer offsetX/offsetY if available (handles scroll/padding correctly)
-      if (event && 'nativeEvent' in event) {
-        // React synthetic event
-        const nativeEvent = (event as React.MouseEvent).nativeEvent;
-        domX = nativeEvent.offsetX;
-        domY = nativeEvent.offsetY;
-      } else if (event && 'offsetX' in event) {
-        // Native event
-        domX = (event as MouseEvent).offsetX;
-        domY = (event as MouseEvent).offsetY;
-      } else {
-        // Fallback to clientX - rect
-        const canvasRect = canvas.getBoundingClientRect();
-        domX = clientX - canvasRect.left;
-        domY = clientY - canvasRect.top;
-      }
-      
-      // Convert from screen coords to canvas logical coords (canvas.width = logical * zoomLevel)
-      const x = domX / (zoomLevel || 1);
-      const y = domY / (zoomLevel || 1);
-      
-      // Clamp to logical bounds
-      const maxX = canvas.width / (zoomLevel || 1);
-      const maxY = canvas.height / (zoomLevel || 1);
+      // Clamp to logical bounds (canvas.width is device pixels when DPR scaling is applied)
+      const maxX = canvas.width / (p.dpr * (zoomLevel || 1));
+      const maxY = canvas.height / (p.dpr * (zoomLevel || 1));
       
       return {
         x: Math.max(0, Math.min(x, maxX)),
@@ -406,8 +387,12 @@ export const useBoundingBox = ({
         const width = x2 - x1;
         const height = y2 - y1;
 
-        const newX1 = Math.max(0, Math.min(x1 + deltaX, canvas.width - width));
-        const newY1 = Math.max(0, Math.min(y1 + deltaY, canvas.height - height));
+        const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+        const maxLogicalWidth = (canvas.width / dpr);
+        const maxLogicalHeight = (canvas.height / dpr);
+
+        const newX1 = Math.max(0, Math.min(x1 + deltaX, maxLogicalWidth - width));
+        const newY1 = Math.max(0, Math.min(y1 + deltaY, maxLogicalHeight - height));
 
         const updatedBox = {
           ...activeBox,
@@ -626,8 +611,9 @@ export const useBoundingBox = ({
         const height = y2 - y1;
 
         // Tính logical bounds (không phải DOM pixels)
-        const logicalWidth = canvasLogicalWidth || canvas.width;
-        const logicalHeight = canvasLogicalHeight || canvas.height;
+        const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+        const logicalWidth = canvasLogicalWidth || (canvas.width / dpr);
+        const logicalHeight = canvasLogicalHeight || (canvas.height / dpr);
 
         const newX1 = Math.max(0, Math.min(x1 + deltaX, logicalWidth - width));
         const newY1 = Math.max(0, Math.min(y1 + deltaY, logicalHeight - height));
