@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
 export interface BoundingBox {
   startX: number;
@@ -8,6 +8,18 @@ export interface BoundingBox {
   id?: string;
   label?: string;
 }
+
+// Patch op types used for history
+export type PatchOp =
+  | { type: 'add'; box: BoundingBox; index: number }
+  | { type: 'remove'; box: BoundingBox; index: number }
+  | { type: 'update'; id: string; prev: BoundingBox; next: BoundingBox }
+  | { type: 'replace_all'; prev: BoundingBox[]; next: BoundingBox[] };
+
+export type UndoRedoResult = {
+  op: PatchOp;
+  direction: 'undo' | 'redo';
+};
 
 interface UseBoundingBoxOptions {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -34,8 +46,8 @@ interface UseBoundingBoxReturn {
   clearBoxes: () => void;
   detectEdgeAtPoint: (x: number, y: number, box: BoundingBox) => string | null;
   isPointInsideBox: (x: number, y: number, box: BoundingBox) => boolean;
-  undo: () => void;
-  redo: () => void;
+  undo: () => UndoRedoResult | null;
+  redo: () => UndoRedoResult | null;
   canUndo: boolean;
   canRedo: boolean;
   deleteActiveBox: () => void;
@@ -57,11 +69,25 @@ export const useBoundingBox = ({
   const [resizingEdge, setResizingEdge] = useState<string | null>(null);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
   
-  // Undo/Redo history - dùng ref để đơn giản, max 200 states
-  // Khởi tạo với state empty để có thể undo về trạng thái ban đầu
-  const historyRef = useRef<BoundingBox[][]>([[]]);
-  const historyIndexRef = useRef<number>(0);
+  // Undo/Redo: delta-based history (patches) to save memory
+  // Patch op types below capture only changes per operation
+  type PatchOp =
+    | { type: 'add'; box: BoundingBox; index: number }
+    | { type: 'remove'; box: BoundingBox; index: number }
+    | { type: 'update'; id: string; prev: BoundingBox; next: BoundingBox }
+    | { type: 'replace_all'; prev: BoundingBox[]; next: BoundingBox[] };
+
+  const HISTORY_LIMIT = 500;
+  const historyRef = useRef<PatchOp[]>([]);
+  // historyIndex points to last applied op: -1 means nothing applied
+  const historyIndexRef = useRef<number>(-1);
   const isApplyingHistoryRef = useRef(false);
+  const [historyVersion, setHistoryVersion] = useState(0); // reactive flag for UI
+
+  // Track operation start state for mouse interactions (move/resize)
+  const operationStartBoxRef = useRef<BoundingBox | null>(null);
+
+  // Undo/Redo result returned to caller
 
   /**
    * Helper: Normalize tọa độ mouse theo scale
@@ -149,14 +175,68 @@ export const useBoundingBox = ({
     []
   );
 
+  const bumpHistoryVersion = useCallback(() => setHistoryVersion(v => v + 1), []);
+
   /**
-   * Lưu state vào history cho undo/redo - đơn giản, lưu mỗi lần kéo thả
-   * Chỉ mark flag, useEffect sẽ tự động lưu khi boxes change
+   * pushOperation: add a patch operation into history (delta-based)
    */
-  const saveToHistory = useCallback(() => {
-    // Không lưu nếu đang apply undo/redo
+  const pushOperation = useCallback((op: PatchOp) => {
     if (isApplyingHistoryRef.current) return;
-  }, []);
+    // remove redo history
+    historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+    // avoid duplicate consecutive ops
+    const last = historyRef.current[historyRef.current.length - 1];
+    try {
+      if (last && JSON.stringify(last) === JSON.stringify(op)) return;
+    } catch (e) {
+      // fallback: if stringify fails, proceed
+    }
+    historyRef.current.push(op);
+    if (historyRef.current.length > HISTORY_LIMIT) {
+      historyRef.current.shift();
+      // adjust index when oldest removed
+      historyIndexRef.current = Math.max(-1, historyIndexRef.current - 1);
+    }
+    historyIndexRef.current = historyRef.current.length - 1;
+    bumpHistoryVersion();
+  }, [bumpHistoryVersion]);
+
+  const applyOperation = useCallback((op: PatchOp, forward: boolean) => {
+    // Applies operation forward (true) or undo (false). Always uses setBoxes
+    isApplyingHistoryRef.current = true;
+    setBoxes((prev) => {
+      switch (op.type) {
+        case 'add': {
+          if (forward) {
+            const idx = Math.min(Math.max(0, op.index), prev.length);
+            return [...prev.slice(0, idx), op.box, ...prev.slice(idx)];
+          }
+          return prev.filter((b) => b.id !== op.box.id);
+        }
+        case 'remove': {
+          if (forward) {
+            return prev.filter((b) => b.id !== op.box.id);
+          }
+          const idx = Math.min(Math.max(0, op.index), prev.length);
+          return [...prev.slice(0, idx), op.box, ...prev.slice(idx)];
+        }
+        case 'update': {
+          const target = forward ? op.next : op.prev;
+          return prev.map((b) => (b.id === op.id ? target : b));
+        }
+        case 'replace_all': {
+          return forward ? op.next : op.prev;
+        }
+      }
+    });
+    // microtask to unflag after state applied
+    setTimeout(() => {
+      isApplyingHistoryRef.current = false;
+      bumpHistoryVersion();
+    }, 0);
+  }, [bumpHistoryVersion]);
+
+  // NOTE: saveToHistory was removed in favor of granular patch operations
 
   /**
    * Phát hiện cạnh hoặc góc tại một điểm - tối ưu O(1) check
@@ -264,12 +344,16 @@ export const useBoundingBox = ({
         const edge = detectEdgeAtPoint(x, y, clickedBox);
         if (edge) {
           setResizingEdge(edge);
+          // record starting state for update op
+          operationStartBoxRef.current = { ...clickedBox };
           setIsDrawing(true);
           return;
         }
 
         // Kiểm tra move
         if (isPointInsideBox(x, y, clickedBox)) {
+          // record starting state for move op
+          operationStartBoxRef.current = { ...clickedBox };
           setIsMoving(true);
           setLastMousePos({ x, y });
           return;
@@ -397,24 +481,28 @@ export const useBoundingBox = ({
           const existingIndex = boxes.findIndex((b) => b.id === activeBox.id);
           newBoxes = [...boxes];
           if (existingIndex >= 0) {
+            // update existing box - update op handled by interaction effect
             newBoxes[existingIndex] = activeBox;
           } else {
+            // new box: append
             newBoxes.push(activeBox);
+            // create add op (index = existing length)
+            pushOperation({ type: 'add', box: { ...activeBox }, index: boxes.length });
           }
         } else {
           // Single box mode: replace
           newBoxes = [activeBox];
+          pushOperation({ type: 'replace_all', prev: [...boxes], next: [...newBoxes] });
         }
 
         setBoxes(newBoxes);
-        saveToHistory();
       }
     }
 
     setIsDrawing(false);
     setResizingEdge(null);
     setIsMoving(false);
-  }, [activeBox, isDrawing, boxes, multipleBoxes, saveToHistory]);
+  }, [activeBox, isDrawing, boxes, multipleBoxes, pushOperation]);
 
   /**
    * Auto-save history khi hoàn thành kéo/move/resize (isDrawing hoặc isMoving từ true -> false)
@@ -426,20 +514,25 @@ export const useBoundingBox = ({
     const isCurrentlyInteracting = isDrawing || isMoving;
     const wasInteracting = isInteractingRef.current;
 
-    // Nếu vừa kết thúc interact (từ true -> false), lưu history
+    // Interaction start: capture initial box state (only for move/resize)
+    if (!wasInteracting && isCurrentlyInteracting) {
+      operationStartBoxRef.current = activeBox ? { ...activeBox } : null;
+    }
+
+    // Interaction end: create update op if box changed
     if (wasInteracting && !isCurrentlyInteracting && !isApplyingHistoryRef.current) {
-      // Xóa các states phía sau historyIndex (khi user đã undo rồi thực hiện action mới)
-      historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
-      historyRef.current.push([...boxes]);
-      // Giữ tối đa 200 states
-      if (historyRef.current.length > 200) {
-        historyRef.current.shift();
+      const start = operationStartBoxRef.current;
+      if (start) {
+        const current = boxes.find((b) => b.id === start.id);
+        if (current && JSON.stringify(start) !== JSON.stringify(current)) {
+          pushOperation({ type: 'update', id: start.id!, prev: start, next: { ...current } });
+        }
       }
-      historyIndexRef.current += 1;
+      operationStartBoxRef.current = null;
     }
 
     isInteractingRef.current = isCurrentlyInteracting;
-  }, [isDrawing, isMoving, boxes]);
+  }, [isDrawing, isMoving, activeBox, boxes, pushOperation]);
 
   /**
    * Cập nhật cursor dựa trên vị trí - throttled
@@ -612,79 +705,119 @@ export const useBoundingBox = ({
    * Thêm box
    */
   const addBox = useCallback((box: BoundingBox) => {
-    setBoxes((prev) => [...prev, box]);
-  }, []);
+    if (isApplyingHistoryRef.current) {
+      // If history is being applied, just set without pushing
+      setBoxes((prev) => [...prev, box]);
+      return;
+    }
+    setBoxes((prev) => {
+      const idx = prev.length;
+      const next = [...prev, box];
+      pushOperation({ type: 'add', box, index: idx });
+      return next;
+    });
+  }, [pushOperation]);
 
   /**
    * Cập nhật box - giữ nguyên O(n) vì cần update array order
    */
   const updateBox = useCallback((id: string, updates: Partial<BoundingBox>) => {
-    setBoxes((prev) =>
-      prev.map((box) => (box.id === id ? { ...box, ...updates } : box))
-    );
-  }, []);
+    setBoxes((prev) => {
+      const prevBox = prev.find((b) => b.id === id);
+      if (!prevBox) return prev;
+      const nextBox = { ...prevBox, ...updates };
+      if (JSON.stringify(prevBox) !== JSON.stringify(nextBox)) {
+        pushOperation({ type: 'update', id, prev: { ...prevBox }, next: { ...nextBox } });
+      }
+      return prev.map((box) => (box.id === id ? nextBox : box));
+    });
+  }, [pushOperation]);
 
   /**
    * Xóa box - tối ưu với boxMap
    */
   const removeBox = useCallback((id: string) => {
-    setBoxes((prev) => prev.filter((box) => box.id !== id));
+    if (isApplyingHistoryRef.current) {
+      setBoxes((prev) => prev.filter((box) => box.id !== id));
+      if (activeBox?.id === id) setActiveBox(null);
+      return;
+    }
+    setBoxes((prev) => {
+      const idx = prev.findIndex((b) => b.id === id);
+      const prevBox = idx >= 0 ? prev[idx] : undefined;
+      const next = prev.filter((box) => box.id !== id);
+      if (prevBox) {
+        pushOperation({ type: 'remove', box: { ...prevBox }, index: idx });
+      }
+      return next;
+    });
     if (activeBox?.id === id) {
       setActiveBox(null);
     }
-  }, [activeBox]);
+  }, [activeBox, pushOperation]);
 
   /**
    * Xóa tất cả boxes
    */
   const clearBoxes = useCallback(() => {
-    setBoxes([]);
+    if (isApplyingHistoryRef.current) {
+      setBoxes([]);
+      setActiveBox(null);
+      return;
+    }
+    setBoxes((prev) => {
+      const prevBoxes = [...prev];
+      const next: BoundingBox[] = [];
+      if (prevBoxes.length > 0) {
+        pushOperation({ type: 'replace_all', prev: prevBoxes, next });
+      }
+      return next;
+    });
     setActiveBox(null);
-  }, []);
+  }, [pushOperation]);
 
   /**
    * Undo - quay lại state trước đó
    */
-  const undo = useCallback(() => {
-    if (historyIndexRef.current > 0) {
-      historyIndexRef.current -= 1;
-      isApplyingHistoryRef.current = true;
-      setBoxes([...historyRef.current[historyIndexRef.current]]);
+  const undo = useCallback((): UndoRedoResult | null => {
+    const idx = historyIndexRef.current;
+    if (idx >= 0) {
+      const op = historyRef.current[idx];
+      applyOperation(op, false); // apply inverse
+      historyIndexRef.current = idx - 1; // set index after applying
       setActiveBox(null);
-      // Reset flag sau khi state update
-      setTimeout(() => {
-        isApplyingHistoryRef.current = false;
-      }, 0);
+      return { op, direction: 'undo' };
     }
-  }, []);
+    return null;
+  }, [applyOperation]);
 
   /**
    * Redo - tiến tới state tiếp theo
    */
-  const redo = useCallback(() => {
-    if (historyIndexRef.current < historyRef.current.length - 1) {
-      historyIndexRef.current += 1;
-      isApplyingHistoryRef.current = true;
-      setBoxes([...historyRef.current[historyIndexRef.current]]);
+  const redo = useCallback((): UndoRedoResult | null => {
+    const nextIndex = historyIndexRef.current + 1;
+    if (nextIndex < historyRef.current.length) {
+      const op = historyRef.current[nextIndex];
+      applyOperation(op, true);
+      historyIndexRef.current = nextIndex; // set index after applying
       setActiveBox(null);
-      // Reset flag sau khi state update
-      setTimeout(() => {
-        isApplyingHistoryRef.current = false;
-      }, 0);
+      return { op, direction: 'redo' };
     }
-  }, []);
+    return null;
+  }, [applyOperation]);
 
   /**
    * Xóa active box (dùng cho phím Delete)
    */
   const deleteActiveBox = useCallback(() => {
     if (activeBox && activeBox.id) {
-      const newBoxes = boxes.filter((box) => box.id !== activeBox.id);
-      setBoxes(newBoxes);
-      saveToHistory();
+      removeBox(activeBox.id);
       setActiveBox(null);
     }
-  }, [activeBox, boxes, saveToHistory]);
+  }, [activeBox, removeBox]);
+
+  const canUndo = useMemo(() => historyIndexRef.current >= 0, [historyVersion]);
+  const canRedo = useMemo(() => historyIndexRef.current < historyRef.current.length - 1, [historyVersion]);
 
   return {
     boxes,
@@ -703,8 +836,8 @@ export const useBoundingBox = ({
     isPointInsideBox,
     undo,
     redo,
-    canUndo: historyIndexRef.current > 0,
-    canRedo: historyIndexRef.current < historyRef.current.length - 1,
+    canUndo,
+    canRedo,
     deleteActiveBox,
   };
 }

@@ -517,16 +517,16 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         if (canUndo) {
-          undo();
-          toast.info('Undo');
+          const rs = undo();
+          toast('Hoàn tác: '+rs?.op.type, { duration: 500 });
         }
       }
 
       if ((e.ctrlKey && e.shiftKey && e.key === 'z') || (e.ctrlKey && e.key === 'y')) {
         e.preventDefault();
         if (canRedo) {
-          redo();
-          toast.info('Redo');
+          const rs = redo();
+          toast('Làm lại: '+rs?.op.type, { duration: 500 });
         }
       }
     };
