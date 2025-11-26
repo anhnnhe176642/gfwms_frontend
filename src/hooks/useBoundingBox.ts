@@ -121,35 +121,46 @@ export const useBoundingBox = ({
    */
   const handleBoxResize = useCallback(
     (box: BoundingBox, edge: string, x: number, y: number): BoundingBox => {
-      let updatedBox = { ...box };
+      const updatedBox = { ...box };
+
+      // Determine which property corresponds to left/right/top/bottom based on orientation
+      const isLeftStart = box.startX <= box.endX;
+      const isTopStart = box.startY <= box.endY;
+
+      // Map logical edges to actual properties to mutate
+      const leftProp: keyof BoundingBox = isLeftStart ? 'startX' : 'endX';
+      const rightProp: keyof BoundingBox = isLeftStart ? 'endX' : 'startX';
+      const topProp: keyof BoundingBox = isTopStart ? 'startY' : 'endY';
+      const bottomProp: keyof BoundingBox = isTopStart ? 'endY' : 'startY';
+
       switch (edge) {
         case 'tl':
-          updatedBox.startX = x;
-          updatedBox.startY = y;
+          updatedBox[leftProp] = x;
+          updatedBox[topProp] = y;
           break;
         case 'tr':
-          updatedBox.endX = x;
-          updatedBox.startY = y;
+          updatedBox[rightProp] = x;
+          updatedBox[topProp] = y;
           break;
         case 'bl':
-          updatedBox.startX = x;
-          updatedBox.endY = y;
+          updatedBox[leftProp] = x;
+          updatedBox[bottomProp] = y;
           break;
         case 'br':
-          updatedBox.endX = x;
-          updatedBox.endY = y;
+          updatedBox[rightProp] = x;
+          updatedBox[bottomProp] = y;
           break;
         case 'n':
-          updatedBox.startY = y;
+          updatedBox[topProp] = y;
           break;
         case 's':
-          updatedBox.endY = y;
+          updatedBox[bottomProp] = y;
           break;
         case 'w':
-          updatedBox.startX = x;
+          updatedBox[leftProp] = x;
           break;
         case 'e':
-          updatedBox.endX = x;
+          updatedBox[rightProp] = x;
           break;
       }
       return updatedBox;
