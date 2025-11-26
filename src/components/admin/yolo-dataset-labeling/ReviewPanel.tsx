@@ -21,7 +21,8 @@ interface ReviewPanelProps {
   skipCurrentAutoLabel: () => void;
   confirmCurrentAutoLabel: () => void;
   getColorForClass: (name: string) => string;
-  userSelectedBoxRef: React.MutableRefObject<boolean>;
+  userSelectedBoxRef: React.RefObject<boolean>;
+  onSizeChange?: (height: number) => void;
 }
 
 export const ReviewPanel: React.FC<ReviewPanelProps> = ({
@@ -40,6 +41,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   confirmCurrentAutoLabel,
   getColorForClass,
   userSelectedBoxRef,
+  onSizeChange,
 }) => {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
@@ -66,6 +68,22 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       // ignore
     }
   }, []);
+
+  // Notify parent of panel height changes so a layout placeholder can be kept in sync
+  useEffect(() => {
+    if (!panelRef.current || !onSizeChange) return;
+    const el = panelRef.current;
+    // report initial size
+    try { onSizeChange(el.getBoundingClientRect().height); } catch (e) {}
+    const ro = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (rect) {
+        try { onSizeChange(rect.height); } catch (e) {}
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [panelRef, onSizeChange]);
 
   const clampAndSet = useCallback((newPos: { x: number; y: number }) => {
     if (!panelRef.current) {

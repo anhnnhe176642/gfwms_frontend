@@ -179,6 +179,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
 
   // isPanelFloating is managed in the parent for layout/placeholder purposes
   const [isPanelFloating, setIsPanelFloating] = useState(false);
+  const [reviewPanelHeight, setReviewPanelHeight] = useState<number>(0);
 
   // load saved floating state
   useEffect(() => {
@@ -190,6 +191,11 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       } catch {}
     }
   }, []);
+
+  // Reset placeholder height when the review panel is not mounted to avoid leftover spacing
+  useEffect(() => {
+    if (!isReviewingAutoLabels) setReviewPanelHeight(0);
+  }, [isReviewingAutoLabels]);
 
   // persist floating state
   useEffect(() => {
@@ -1349,11 +1355,12 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
                 confirmCurrentAutoLabel={confirmCurrentAutoLabel}
                 getColorForClass={getColorForClass}
                 userSelectedBoxRef={userSelectedBoxRef}
+                onSizeChange={(h) => setReviewPanelHeight(h)}
               />
             )}
-            {/* Reserve layout space when panel is floating to avoid layout jump */}
-            {isPanelFloating && (
-              <div className="w-full h-56" aria-hidden />
+            {/* Reserve layout space when panel is floating to avoid layout jump - use measured height */}
+            {isReviewingAutoLabels && isPanelFloating && reviewPanelHeight > 0 && (
+              <div className="w-full" aria-hidden style={{ height: reviewPanelHeight }} />
             )}
             <BoxesList 
               boxes={boxes}
