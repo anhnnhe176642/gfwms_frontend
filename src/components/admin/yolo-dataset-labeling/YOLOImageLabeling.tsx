@@ -514,7 +514,11 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         toast.success('Đã xóa box');
       }
 
-      if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+      // Support Ctrl/Cmd + Z (undo) and Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y (redo)
+      const key = e.key?.toLowerCase();
+      const mod = e.ctrlKey || e.metaKey; // Ctrl for Windows/Linux, Meta for macOS
+
+      if (mod && key === 'z' && !e.shiftKey) {
         e.preventDefault();
         if (canUndo) {
           const rs = undo();
@@ -522,7 +526,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         }
       }
 
-      if ((e.ctrlKey && e.shiftKey && e.key === 'z') || (e.ctrlKey && e.key === 'y')) {
+      if (mod && ((e.shiftKey && key === 'z') || key === 'y')) {
         e.preventDefault();
         if (canRedo) {
           const rs = redo();
@@ -748,7 +752,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     setIsMarking(true);
     try {
       onSave(labels, 'completed');
-      toast.success(`✅ Đã đánh dấu hoàn thành với ${labels.length} labels`);
+      toast.success(` Đã đánh dấu hoàn thành với ${labels.length} labels`);
     } finally {
       setIsMarking(false);
     }
