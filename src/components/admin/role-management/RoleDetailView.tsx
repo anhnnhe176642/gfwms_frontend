@@ -11,16 +11,8 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { roleService } from '@/services/role.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ROUTES } from '@/config/routes';
+import { PermissionTree } from './PermissionTree';
 import type { RoleDetail } from '@/types/role';
-
-type PermissionGroup = {
-  group: string;
-  permissions: Array<{
-    id: number;
-    key: string;
-    description: string;
-  }>;
-};
 
 export type RoleDetailViewProps = {
   roleName: string;
@@ -33,7 +25,7 @@ export function RoleDetailView({ roleName }: RoleDetailViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [serverError, setServerError] = useState('');
   const [roleDetail, setRoleDetail] = useState<RoleDetail | null>(null);
-  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
   // Fetch role details khi component mount
   useEffect(() => {
@@ -43,32 +35,9 @@ export function RoleDetailView({ roleName }: RoleDetailViewProps) {
         const roleResponse = await roleService.getRoleDetail(roleName);
         setRoleDetail(roleResponse.data);
 
-        // Nhóm permissions theo resource
-        const permissions = roleResponse.data.rolePermissions?.map(rp => rp.permission) || [];
-        const grouped = permissions.reduce((acc, permission) => {
-          const [group] = permission.key.split(':');
-          const groupName = group.charAt(0).toUpperCase() + group.slice(1);
-          
-          const existingGroup = acc.find(g => g.group === groupName);
-          if (existingGroup) {
-            existingGroup.permissions.push(permission);
-          } else {
-            acc.push({
-              group: groupName,
-              permissions: [permission],
-            });
-          }
-          
-          return acc;
-        }, [] as PermissionGroup[]);
-
-        // Sắp xếp
-        grouped.forEach(group => {
-          group.permissions.sort((a, b) => a.key.localeCompare(b.key));
-        });
-        grouped.sort((a, b) => a.group.localeCompare(b.group));
-
-        setPermissionGroups(grouped);
+        // Lấy danh sách permission keys từ rolePermissions
+        const permissionKeys = roleResponse.data.rolePermissions?.map(rp => rp.permission.key) || [];
+        setSelectedPermissions(permissionKeys);
       } catch (err) {
         const message = getServerErrorMessage(err);
         setServerError(message || 'Không thể tải dữ liệu');
@@ -182,49 +151,11 @@ export function RoleDetailView({ roleName }: RoleDetailViewProps) {
       </Card>
 
       {/* Permissions Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quyền hạn</CardTitle>
-          <CardDescription>
-            Tổng cộng {roleDetail.rolePermissions?.length || 0} quyền
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {permissionGroups.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Vai trò này chưa có quyền nào
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {permissionGroups.map((group) => (
-                <div key={group.group} className="space-y-3">
-                  {/* Group Header */}
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-base">{group.group}</h3>
-                    <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
-                      {group.permissions.length}
-                    </span>
-                  </div>
-
-                  {/* Group Permissions */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-4">
-                    {group.permissions.map((permission) => (
-                      <div key={permission.id} className="p-3 border rounded-lg hover:bg-accent transition-colors">
-                        <p className="text-sm font-medium text-foreground">
-                          {permission.description}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {permission.key}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <PermissionTree
+        selectedPermissions={selectedPermissions}
+        isFetching={false}
+        onTogglePermission={() => {}} // Read-only mode, no toggle allowed
+      />
 
       {/* Action Buttons */}
       <div className="flex gap-4 justify-end pb-8">
