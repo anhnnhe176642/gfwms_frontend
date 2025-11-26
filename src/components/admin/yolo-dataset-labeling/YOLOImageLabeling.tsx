@@ -723,9 +723,16 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     const idx = autoReviewIndex;
     const item = autoLabelResults[idx];
     if (!item) return;
-    const toSave = activeBox && activeBox.id === item.id ? { ...activeBox } : { ...item.canvas, label: item.className };
-    // If the box already exists (e.g. user resized and mouseup auto-added it), update instead of adding to avoid duplicate ids
+    // Determine the source of truth for the current item when confirming:
+    // - Prefer the box as currently stored in `boxes` (this contains any user edits)
+    // - Fallback to `activeBox` if it matches the item id
+    // - Last fallback to the original detection `item.canvas`
     const existing = boxes.find((b) => b.id === item.id);
+    const toSave = existing
+      ? { ...existing }
+      : activeBox && activeBox.id === item.id
+      ? { ...activeBox }
+      : { ...item.canvas, label: item.className };
     if (existing) {
       updateBox(existing.id!, { ...toSave, isAutoPreview: false });
       // Mark as confirmed (no longer preview)
