@@ -353,6 +353,18 @@ export default function DatasetImagesPage({
                     <p className="font-semibold">{selectedImage.objectCount}</p>
                   </div>
                   <div>
+                    <p className="font-medium text-muted-foreground">Kích thước</p>
+                    <p className="font-semibold">{selectedImage.width ? `${selectedImage.width} × ${selectedImage.height}px` : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">Format</p>
+                    <p className="font-semibold">{selectedImage.format || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-muted-foreground">Classes</p>
+                    <p className="font-semibold">{selectedImage.classes?.join(', ') || 'N/A'}</p>
+                  </div>
+                  <div>
                     <p className="font-medium text-muted-foreground">Người tải lên</p>
                     <p className="font-semibold">{selectedImage.uploadedByUser?.fullname || 'N/A'}</p>
                   </div>
@@ -362,6 +374,12 @@ export default function DatasetImagesPage({
                       {new Date(selectedImage.createdAt).toLocaleString('vi-VN')}
                     </p>
                   </div>
+                  {selectedImage.updatedAt && (
+                    <div>
+                      <p className="font-medium text-muted-foreground">Ngày cập nhật</p>
+                      <p className="font-semibold">{new Date(selectedImage.updatedAt).toLocaleString('vi-VN')}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Notes */}

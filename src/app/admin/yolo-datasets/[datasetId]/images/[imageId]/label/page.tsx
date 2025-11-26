@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
+import type { DatasetImageDetail } from '@/types/yolo-dataset';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { Loader2, ArrowLeft, Lightbulb } from 'lucide-react';
 
@@ -33,6 +34,7 @@ const ImageLabelPage: React.FC = () => {
   const [classes, setClasses] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState<string>('');
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [imageDetail, setImageDetail] = useState<DatasetImageDetail | null>(null);
   const [existingLabels, setExistingLabels] = useState<ExistingLabel[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,7 +70,11 @@ const ImageLabelPage: React.FC = () => {
         }
 
         if (imageDetail.imageUrl) {
+          setImageDetail(imageDetail);
           setImageUrl(imageDetail.imageUrl);
+          if (imageDetail.width && imageDetail.height) {
+            setImageDimensions({ width: imageDetail.width, height: imageDetail.height });
+          }
           
           // Load image để lấy kích thước
           const img = new Image();
@@ -229,6 +235,18 @@ const ImageLabelPage: React.FC = () => {
       <Card className="bg-muted/50">
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 gap-4 text-sm">
+            {imageDetail && (
+              <>
+                <div>
+                  <span className="text-muted-foreground">Filename:</span>
+                  <p className="font-mono text-primary">{imageDetail.filename}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Format:</span>
+                  <p className="font-medium">{imageDetail.format || 'N/A'}</p>
+                </div>
+              </>
+            )}
             <div>
               <span className="text-muted-foreground">Dataset ID:</span>
               <p className="font-mono text-primary">{datasetId}</p>
@@ -243,12 +261,44 @@ const ImageLabelPage: React.FC = () => {
                 <p className="font-medium">{imageDimensions.width} × {imageDimensions.height}px</p>
               </div>
             )}
+            {imageDetail && (
+              <>
+                <div>
+                  <span className="text-muted-foreground">Số đối tượng:</span>
+                  <p className="font-medium">{imageDetail.objectCount}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Trạng thái:</span>
+                  <p className="font-medium">{imageDetail.status}</p>
+                </div>
+              </>
+            )}
             <div>
               <span className="text-muted-foreground">Classes:</span>
-              <p className="font-medium">{classes.length} classes</p>
+              <p className="font-medium">{imageDetail?.classes ? imageDetail.classes.length : classes.length} classes</p>
             </div>
+            {imageDetail && (
+              <>
+                <div>
+                  <span className="text-muted-foreground">Người tải lên:</span>
+                  <p className="font-medium">{imageDetail.uploadedByUser?.fullname || imageDetail.uploadedByUser?.username || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Ngày cập nhật:</span>
+                  <p className="font-medium">{imageDetail.updatedAt ? new Date(imageDetail.updatedAt).toLocaleString('vi-VN') : 'N/A'}</p>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
+        {imageDetail?.notes && (
+          <CardContent>
+            <div>
+              <span className="text-muted-foreground">Ghi chú:</span>
+              <p className="text-sm mt-1">{imageDetail.notes}</p>
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       {/* Labeling Component */}

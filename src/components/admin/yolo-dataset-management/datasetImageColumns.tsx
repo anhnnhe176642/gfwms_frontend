@@ -77,6 +77,9 @@ export function createDatasetImageColumns(
     },
     {
       accessorKey: 'filename',
+      // Set initial width for this column to reduce its default width in the table
+      size: 160,
+      minSize: 120,
       header: ({ column }) => (
         <div className="flex items-center gap-1">
           <span className="font-medium">Tên file</span>
@@ -84,7 +87,7 @@ export function createDatasetImageColumns(
         </div>
       ),
       cell: ({ row }) => (
-        <div className="max-w-xs truncate font-medium">
+        <div className="max-w-40 truncate font-medium">
           {row.getValue('filename')}
         </div>
       ),

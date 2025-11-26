@@ -185,7 +185,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       </div>
       <div className="mt-3 flex items-center gap-2">
         <Button size="sm" variant="outline" onClick={prevAutoLabel} disabled={autoReviewIndex === 0}>Trước</Button>
-        <Button size="sm" variant="outline" onClick={skipCurrentAutoLabel}>Tiếp</Button>
+        <Button size="sm" variant="outline" onClick={skipCurrentAutoLabel}>Sau</Button>
         <Button size="sm" variant="default" onClick={confirmCurrentAutoLabel}>Duyệt & Tiếp</Button>
       </div>
       <div className="mt-3">

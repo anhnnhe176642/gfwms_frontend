@@ -70,17 +70,26 @@ export type DatasetImageStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILE
 
 export type DatasetImage = {
   id: string;
+  datasetId?: string;
   filename: string;
   imagePath?: string;
   imageUrl?: string;
+  width?: number;
+  height?: number;
+  format?: string;
+  classes?: string[];
   objectCount: number;
   status: DatasetImageStatus;
   notes?: string;
+  /** user id of uploader */
+  uploadedBy?: string;
   uploadedByUser: {
     id: string;
-    fullname: string;
+    fullname?: string | null;
+    username?: string;
   };
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type DatasetImageListResponse = {
@@ -126,7 +135,7 @@ export type UpdateDatasetImagePayload = {
 
 export type UpdateDatasetImageResponse = {
   message: string;
-  data: DatasetImage;
+  data: DatasetImageDetail;
 };
 
 export type DatasetImageDetail = DatasetImage & {

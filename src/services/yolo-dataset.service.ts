@@ -14,6 +14,8 @@ import type {
   DatasetImageListParams,
   UpdateDatasetImagePayload,
   UpdateDatasetImageResponse,
+  DatasetImageDetail,
+  GetImageDetailResponse,
   ImportDatasetFromZipResponse,
   ImportDatasetToExistingResponse,
   ExportDatasetResponse,
@@ -80,8 +82,8 @@ export const yoloDatasetService = {
   /**
    * Lấy thông tin chi tiết một ảnh (bao gồm annotations nếu có)
    */
-  getImageById: async (imageId: string): Promise<any> => {
-    const response = await api.get(`/v1/yolo/datasets/images/${imageId}`);
+  getImageById: async (imageId: string): Promise<DatasetImageDetail> => {
+    const response = await api.get<GetImageDetailResponse>(`/v1/yolo/datasets/images/${imageId}`);
     return response.data.data;
   },
 
@@ -114,7 +116,7 @@ export const yoloDatasetService = {
   /**
    * Cập nhật thông tin ảnh (gán nhãn, cập nhật trạng thái, ghi chú)
    */
-  updateImage: async (imageId: string, payload: UpdateDatasetImagePayload): Promise<any> => {
+  updateImage: async (imageId: string, payload: UpdateDatasetImagePayload): Promise<DatasetImageDetail> => {
     const response = await api.patch<UpdateDatasetImageResponse>(
       `/v1/yolo/datasets/images/${imageId}`,
       payload
@@ -129,7 +131,7 @@ export const yoloDatasetService = {
    * x1, y1 = top-left corner; x2, y2 = bottom-right corner (pixel coordinates)
    * Input: annotations with x (x1 pixel), y (y1 pixel), width (pixels), height (pixels)
    */
-  saveImageAnnotations: async (imageId: string, annotations: any[]): Promise<any> => {
+  saveImageAnnotations: async (imageId: string, annotations: any[]): Promise<DatasetImageDetail> => {
     const payload: UpdateDatasetImagePayload = {
       annotations: annotations.map((ann) => {
         // Convert from x, y, width, height (pixel format) to x1, y1, x2, y2 (pixel format)
