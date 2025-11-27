@@ -86,6 +86,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     return index >= 0 ? classColors[index % classColors.length] : '#4ECDC4';
   }, [classes, classColors]);
 
+  // Highlight color used for review active/preview highlighting
+  const REVIEW_HIGHLIGHT_COLOR = '#FFD93D';
+
   // Sử dụng hook useBoundingBox
   const {
     boxes,
@@ -438,7 +441,9 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     // Vẽ active box cuối cùng (để nó nổi lên trên)
     if (activeBoxToRender) {
       const box = activeBoxToRender;
-      const color = box.label ? getColorForClass(box.label) : '#4ECDC4';
+      // If we're in a review session and this is the review focus, use a different highlight color
+      const isActiveReview = isReviewingAutoLabels && autoLabelResultsRef.current && autoLabelResultsRef.current.length > 0 && autoLabelResultsRef.current[autoReviewIndex]?.id === box.id;
+      const color = isActiveReview ? REVIEW_HIGHLIGHT_COLOR : (box.label ? getColorForClass(box.label) : '#4ECDC4');
 
       const x1 = box.x;
       const y1 = box.y;
@@ -475,6 +480,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
       }
 
       // Handles (only for active box)
+      // If active review, make the handle color stronger for emphasis
       ctx.fillStyle = color;
       const handleSize = 8;
       const edgeSize = 6;
@@ -512,14 +518,16 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
         const width = Math.abs(box.endX - box.startX) * zoomLevel;
         const height = Math.abs(box.endY - box.startY) * zoomLevel;
 
-        // Dimmed fill for preview
-        ctx.fillStyle = `${getColorForClass(item.className) || '#4ECDC4'}22`;
+        // Dimmed fill for preview - highlight the active preview if it's the current review index
+        const isPreviewActive = idx === autoReviewIndex;
+        const previewColor = isPreviewActive ? REVIEW_HIGHLIGHT_COLOR : (getColorForClass(item.className) || '#4ECDC4');
+        ctx.fillStyle = `${previewColor}22`;
         ctx.fillRect(x, y, width, height);
 
         // Dashed stroke for preview
         ctx.save();
         ctx.setLineDash([6, 4]);
-        ctx.strokeStyle = getColorForClass(item.className) || '#4ECDC4';
+        ctx.strokeStyle = previewColor;
         ctx.lineWidth = idx === autoReviewIndex ? 3 : 2;
         ctx.strokeRect(x, y, width, height);
         ctx.restore();
