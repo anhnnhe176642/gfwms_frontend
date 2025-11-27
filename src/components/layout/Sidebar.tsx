@@ -153,7 +153,7 @@ export const Sidebar: React.FC = () => {
         },
         {
           label: 'Xuất kho',
-          href: `/admin/warehouses/${id}/export`,
+          href: `/admin/warehouses/${id}/export-fabrics`,
           icon: TruckIcon,
           requiredPermission: PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key,
         },

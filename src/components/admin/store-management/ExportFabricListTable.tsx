@@ -16,9 +16,10 @@ import { Search, RefreshCw } from 'lucide-react';
 
 export type ExportFabricListTableProps = {
   initialParams?: ExportFabricListParams;
+  hideWarehouseColumn?: boolean;
 };
 
-export function ExportFabricListTable({ initialParams }: ExportFabricListTableProps) {
+export function ExportFabricListTable({ initialParams, hideWarehouseColumn }: ExportFabricListTableProps) {
   const router = useRouter();
   const { canAccess } = useRouteAccess();
   const { hasPermission } = useAuth();
@@ -105,6 +106,7 @@ export function ExportFabricListTable({ initialParams }: ExportFabricListTablePr
    */
   const columns = createExportFabricColumns({
     onView: handleViewClick,
+    hideWarehouseColumn,
   });
 
   // Show loading state

@@ -289,6 +289,11 @@ export const ROUTES = {
         name: 'Danh sách phiếu nhập',
         requiredPermission: PERMISSIONS.IMPORT_FABRICS.VIEW_LIST.key,
       },
+      EXPORT_FABRICS: {
+        path: '/admin/warehouses/:id/export-fabrics',
+        name: 'Danh sách phiếu xuất',
+        requiredPermission: PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key,
+      },
       IMPORT_FABRICS_CREATE: {
         path: '/admin/warehouses/:id/create-import-fabric',
         name: 'Tạo phiếu nhập',
