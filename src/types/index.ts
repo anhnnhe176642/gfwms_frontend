@@ -71,6 +71,14 @@ export type {
   FabricListParams,
 } from './fabric';
 
+// Export Fabric types
+export type {
+  ExportFabricStatus,
+  ExportFabricListItem,
+  ExportFabricListResponse,
+  ExportFabricListParams,
+} from './exportFabric';
+
 // Auth types 
 export type * from './auth';
 
