@@ -17,6 +17,7 @@ interface InfiniteScrollSelectProps<T> {
   getValue: (item: T) => string;
   placeholder: string;
   disabled?: boolean;
+  disablePortal?: boolean;
 }
 
 export function InfiniteScrollSelect<T extends Record<string, any>>({
@@ -28,6 +29,7 @@ export function InfiniteScrollSelect<T extends Record<string, any>>({
   getValue,
   placeholder,
   disabled = false,
+  disablePortal = false,
 }: InfiniteScrollSelectProps<T>) {
   const { data, loading, hasMore, loadMore, handleSearch } = useInfiniteScroll({
     fetchData,
@@ -64,7 +66,7 @@ export function InfiniteScrollSelect<T extends Record<string, any>>({
           <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0" align="start">
+      <PopoverContent className="w-[280px] p-0" align="start" disablePortal={disablePortal}>
         <div className="flex flex-col max-h-80">
           {/* Search input */}
           <div className="relative p-2 border-b">

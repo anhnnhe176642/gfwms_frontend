@@ -13,15 +13,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
+import { InfiniteScrollSelect } from '@/components/admin/import-fabric-management/InfiniteScrollSelect';
 import * as React from 'react';
-import { Loader, Plus, Trash2, Search, X } from 'lucide-react';
-import InfiniteScroll from '@/components/ui/infinite-scroll';
+import { Loader, Plus, Trash2 } from 'lucide-react';
 import { exportFabricService } from '@/services/exportFabric.service';
 import { warehouseService } from '@/services/warehouse.service';
 import { fabricService } from '@/services/fabric.service';
@@ -77,23 +71,14 @@ export function CreateExportFabricDialog({
     pageSize: 10,
   });
 
-  // State for popover controls
-  const [warehouseSearchInput, setWarehouseSearchInput] = useState('');
-  const [fabricSearchInputs, setFabricSearchInputs] = useState<string[]>(['']);
-  const [openFabricPopovers, setOpenFabricPopovers] = useState<boolean[]>([false]);
-  const [openWarehousePopover, setOpenWarehousePopover] = useState(false);
 
   const handleAddItem = () => {
     setExportItems([...exportItems, { fabricId: null, quantity: '' }]);
-    setOpenFabricPopovers([...openFabricPopovers, false]);
-    setFabricSearchInputs([...fabricSearchInputs, '']);
   };
 
   const handleRemoveItem = (index: number) => {
     if (exportItems.length > 1) {
       setExportItems(exportItems.filter((_, i) => i !== index));
-      setOpenFabricPopovers(openFabricPopovers.filter((_, i) => i !== index));
-      setFabricSearchInputs(fabricSearchInputs.filter((_, i) => i !== index));
     }
   };
 
@@ -101,9 +86,6 @@ export function CreateExportFabricDialog({
     const newItems = [...exportItems];
     newItems[index] = { ...newItems[index], fabricId };
     setExportItems(newItems);
-    const newPopovers = [...openFabricPopovers];
-    newPopovers[index] = false;
-    setOpenFabricPopovers(newPopovers);
   };
 
   const handleQuantityChange = (index: number, quantity: string) => {
@@ -126,17 +108,6 @@ export function CreateExportFabricDialog({
     return warehouse ? warehouse.name : `#${selectedWarehouse}`;
   };
 
-  const handleWarehouseSearchChange = (value: string) => {
-    setWarehouseSearchInput(value);
-    handleWarehouseSearch(value);
-  };
-
-  const handleFabricSearchChange = (index: number, value: string) => {
-    const newSearch = [...fabricSearchInputs];
-    newSearch[index] = value;
-    setFabricSearchInputs(newSearch);
-    handleFabricSearch(value);
-  };
 
   const handleSubmit = async () => {
     // Clear previous errors
@@ -176,9 +147,6 @@ export function CreateExportFabricDialog({
       setSelectedWarehouse('');
       setNote('');
       setExportItems([{ fabricId: null, quantity: '' }]);
-      setOpenFabricPopovers([false]);
-      setFabricSearchInputs(['']);
-      setWarehouseSearchInput('');
       setFieldErrors({});
 
       onSuccess?.();
@@ -209,102 +177,17 @@ export function CreateExportFabricDialog({
             <Label>
               Chọn kho <span className="text-destructive">*</span>
             </Label>
-            <Popover open={openWarehousePopover} onOpenChange={setOpenWarehousePopover}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left"
-                  disabled={isLoading}
-                >
-                  <span className="truncate">{getSelectedWarehouseDisplay()}</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0 z-60" align="start">
-                <div className="flex flex-col max-h-80">
-                  {/* Header */}
-                  <div className="flex items-center justify-between p-4 pb-2 border-b">
-                    <h4 className="font-medium text-sm">Chọn kho</h4>
-                  </div>
-
-                  {/* Search input */}
-                  <div className="relative p-4 pt-2 border-b">
-                    <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Tìm kiếm kho..."
-                      value={warehouseSearchInput}
-                      onChange={(e) => handleWarehouseSearchChange(e.target.value)}
-                      className="pl-8 pr-8 text-sm"
-                    />
-                    {warehouseSearchInput && (
-                      <button
-                        onClick={() => handleWarehouseSearchChange('')}
-                        className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Warehouses list with infinite scroll */}
-                  <div className="flex-1 overflow-y-auto px-4 pt-2 min-h-40">
-                    <div className="flex flex-col gap-2 h-full">
-                      {warehouses.length === 0 && !warehousesLoading ? (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="text-sm text-gray-500">Không có dữ liệu</div>
-                        </div>
-                      ) : (
-                        <>
-                          {warehouses.map((warehouse) => (
-                            <div
-                              key={warehouse.id}
-                              onClick={() => {
-                                setSelectedWarehouse(warehouse.id.toString());
-                                setOpenWarehousePopover(false);
-                              }}
-                              className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted"
-                            >
-                              <Checkbox
-                                checked={selectedWarehouse === warehouse.id.toString()}
-                                className="cursor-pointer"
-                                onCheckedChange={() => {
-                                  setSelectedWarehouse(warehouse.id.toString());
-                                  setOpenWarehousePopover(false);
-                                }}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-sm">{warehouse.name}</div>
-                                <div className="text-xs text-muted-foreground truncate">{warehouse.address}</div>
-                              </div>
-                            </div>
-                          ))}
-                        </>
-                      )}
-
-                      {/* Infinite Scroll Trigger */}
-                      <InfiniteScroll
-                        hasMore={warehousesHasMore}
-                        isLoading={warehousesLoading}
-                        next={loadMoreWarehouses}
-                        threshold={0.5}
-                      >
-                        {warehousesHasMore && (
-                          <div className="flex items-center justify-center h-12">
-                            <Loader className="h-4 w-4 animate-spin text-muted-foreground" />
-                          </div>
-                        )}
-                      </InfiniteScroll>
-
-                      {/* End of list */}
-                      {!warehousesHasMore && warehouses.length > 0 && (
-                        <div className="flex items-center justify-center h-12">
-                          <p className="text-xs text-gray-400 font-medium">✓ Hết dữ liệu</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <InfiniteScrollSelect
+              value={selectedWarehouse}
+              onChange={(val) => setSelectedWarehouse(val)}
+              error={fieldErrors.warehouseId}
+              fetchData={warehouseService.getWarehousesForInfiniteScroll}
+              getLabel={(w: any) => w.name}
+              getValue={(w: any) => w.id.toString()}
+              placeholder={getSelectedWarehouseDisplay()}
+              disabled={isLoading}
+              disablePortal
+            />
           </div>
 
           {/* Note */}
@@ -340,109 +223,17 @@ export function CreateExportFabricDialog({
                 <div key={index} className="flex gap-2 items-start border rounded-lg p-3">
                   <div className="flex-1 space-y-2">
                     <Label className="text-xs">Chọn vải</Label>
-                    <Popover
-                      open={openFabricPopovers[index]}
-                      onOpenChange={(newOpen) => {
-                        const newPopovers = [...openFabricPopovers];
-                        newPopovers[index] = newOpen;
-                        setOpenFabricPopovers(newPopovers);
-                      }}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left"
-                          disabled={isLoading}
-                        >
-                          <span className="truncate">
-                            {getSelectedFabricDisplay(item.fabricId)}
-                          </span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80 p-0 z-60" align="start">
-                        <div className="flex flex-col max-h-80">
-                          {/* Header */}
-                          <div className="flex items-center justify-between p-4 pb-2 border-b">
-                            <h4 className="font-medium text-sm">Chọn vải</h4>
-                          </div>
-
-                          {/* Search input */}
-                          <div className="relative p-4 pt-2 border-b">
-                            <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <Input
-                              placeholder="Tìm kiếm vải..."
-                              value={fabricSearchInputs[index] || ''}
-                              onChange={(e) => handleFabricSearchChange(index, e.target.value)}
-                              className="pl-8 pr-8 text-sm"
-                            />
-                            {fabricSearchInputs[index] && (
-                              <button
-                                onClick={() => handleFabricSearchChange(index, '')}
-                                className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Items list with infinite scroll */}
-                          <div className="flex-1 overflow-y-auto px-4 pt-2 min-h-40">
-                            <div className="flex flex-col gap-2 h-full">
-                              {fabrics.length === 0 && !fabricsLoading ? (
-                                <div className="flex items-center justify-center h-full">
-                                  <div className="text-sm text-gray-500">Không có dữ liệu</div>
-                                </div>
-                              ) : (
-                                <>
-                                  {fabrics.map((fabric) => (
-                                    <div
-                                      key={fabric.id}
-                                      onClick={() => handleFabricSelect(index, fabric.id)}
-                                      className="flex items-start gap-2 p-2 rounded cursor-pointer hover:bg-muted"
-                                    >
-                                      <Checkbox
-                                        checked={item.fabricId === fabric.id}
-                                        className="mt-1"
-                                        onCheckedChange={() => handleFabricSelect(index, fabric.id)}
-                                      />
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm">
-                                          #{fabric.id} - {fabric.category.name}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          Màu: {fabric.color.name} | Giá: {fabric.sellingPrice.toLocaleString()} đ
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </>
-                              )}
-
-                              {/* Infinite Scroll Trigger */}
-                              <InfiniteScroll
-                                hasMore={fabricsHasMore}
-                                isLoading={fabricsLoading}
-                                next={loadMoreFabrics}
-                                threshold={0.5}
-                              >
-                                {fabricsHasMore && (
-                                  <div className="flex items-center justify-center h-12">
-                                    <Loader className="h-4 w-4 animate-spin text-muted-foreground" />
-                                  </div>
-                                )}
-                              </InfiniteScroll>
-
-                              {/* End of list */}
-                              {!fabricsHasMore && fabrics.length > 0 && (
-                                <div className="flex items-center justify-center h-12">
-                                  <p className="text-xs text-gray-400 font-medium">✓ Hết dữ liệu</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                    <InfiniteScrollSelect
+                      value={item.fabricId ? item.fabricId.toString() : ''}
+                      onChange={(val) => handleFabricSelect(index, parseInt(val))}
+                      error={fieldErrors[`exportItems.${index}.fabricId`]}
+                      fetchData={fabricService.getFabrics}
+                      getLabel={(f: any) => `#${f.id} - ${f.category.name} - ${f.color.name}`}
+                      getValue={(f: any) => f.id.toString()}
+                      placeholder={getSelectedFabricDisplay(item.fabricId)}
+                      disabled={isLoading}
+                      disablePortal
+                    />
                   </div>
                   <div className="w-28 space-y-2">
                     <Label className="text-xs">Số lượng</Label>
