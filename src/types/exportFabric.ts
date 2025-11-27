@@ -42,3 +42,47 @@ export type ExportFabricListParams = {
   sortBy?: string; // e.g., "id,createdAt,updatedAt,status"
   order?: string; // e.g., "asc,desc"
 };
+
+export type ExportFabricItem = {
+  fabricId: number;
+  quantity: number;
+  price: number | null;
+  fabric: {
+    id: number;
+    colorId: string;
+    categoryId: number;
+    sellingPrice: number;
+    supplierId: number;
+  };
+};
+
+export type ExportFabricDetail = {
+  id: number;
+  warehouseId: number;
+  warehouse: {
+    name: string;
+  };
+  store: {
+    name: string;
+  };
+  status: ExportFabricStatus;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdById: string;
+  createdBy: {
+    username: string;
+    email: string;
+  };
+  receivedById: string | null;
+  receivedBy: {
+    username: string;
+    email: string;
+  } | null;
+  exportItems: ExportFabricItem[];
+};
+
+export type ExportFabricDetailResponse = {
+  message: string;
+  exportFabric: ExportFabricDetail;
+};

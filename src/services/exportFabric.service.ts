@@ -2,6 +2,8 @@ import api from '@/lib/api';
 import type {
   ExportFabricListParams,
   ExportFabricListResponse,
+  ExportFabricDetail as ExportFabricDetailType,
+  ExportFabricStatus,
 } from '@/types/exportFabric';
 
 export type ExportFabricItem = {
@@ -47,7 +49,7 @@ export type ExportFabricDetail = {
   warehouseId: number;
   warehouse: ExportFabricWarehouse;
   store: ExportFabricStore;
-  status: string;
+  status: ExportFabricStatus;
   note: string | null;
   createdAt: string;
   updatedAt: string;
@@ -72,6 +74,16 @@ export const exportFabricService = {
   list: async (params?: ExportFabricListParams): Promise<ExportFabricListResponse> => {
     const response = await api.get<ExportFabricListResponse>(BASE_PATH, { params });
     return response.data;
+  },
+
+  /**
+   * Lấy chi tiết phiếu xuất vải
+   */
+  getDetail: async (id: number | string): Promise<ExportFabricDetail> => {
+    const response = await api.get<{ message: string; exportFabric: ExportFabricDetail }>(
+      `${BASE_PATH}/${id}`
+    );
+    return response.data.exportFabric;
   },
 
   /**
