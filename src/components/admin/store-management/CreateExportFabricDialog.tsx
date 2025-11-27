@@ -163,7 +163,7 @@ export function CreateExportFabricDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl" style={{ pointerEvents: 'auto' }}>
+      <DialogContent maxWidth="sm:max-w-2xl" style={{ pointerEvents: 'auto' }}>
         <DialogHeader>
           <DialogTitle>Tạo phiếu xuất kho</DialogTitle>
           <DialogDescription>
