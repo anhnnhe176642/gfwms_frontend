@@ -49,6 +49,7 @@ export type ShelfListParams = {
   limit?: number;
   search?: string;
   warehouseId?: number;
+  fabricId?: number; // Filter shelves that contain specific fabric
   sortBy?: string; // e.g., "code,createdAt"
   order?: string; // e.g., "asc,desc"
   createdFrom?: string; // ISO date string
@@ -79,18 +80,22 @@ export type UpdateShelfResponse = {
 };
 
 export type GlossInfo = {
+  id?: number;
   description: string;
 };
 
 export type CategoryInfo = {
+  id?: number;
   name: string;
 };
 
 export type ColorInfo = {
+  id?: string;
   name: string;
 };
 
 export type SupplierInfo = {
+  id?: number;
   name: string;
 };
 
@@ -112,6 +117,16 @@ export type FabricShelfItem = {
 
 export type ShelfDetail = ShelfListItem & {
   fabricShelf: FabricShelfItem[];
+};
+
+export type ShelfWithFabricListItem = ShelfListItem & {
+  fabricShelf: FabricShelfItem[];
+};
+
+export type ShelfWithFabricListResponse = {
+  message: string;
+  data: ShelfWithFabricListItem[];
+  pagination: PaginationState;
 };
 
 export type GetShelfResponse = {

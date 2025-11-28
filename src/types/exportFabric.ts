@@ -43,6 +43,12 @@ export type ExportFabricListParams = {
   order?: string; // e.g., "asc,desc"
 };
 
+export type ShelfSuggestion = {
+  shelfId: number;
+  shelfCode: string;
+  availableQuantity: number;
+};
+
 export type ExportFabricItem = {
   fabricId: number;
   quantity: number;
@@ -54,6 +60,7 @@ export type ExportFabricItem = {
     sellingPrice: number;
     supplierId: number;
   };
+  shelfSuggestions?: ShelfSuggestion[];
 };
 
 export type ExportFabricDetail = {

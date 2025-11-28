@@ -42,6 +42,11 @@ export type ExportFabricItemDetail = {
     sellingPrice: number;
     supplierId: number;
   };
+  shelfSuggestions?: Array<{
+    shelfId: number;
+    shelfCode: string;
+    availableQuantity: number;
+  }>;
 };
 
 export type ExportFabricDetail = {
@@ -91,6 +96,37 @@ export const exportFabricService = {
    */
   createExportFabric: async (data: CreateExportFabricRequest): Promise<ExportFabricDetail> => {
     const response = await api.post<CreateExportFabricResponse>(BASE_PATH, data);
+    return response.data.exportFabric;
+  },
+
+  /**
+   * Lấy chi tiết phiếu xuất để xem trước khi duyệt (theo warehouse id của export fabric)
+   */
+  getPreview: async (exportFabricId: number | string): Promise<ExportFabricDetail> => {
+    const response = await api.get<{ message: string; exportFabric: ExportFabricDetail }>(
+      `${BASE_PATH}/warehouse/${exportFabricId}`
+    );
+    return response.data.exportFabric;
+  },
+
+  /**
+   * Duyệt phiếu xuất kho
+   */
+  approveExport: async (
+    exportFabricId: number | string,
+    itemShelfSelections: Array<{
+      fabricId: number;
+      shelfId: number;
+      quantityToTake: number;
+    }>
+  ): Promise<ExportFabricDetail> => {
+    const response = await api.patch<{ message: string; exportFabric: ExportFabricDetail }>(
+      `${BASE_PATH}/${exportFabricId}/status`,
+      {
+        status: 'APPROVED',
+        itemShelfSelections,
+      }
+    );
     return response.data.exportFabric;
   },
 };

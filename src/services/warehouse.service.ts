@@ -13,6 +13,7 @@ import type {
   GetShelfResponse,
   ShelfListItem,
   ShelfDetail,
+  ShelfWithFabricListResponse,
 } from '@/types/warehouse';
 import type { CreateWarehouseFormData, UpdateWarehouseFormData } from '@/schemas/warehouse.schema';
 
@@ -105,9 +106,11 @@ export const warehouseService = {
 
   /**
    * Lấy danh sách kệ của một kho
+   * Nếu fabricId được cung cấp, sẽ trả về các kệ chứa loại vải đó
+   * Kết quả sẽ bao gồm fabricShelf chi tiết cho từng kệ
    */
-  getShelves: async (params?: ShelfListParams): Promise<ShelfListResponse> => {
-    const response = await api.get<ShelfListResponse>('/v1/shelves', { params });
+  getShelves: async (params?: ShelfListParams): Promise<ShelfWithFabricListResponse | ShelfListResponse> => {
+    const response = await api.get<ShelfWithFabricListResponse | ShelfListResponse>('/v1/shelves', { params });
     return response.data;
   },
 
