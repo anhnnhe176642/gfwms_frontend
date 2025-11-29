@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { Detection } from '@/types/yolo';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { CanvasControlBar } from './CanvasControlBar';
 import { CanvasDisplay } from './CanvasDisplay';
 import { EditModeControls } from './EditModeControls';
@@ -24,6 +26,8 @@ interface CanvasDrawerProps {
   showRowlines?: boolean;
   onShowRowlinesChange?: (show: boolean) => void;
   confidenceFilter?: React.ReactNode;
+  onReload?: () => void | Promise<void>;
+  isReloading?: boolean;
   onPolygonFilteredCountChange?: (count: number) => void;
   detectionsByClass?: Record<string, number>;
   filteredDetectionsCount?: number;
@@ -40,6 +44,8 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   showRowlines = true,
   onShowRowlinesChange,
   confidenceFilter,
+  onReload,
+  isReloading,
   onPolygonFilteredCountChange,
   detectionsByClass = {},
   filteredDetectionsCount = 0,
@@ -612,6 +618,8 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
             />
           }
           confidenceFilter={confidenceFilter}
+          onReload={onReload}
+          isReloading={isReloading}
         />
       ) : (
         <div className="flex gap-2 flex-wrap items-center">
@@ -623,7 +631,21 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
             onCircleScaleChange={setCircleScale}
             onManualCircleColorChange={setManualCircleColor}
           />
-          {confidenceFilter && <div>{confidenceFilter}</div>}
+          {confidenceFilter && (
+            <div className="flex items-center gap-2">
+              <div>{confidenceFilter}</div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onReload}
+                disabled={!onReload || isReloading}
+                className="gap-2 p-2"
+                aria-label="Tải lại"
+              >
+                {isReloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

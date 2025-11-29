@@ -125,7 +125,7 @@ export function FabricCountModal({
       setFormData({ ...formData, image: croppedFile });
 
       // Tự động phát hiện
-      detectObjects(croppedFile);
+      detectObjects(croppedFile, confidenceThreshold);
     } catch (error) {
       toast.error('Lỗi khi xử lý ảnh');
     }
@@ -168,18 +168,18 @@ export function FabricCountModal({
       setFormData({ ...formData, image: originalFile });
 
       // Tự động phát hiện
-      detectObjects(originalFile);
+      detectObjects(originalFile, confidenceThreshold);
     } catch (error) {
       toast.error('Lỗi khi xử lý ảnh');
     }
   };
 
-  const detectObjects = async (file: File) => {
+  const detectObjects = async (file: File, confidence: number = 0.1) => {
     try {
       setIsDetecting(true);
       const response = await yoloService.detect({
         image: file,
-        confidence: 0.1,
+        confidence,
       });
 
       if (response.success) {
@@ -411,16 +411,19 @@ export function FabricCountModal({
                 containerWidth={containerWidth}
                 onDetectionsChange={setEditedDetections}
                 enableEdit={true}
+                onReload={() => detectObjects(formData.image as File, confidenceThreshold)}
+                isReloading={isDetecting}
                 confidenceFilter={
-                  <ConfidenceFilter
-                    value={confidenceThreshold}
-                    onChange={setConfidenceThreshold}
-                    detectionCount={
-                      editedDetections?.length || detectionResult.data.detections.length
-                    }
-                    filteredCount={filteredDetections.length}
-                  />
-                }
+                    <ConfidenceFilter
+                      value={confidenceThreshold}
+                      onChange={setConfidenceThreshold}
+                      detectionCount={
+                        editedDetections?.length || detectionResult.data.detections.length
+                      }
+                      filteredCount={filteredDetections.length}
+                    isLoading={isDetecting}
+                    />
+                  }
               />
 
               {/* Submit to Dataset Button */}

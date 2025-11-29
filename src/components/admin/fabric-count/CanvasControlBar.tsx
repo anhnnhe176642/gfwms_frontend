@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, RotateCcw, Eye, EyeOff, GitBranch, Pen } from 'lucide-react';
+import { Check, RotateCcw, Eye, EyeOff, GitBranch, Pen, RefreshCw, Loader2 } from 'lucide-react';
 
 interface CanvasControlBarProps {
   isEditMode: boolean;
@@ -17,6 +17,8 @@ interface CanvasControlBarProps {
   onRowlinesToggle: () => void;
   sizeControlPanel: React.ReactNode;
   confidenceFilter?: React.ReactNode;
+  onReload?: () => void | Promise<void>;
+  isReloading?: boolean;
 }
 
 export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
@@ -32,6 +34,8 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
   onRowlinesToggle,
   sizeControlPanel,
   confidenceFilter,
+  onReload,
+  isReloading,
 }) => {
   return (
     <div className="flex gap-2 flex-wrap items-center">
@@ -126,7 +130,21 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
       {sizeControlPanel}
 
       {/* Confidence Filter */}
-      {confidenceFilter && <div>{confidenceFilter}</div>}
+      {confidenceFilter && (
+        <div className="flex items-center gap-2">
+          <div>{confidenceFilter}</div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onReload}
+            disabled={!onReload || isReloading}
+            className="gap-2 p-2"
+            aria-label="Tải lại"
+          >
+            {isReloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

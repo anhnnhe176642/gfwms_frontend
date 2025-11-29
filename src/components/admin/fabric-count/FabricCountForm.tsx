@@ -101,7 +101,7 @@ export const FabricCountForm: React.FC = () => {
       setFormData({ ...formData, image: croppedFile });
 
       // Tự động phát hiện
-      detectObjects(croppedFile);
+      detectObjects(croppedFile, confidenceThreshold);
     } catch (error) {
       toast.error('Lỗi khi xử lý ảnh');
     }
@@ -144,7 +144,7 @@ export const FabricCountForm: React.FC = () => {
       setFormData({ ...formData, image: originalFile });
 
       // Tự động phát hiện
-      detectObjects(originalFile);
+      detectObjects(originalFile, confidenceThreshold);
     } catch (error) {
       toast.error('Lỗi khi xử lý ảnh');
     }
@@ -174,6 +174,16 @@ export const FabricCountForm: React.FC = () => {
       toast.error(message);
     } finally {
       setIsDetecting(false);
+    }
+  };
+
+  const handleReload = async () => {
+    if (!formData.image) return;
+    try {
+      setIsRefetching(true);
+      await detectObjects(formData.image as File, confidenceThreshold);
+    } finally {
+      setIsRefetching(false);
     }
   };
 
@@ -302,6 +312,8 @@ export const FabricCountForm: React.FC = () => {
                   detectionsByClass={detectionResult.data.summary.counts_by_class}
                   filteredDetectionsCount={filteredDetections.length}
                   totalDetectionsCount={editedDetections?.length || detectionResult.data.detections.length}
+                  onReload={handleReload}
+                  isReloading={isRefetching}
                   confidenceFilter={
                     <ConfidenceFilter
                       value={confidenceThreshold}
