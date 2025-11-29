@@ -205,8 +205,8 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         ctx.fillText(String(orderNumber), centerX, centerY);
 
         // Vẽ label ở dưới vòng tròn
-        const rowLabel = detection.row ? ` (Row ${detection.row})` : '';
-        const label = `${class_name} ${(confidence * 100).toFixed(1)}%${rowLabel}`;
+        //const rowLabel = detection.row ? ` (Row ${detection.row})` : '';
+        const label = `${class_name} ${(confidence * 100).toFixed(1)}%`;
         ctx.font = '12px Arial';
         ctx.fillStyle = circleColor;
         ctx.textAlign = 'center';
