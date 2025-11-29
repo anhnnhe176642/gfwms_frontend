@@ -6,8 +6,10 @@ import { toast } from 'sonner';
 import { CanvasControlBar } from './CanvasControlBar';
 import { CanvasDisplay } from './CanvasDisplay';
 import { EditModeControls } from './EditModeControls';
+import { DrawingModeControls } from './DrawingModeControls';
 import { SizeControlPanel } from './SizeControlPanel';
 import { setupCanvasDPR, mapClientToLogicalPoint } from '@/lib/canvasUtils';
+import { usePolygonDrawing, type PolygonPoint } from '@/hooks/usePolygonDrawing';
 
 interface CanvasDrawerProps {
   imageUrl: string;
@@ -22,6 +24,10 @@ interface CanvasDrawerProps {
   showRowlines?: boolean;
   onShowRowlinesChange?: (show: boolean) => void;
   confidenceFilter?: React.ReactNode;
+  onPolygonFilteredCountChange?: (count: number) => void;
+  detectionsByClass?: Record<string, number>;
+  filteredDetectionsCount?: number;
+  totalDetectionsCount?: number;
 }
 
 export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
@@ -34,9 +40,14 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   showRowlines = true,
   onShowRowlinesChange,
   confidenceFilter,
+  onPolygonFilteredCountChange,
+  detectionsByClass = {},
+  filteredDetectionsCount = 0,
+  totalDetectionsCount = 0,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [scale, setScale] = useState(1);
   const [currentDetections, setCurrentDetections] = useState<Detection[]>(detections);
   const [history, setHistory] = useState<Detection[][]>([detections]);
@@ -49,6 +60,12 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   const [circleScale, setCircleScale] = useState(1);
   const [manualCircleColor, setManualCircleColor] = useState('#FF6B6B');
   const [localShowRowlines, setLocalShowRowlines] = useState(showRowlines);
+  const [polygonFilteredCount, setPolygonFilteredCount] = useState<number>(0);
+  const [filteredDetectionsByClass, setFilteredDetectionsByClass] = useState<Record<string, number>>({});
+  const [filteredTotalDetections, setFilteredTotalDetections] = useState<number>(0);
+
+  // Polygon drawing state
+  const polygon = usePolygonDrawing();
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -98,6 +115,10 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
       // Vẽ ảnh
       ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
+      
+      // Tính toán số phát hiện được lọc bởi vùng đa giác
+      let filteredDetectionCount = 0;
+      const classCountsInRegion: Record<string, number> = {};
       // Mảng màu cho các rows khác nhau
       const rowColors = [
         "#FF6B6B", // đỏ
@@ -162,11 +183,24 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
 
       // Vẽ bounding boxes với hình tròn
+      let displayIndex = 0; // Index cho hiển thị (được cập nhật khi lọc theo vùng)
       currentDetections.forEach((detection, index) => {
         const { class_name, confidence, center, dimensions, row } = detection;
 
+        // Kiểm tra xem điểm có nằm trong đa giác không (nếu đang vẽ đa giác)
+        if (isDrawingMode && polygon.polygonPoints.length > 0) {
+          const isInside = polygon.isPointInPolygon({ x: center.x, y: center.y });
+          if (!isInside) {
+            // Không hiển thị điểm nằm ngoài vùng
+            return;
+          }
+          filteredDetectionCount++; // Đếm các phát hiện nằm trong vùng
+          // Cập nhật count theo class
+          classCountsInRegion[class_name] = (classCountsInRegion[class_name] || 0) + 1;
+        }
+
         // Nếu có row, sử dụng màu theo row; nếu không có, sử dụng màu theo index
-        const colorIndex = row !== undefined ? (row - 1) % rowColors.length : index % rowColors.length;
+        const colorIndex = row !== undefined ? (row - 1) % rowColors.length : displayIndex % rowColors.length;
         // Nếu là custom (được vẽ thủ công), dùng màu tuỳ chỉnh; nếu không, dùng màu mặc định
         const circleColor = class_name === 'custom' ? manualCircleColor : rowColors[colorIndex];
 
@@ -185,8 +219,8 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Vẽ số thứ tự ở tâm hình tròn
-        const orderNumber = index + 1;
+        // Vẽ số thứ tự ở tâm hình tròn (sử dụng displayIndex khi lọc vùng)
+        const orderNumber = isDrawingMode && polygon.polygonPoints.length > 0 ? displayIndex + 1 : index + 1;
         const baseFontSize = Math.max(Math.floor(radius * 1.5), 14); // Font size ~ 1.5x bán kính, tối thiểu 14px
         const adjustedFontSize = Math.floor(baseFontSize * fontSize);
         ctx.font = `bold ${adjustedFontSize}px Arial`;
@@ -214,7 +248,92 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         if (showLabels) {
           ctx.fillText(label, centerX, labelY);
         }
+
+        displayIndex++; // Tăng index cho phần tử kế tiếp được hiển thị
       });
+
+      // Vẽ đa giác (nếu đang vẽ)
+      if (isDrawingMode && polygon.polygonPoints.length > 0) {
+        // Vẽ nền đa giác (filled polygon)
+        ctx.fillStyle = 'rgba(255, 107, 107, 0.1)'; // Đỏ nhạt với độ trong suốt 10%
+        ctx.beginPath();
+        const firstPoint = polygon.polygonPoints[0];
+        ctx.moveTo(firstPoint.x * calculatedScale, firstPoint.y * calculatedScale);
+
+        for (let i = 1; i < polygon.polygonPoints.length; i++) {
+          const p = polygon.polygonPoints[i];
+          ctx.lineTo(p.x * calculatedScale, p.y * calculatedScale);
+        }
+
+        // Nối lại với điểm đầu tiên nếu đã hoàn thành
+        if (!polygon.isDrawing) {
+          ctx.lineTo(firstPoint.x * calculatedScale, firstPoint.y * calculatedScale);
+        }
+
+        ctx.fill();
+
+        // Vẽ các điểm đã vẽ
+        polygon.polygonPoints.forEach((point) => {
+          const x = point.x * calculatedScale;
+          const y = point.y * calculatedScale;
+          ctx.fillStyle = '#FF6B6B';
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+
+        // Vẽ các cạnh của đa giác
+        if (polygon.polygonPoints.length > 1) {
+          ctx.strokeStyle = '#FF6B6B';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          const firstPoint = polygon.polygonPoints[0];
+          ctx.moveTo(firstPoint.x * calculatedScale, firstPoint.y * calculatedScale);
+
+          for (let i = 1; i < polygon.polygonPoints.length; i++) {
+            const p = polygon.polygonPoints[i];
+            ctx.lineTo(p.x * calculatedScale, p.y * calculatedScale);
+          }
+
+          // Nếu đã hoàn thành, nối lại với điểm đầu tiên
+          if (!polygon.isDrawing) {
+            ctx.lineTo(firstPoint.x * calculatedScale, firstPoint.y * calculatedScale);
+          }
+
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        // Vẽ đường preview (đang kéo chuột)
+        if (polygon.tempLine && polygon.polygonPoints.length > 0) {
+          const lastPoint = polygon.polygonPoints[polygon.polygonPoints.length - 1];
+          ctx.strokeStyle = '#FFFF00';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([10, 5]);
+          ctx.beginPath();
+          ctx.moveTo(lastPoint.x * calculatedScale, lastPoint.y * calculatedScale);
+          ctx.lineTo(polygon.tempLine.x * calculatedScale, polygon.tempLine.y * calculatedScale);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      // Gửi thông tin số lượng phát hiện được lọc bởi vùng đa giác
+      if (isDrawingMode && polygon.polygonPoints.length > 0) {
+        onPolygonFilteredCountChange?.(filteredDetectionCount);
+        setPolygonFilteredCount(filteredDetectionCount);
+        setFilteredDetectionsByClass(classCountsInRegion);
+        setFilteredTotalDetections(filteredDetectionCount);
+      } else {
+        onPolygonFilteredCountChange?.(0); // 0 có nghĩa là không có vùng được vẽ
+        setPolygonFilteredCount(0);
+        setFilteredDetectionsByClass({});
+        setFilteredTotalDetections(0);
+      }
 
       setIsLoading(false);
     };
@@ -225,7 +344,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
     };
 
     img.src = imageUrl;
-  }, [currentDetections, calculateScale, imageUrl, isEditMode, objectSize, isDraggingSlider, showLabels, fontSize, circleScale, manualCircleColor, localShowRowlines]);
+  }, [currentDetections, calculateScale, imageUrl, isEditMode, isDrawingMode, objectSize, isDraggingSlider, showLabels, fontSize, circleScale, manualCircleColor, localShowRowlines, polygon.polygonPoints, polygon.tempLine, polygon.isDrawing]);
 
   React.useEffect(() => {
     if (imageUrl) {
@@ -244,7 +363,138 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
     setCurrentDetections(detections);
   }, [detections]);
 
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawingMode || !canvasRef.current) return;
+
+    const p = mapClientToLogicalPoint(e.clientX, e.clientY, canvasRef.current, calculateScale());
+    const point: PolygonPoint = { x: p.x, y: p.y };
+
+    // Nếu đang kéo một điểm
+    if (polygon.draggingPointIndex !== null && !polygon.isDrawing) {
+      polygon.updatePoint(polygon.draggingPointIndex, point);
+      drawDetections();
+      return;
+    }
+
+    // Nếu đang vẽ
+    if (polygon.isDrawing) {
+      polygon.setCurrentLine(point);
+      drawDetections();
+    }
+  };
+
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawingMode || !canvasRef.current) return;
+
+    const p = mapClientToLogicalPoint(e.clientX, e.clientY, canvasRef.current, calculateScale());
+    const point: PolygonPoint = { x: p.x, y: p.y };
+
+    // Kiểm tra xem có click vào một điểm hiện có không (để kéo chỉnh sửa)
+    const pointRadius = 50;
+    for (let i = 0; i < polygon.polygonPoints.length; i++) {
+      const existingPoint = polygon.polygonPoints[i];
+      const dist = Math.hypot(point.x - existingPoint.x, point.y - existingPoint.y);
+
+      if (dist < pointRadius) {
+        polygon.setDraggingPointIndex(i);
+        return;
+      }
+    }
+
+    // Chỉ cho phép thêm điểm trên cạnh nếu đang trong quá trình vẽ hoặc đã hoàn tất
+    // (cạnh chỉ có thể được click nếu đa giác đã tồn tại)
+    const edgeInfo = polygon.findClosestPointOnEdge(point, 15);
+    if (edgeInfo) {
+      // Thêm điểm mới trên cạnh
+      polygon.insertPoint(edgeInfo.closestPoint, edgeInfo.edgeIndex + 1);
+      polygon.setDraggingPointIndex(edgeInfo.edgeIndex + 1);
+      drawDetections();
+    }
+  };
+
+  const handleCanvasMouseUp = () => {
+    if (polygon.draggingPointIndex !== null) {
+      polygon.setDraggingPointIndex(null);
+      drawDetections();
+    }
+  };
+
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Nếu đang vẽ đa giác
+    if (isDrawingMode && canvasRef.current) {
+      const p = mapClientToLogicalPoint(e.clientX, e.clientY, canvasRef.current, calculateScale());
+      const point: PolygonPoint = { x: p.x, y: p.y };
+
+      if (!polygon.isDrawing && polygon.polygonPoints.length > 0) {
+        // Đã hoàn thành vẽ - chỉ cho phép chỉnh sửa (không thêm điểm bên ngoài)
+        // Kiểm tra xem có click vào một điểm hiện có không
+        const pointRadius = 15;
+        for (let i = 0; i < polygon.polygonPoints.length; i++) {
+          const existingPoint = polygon.polygonPoints[i];
+          const dist = Math.hypot(point.x - existingPoint.x, point.y - existingPoint.y);
+
+          if (dist < pointRadius) {
+            // Click vào một điểm hiện có, chỉ cho phép chỉnh sửa
+            // (logic này được xử lý trong handleCanvasMouseDown)
+            return;
+          }
+        }
+
+        // Kiểm tra xem có click vào một cạnh không
+        const edgeInfo = polygon.findClosestPointOnEdge(point, 15);
+        if (edgeInfo) {
+          // Click vào một cạnh, chỉ cho phép thêm điểm trên cạnh
+          // (logic này được xử lý trong handleCanvasMouseDown)
+          return;
+        }
+
+        // Click bên ngoài vùng - không làm gì
+        return;
+      } else if (polygon.isDrawing || polygon.polygonPoints.length === 0) {
+        // Đang vẽ hoặc chưa vẽ gì - thêm điểm tiếp theo hoặc kết thúc vẽ
+        
+        if (!polygon.isDrawing) {
+          // Bắt đầu vẽ - click lần đầu tiên
+          polygon.setIsDrawing(true);
+          polygon.addPoint(point);
+        } else {
+          // Thêm điểm tiếp theo hoặc kết thúc vẽ nếu click vào điểm đầu tiên
+          
+          // Kiểm tra xem có click vào một điểm hiện có không (với radius 10 pixels)
+          const clickRadius = 10;
+          let clickedExistingPoint = false;
+          
+          for (let i = 0; i < polygon.polygonPoints.length; i++) {
+            const existingPoint = polygon.polygonPoints[i];
+            const dist = Math.hypot(point.x - existingPoint.x, point.y - existingPoint.y);
+            
+            // Nếu click quá gần điểm đầu tiên và có ≥3 điểm, kết thúc vẽ
+            if (i === 0 && dist < clickRadius && polygon.polygonPoints.length >= 3) {
+              polygon.finishPolygon();
+              clickedExistingPoint = true;
+              toast.success('Đã hoàn thành vùng đếm');
+              break;
+            }
+          }
+          
+          if (!clickedExistingPoint) {
+            // Kiểm tra khoảng cách với điểm cuối cùng để tránh click trùng
+            const lastPoint = polygon.polygonPoints[polygon.polygonPoints.length - 1];
+            const distance = Math.hypot(point.x - lastPoint.x, point.y - lastPoint.y);
+            
+            if (distance > 5) {
+              // Nếu khoảng cách > 5 pixels, thêm điểm mới
+              polygon.addPoint(point);
+            }
+          }
+        }
+      }
+      polygon.setCurrentLine(null);
+      drawDetections();
+      return;
+    }
+
+    // Nếu không ở chế độ vẽ, sử dụng logic edit cũ
     if (!isEditMode || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
@@ -336,10 +586,12 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
       {enableEdit ? (
         <CanvasControlBar
           isEditMode={isEditMode}
+          isDrawingMode={isDrawingMode}
           canUndo={history.length > 1}
           showLabels={showLabels}
           showRowlines={localShowRowlines}
           onEditModeToggle={() => setIsEditMode(!isEditMode)}
+          onDrawingModeToggle={() => setIsDrawingMode(!isDrawingMode)}
           onUndo={handleUndo}
           onLabelsToggle={() => setShowLabels(!showLabels)}
           onRowlinesToggle={() => {
@@ -390,10 +642,36 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         />
       )}
 
+      {isDrawingMode && (
+        <DrawingModeControls
+          isDrawing={polygon.isDrawing}
+          pointCount={polygon.polygonPoints.length}
+          onFinish={() => {
+            polygon.finishPolygon();
+            drawDetections();
+            toast.success('Đã hoàn thành vùng đếm');
+          }}
+          onClear={() => {
+            polygon.clearPolygon();
+            drawDetections();
+            toast.success('Đã xóa vùng');
+          }}
+        />
+      )}
+
       <CanvasDisplay
         canvasRef={canvasRef}
         isEditMode={isEditMode}
+        isDrawingMode={isDrawingMode}
         onCanvasClick={handleCanvasClick}
+        onCanvasMouseMove={handleCanvasMouseMove}
+        onCanvasMouseDown={handleCanvasMouseDown}
+        onCanvasMouseUp={handleCanvasMouseUp}
+        polygonFilteredCount={polygonFilteredCount}
+        totalDetections={polygonFilteredCount > 0 ? filteredTotalDetections : currentDetections.length}
+        detectionsByClass={polygonFilteredCount > 0 ? filteredDetectionsByClass : detectionsByClass}
+        filteredDetectionsCount={filteredDetectionsCount}
+        totalDetectionsCount={totalDetectionsCount}
       />
     </div>
   );

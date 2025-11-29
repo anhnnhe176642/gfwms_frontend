@@ -289,23 +289,6 @@ export const FabricCountForm: React.FC = () => {
             {/* Canvas Section */}
             {detectionResult && detectionResult.success && preview && (
               <div className="space-y-4">
-                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-                    Kết quả phát hiện: {detectionResult.data.summary.total_objects} vật thể
-                  </p>
-                  {Object.entries(detectionResult.data.summary.counts_by_class).length > 0 && (
-                    <div className="flex flex-wrap gap-3">
-                      {Object.entries(detectionResult.data.summary.counts_by_class).map(([className, count]) => (
-                        <div key={className} className="text-xs text-blue-800 dark:text-blue-200">
-                          <span className="font-semibold">{className}:</span> {count}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
-                    Hiển thị: <span className="font-semibold">{filteredDetections.length}</span> / {editedDetections?.length || detectionResult.data.detections.length} (theo độ tin cậy)
-                  </p>
-                </div>
                 <CanvasDrawer
                   imageUrl={preview}
                   detections={filteredDetections}
@@ -315,6 +298,10 @@ export const FabricCountForm: React.FC = () => {
                   enableEdit={true}
                   showRowlines={showRowlines}
                   onShowRowlinesChange={setShowRowlines}
+                  onPolygonFilteredCountChange={() => {}}
+                  detectionsByClass={detectionResult.data.summary.counts_by_class}
+                  filteredDetectionsCount={filteredDetections.length}
+                  totalDetectionsCount={editedDetections?.length || detectionResult.data.detections.length}
                   confidenceFilter={
                     <ConfidenceFilter
                       value={confidenceThreshold}

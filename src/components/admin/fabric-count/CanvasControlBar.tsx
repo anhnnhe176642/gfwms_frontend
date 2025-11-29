@@ -2,14 +2,16 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, RotateCcw, Eye, EyeOff, GitBranch } from 'lucide-react';
+import { Check, RotateCcw, Eye, EyeOff, GitBranch, Pen } from 'lucide-react';
 
 interface CanvasControlBarProps {
   isEditMode: boolean;
+  isDrawingMode?: boolean;
   canUndo: boolean;
   showLabels: boolean;
   showRowlines: boolean;
   onEditModeToggle: () => void;
+  onDrawingModeToggle?: () => void;
   onUndo: () => void;
   onLabelsToggle: () => void;
   onRowlinesToggle: () => void;
@@ -19,10 +21,12 @@ interface CanvasControlBarProps {
 
 export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
   isEditMode,
+  isDrawingMode = false,
   canUndo,
   showLabels,
   showRowlines,
   onEditModeToggle,
+  onDrawingModeToggle,
   onUndo,
   onLabelsToggle,
   onRowlinesToggle,
@@ -46,6 +50,27 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
           'Chế độ chỉnh sửa (tắt)'
         )}
       </Button>
+
+      {/* Drawing Mode Controls */}
+      {onDrawingModeToggle && (
+        <Button
+          variant={isDrawingMode ? 'default' : 'outline'}
+          onClick={onDrawingModeToggle}
+          className="gap-2"
+        >
+          {isDrawingMode ? (
+            <>
+              <Pen className="w-4 h-4" />
+              Chế độ vẽ vùng (bật)
+            </>
+          ) : (
+            <>
+              <Pen className="w-4 h-4" />
+              Chế độ vẽ vùng (tắt)
+            </>
+          )}
+        </Button>
+      )}
 
       {isEditMode && (
         <Button 
