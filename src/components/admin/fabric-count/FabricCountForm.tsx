@@ -39,6 +39,10 @@ export const FabricCountForm: React.FC = () => {
   const [confidenceThreshold, setConfidenceThreshold] = useState<number>(0.5);
   const [showCameraCapture, setShowCameraCapture] = useState(false);
   const [showSubmitDatasetModal, setShowSubmitDatasetModal] = useState(false);
+  const [minConfidenceUsed, setMinConfidenceUsed] = useState<number>(0.5);
+  const [isRefetching, setIsRefetching] = useState(false);
+  const [showRowlines, setShowRowlines] = useState(false);
+  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Lọc detections dựa trên confidence threshold
   const filteredDetections = React.useMemo(() => {
@@ -146,17 +150,18 @@ export const FabricCountForm: React.FC = () => {
     }
   };
 
-  const detectObjects = async (file: File) => {
+  const detectObjects = async (file: File, confidence: number = 0.5) => {
     try {
       setIsDetecting(true);
       const response = await yoloService.detect({
         image: file,
-        confidence: 0.1,
+        confidence: confidence,
       });
 
       if (response.success) {
         setDetectionResult(response);
         setEditedDetections(null);
+        setMinConfidenceUsed(confidence);
         toast.success('Phát hiện vật thể thành công');
       } else {
         toast.error(response.message || 'Lỗi phát hiện vật thể');
@@ -170,6 +175,25 @@ export const FabricCountForm: React.FC = () => {
     } finally {
       setIsDetecting(false);
     }
+  };
+
+  const handleConfidenceThresholdChange = (newThreshold: number) => {
+    setConfidenceThreshold(newThreshold);
+
+    // Clear existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new debounce timer - wait for slider drag to end
+    debounceTimerRef.current = setTimeout(() => {
+      // If new threshold is lower than the minimum confidence used in API, re-fetch
+      if (newThreshold < minConfidenceUsed && formData.image) {
+        setIsRefetching(true);
+        detectObjects(formData.image as File, newThreshold)
+          .finally(() => setIsRefetching(false));
+      }
+    }, 500); // 500ms debounce
   };
 
   return (
@@ -277,12 +301,15 @@ export const FabricCountForm: React.FC = () => {
                   containerWidth={containerWidth}
                   onDetectionsChange={setEditedDetections}
                   enableEdit={true}
+                  showRowlines={showRowlines}
+                  onShowRowlinesChange={setShowRowlines}
                   confidenceFilter={
                     <ConfidenceFilter
                       value={confidenceThreshold}
-                      onChange={setConfidenceThreshold}
+                      onChange={handleConfidenceThresholdChange}
                       detectionCount={editedDetections?.length || detectionResult.data.detections.length}
                       filteredCount={filteredDetections.length}
+                      isLoading={isRefetching}
                     />
                   }
                 />

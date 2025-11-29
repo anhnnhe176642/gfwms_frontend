@@ -2,15 +2,17 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { Check, RotateCcw, Eye, EyeOff, GitBranch } from 'lucide-react';
 
 interface CanvasControlBarProps {
   isEditMode: boolean;
   canUndo: boolean;
   showLabels: boolean;
+  showRowlines: boolean;
   onEditModeToggle: () => void;
   onUndo: () => void;
   onLabelsToggle: () => void;
+  onRowlinesToggle: () => void;
   sizeControlPanel: React.ReactNode;
   confidenceFilter?: React.ReactNode;
 }
@@ -19,9 +21,11 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
   isEditMode,
   canUndo,
   showLabels,
+  showRowlines,
   onEditModeToggle,
   onUndo,
   onLabelsToggle,
+  onRowlinesToggle,
   sizeControlPanel,
   confidenceFilter,
 }) => {
@@ -70,6 +74,25 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
           <>
             <EyeOff className="w-4 h-4" />
             Hiện tên & độ tin cậy
+          </>
+        )}
+      </Button>
+
+      {/* Rowlines Toggle */}
+      <Button
+        variant={showRowlines ? 'default' : 'outline'}
+        onClick={onRowlinesToggle}
+        className="gap-2"
+      >
+        {showRowlines ? (
+          <>
+            <GitBranch className="w-4 h-4" />
+            Ẩn Rowline
+          </>
+        ) : (
+          <>
+            <GitBranch className="w-4 h-4" />
+            Hiện Rowline
           </>
         )}
       </Button>

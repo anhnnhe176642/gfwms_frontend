@@ -27,6 +27,13 @@ export type Detection = {
   center: Point;
   dimensions: Dimensions;
   row?: number;
+  rowline?: {
+    row: number;
+    meanX: number;
+    meanY: number;
+    dirX: number;
+    dirY: number;
+  } | null;
 };
 
 export type Summary = {

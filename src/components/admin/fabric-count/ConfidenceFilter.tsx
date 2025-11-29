@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Target, X } from 'lucide-react';
+import { Target, X, Loader2 } from 'lucide-react';
 
 interface ConfidenceFilterProps {
   value: number;
   onChange: (value: number) => void;
   detectionCount: number;
   filteredCount: number;
+  isLoading?: boolean;
 }
 
 export const ConfidenceFilter: React.FC<ConfidenceFilterProps> = ({
@@ -16,6 +17,7 @@ export const ConfidenceFilter: React.FC<ConfidenceFilterProps> = ({
   onChange,
   detectionCount,
   filteredCount,
+  isLoading = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -24,13 +26,23 @@ export const ConfidenceFilter: React.FC<ConfidenceFilterProps> = ({
       <Button
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
+        disabled={isLoading}
         className="gap-2"
       >
-        <Target className="w-4 h-4" />
-        <span>Độ tin cậy: {Math.round(value * 100)}%</span>
-        <span className="text-xs text-muted-foreground">
-          ({filteredCount}/{detectionCount})
-        </span>
+        {isLoading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Đang tải...</span>
+          </>
+        ) : (
+          <>
+            <Target className="w-4 h-4" />
+            <span>Độ tin cậy: {Math.round(value * 100)}%</span>
+            <span className="text-xs text-muted-foreground">
+              ({filteredCount}/{detectionCount})
+            </span>
+          </>
+        )}
       </Button>
 
       {isOpen && (
@@ -49,7 +61,8 @@ export const ConfidenceFilter: React.FC<ConfidenceFilterProps> = ({
               max="100"
               value={Math.round(value * 100)}
               onChange={(e) => onChange(Number(e.target.value) / 100)}
-              className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              disabled={isLoading}
+              className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             />
 
             <div className="flex justify-between text-xs text-muted-foreground">
@@ -70,10 +83,20 @@ export const ConfidenceFilter: React.FC<ConfidenceFilterProps> = ({
               variant="default"
               size="sm"
               onClick={() => setIsOpen(false)}
+              disabled={isLoading}
               className="w-full gap-2"
             >
-              <X className="w-4 h-4" />
-              Đóng
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Đang tải...
+                </>
+              ) : (
+                <>
+                  <X className="w-4 h-4" />
+                  Đóng
+                </>
+              )}
             </Button>
           </div>
         </div>

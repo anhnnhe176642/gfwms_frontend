@@ -19,6 +19,8 @@ interface CanvasDrawerProps {
   containerWidth?: number;
   onDetectionsChange?: (detections: Detection[]) => void;
   enableEdit?: boolean;
+  showRowlines?: boolean;
+  onShowRowlinesChange?: (show: boolean) => void;
   confidenceFilter?: React.ReactNode;
 }
 
@@ -29,6 +31,8 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   containerWidth = 800,
   onDetectionsChange,
   enableEdit = false,
+  showRowlines = true,
+  onShowRowlinesChange,
   confidenceFilter,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +48,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   const [fontSize, setFontSize] = useState(1);
   const [circleScale, setCircleScale] = useState(1);
   const [manualCircleColor, setManualCircleColor] = useState('#FF6B6B');
+  const [localShowRowlines, setLocalShowRowlines] = useState(showRowlines);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -93,7 +98,6 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
       // Vẽ ảnh
       ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
-
       // Mảng màu cho các rows khác nhau
       const rowColors = [
         "#FF6B6B", // đỏ
@@ -105,6 +109,56 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         "#D7BEE8", // tím nhạt
         "#FFA07A", // cam nhạt
       ];
+
+      // Vẽ rowlines (nếu có và được bật)
+      if (localShowRowlines) {
+        type RowLine = { row: number; meanX: number; meanY: number; dirX: number; dirY: number };
+        const rowlinesMap = new Map<number, RowLine>();
+        currentDetections.forEach((detection) => {
+          if (detection.rowline && detection.rowline.row !== undefined) {
+            rowlinesMap.set(detection.rowline.row, detection.rowline);
+          }
+        });
+
+        if (rowlinesMap.size > 0) {
+          // Vẽ các rowline, mỗi row 1 đường
+          rowlinesMap.forEach((rowline, row) => {
+            if (!rowline) return;
+            // Màu theo row
+            const colorIndex = row !== undefined ? (row - 1) % rowColors.length : 0;
+            const lineColor = rowColors[colorIndex];
+
+            // Vector cơ sở (meanX, meanY) và hướng (dirX, dirY)
+            const mx = rowline.meanX * calculatedScale;
+            const my = rowline.meanY * calculatedScale;
+            const dx = rowline.dirX;
+            const dy = rowline.dirY;
+
+            // Khoảng dài đủ lớn để kéo đường qua toàn bộ ảnh
+            const length = Math.max(displayWidth, displayHeight) * 2;
+            const startX = mx - dx * length;
+            const startY = my - dy * length;
+            const endX = mx + dx * length;
+            const endY = my + dy * length;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 3;
+            // Solid line to show rowline
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 0.9;
+            ctx.stroke();
+            // Reset line dash and alpha
+            ctx.globalAlpha = 1.0;
+
+            // No label - the user requested not to show row numbers
+          });
+        }
+      }
+
+      // (nothing)
 
 
       // Vẽ bounding boxes với hình tròn
@@ -171,7 +225,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
     };
 
     img.src = imageUrl;
-  }, [currentDetections, calculateScale, imageUrl, isEditMode, objectSize, isDraggingSlider, showLabels, fontSize, circleScale, manualCircleColor]);
+  }, [currentDetections, calculateScale, imageUrl, isEditMode, objectSize, isDraggingSlider, showLabels, fontSize, circleScale, manualCircleColor, localShowRowlines]);
 
   React.useEffect(() => {
     if (imageUrl) {
@@ -284,9 +338,17 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
           isEditMode={isEditMode}
           canUndo={history.length > 1}
           showLabels={showLabels}
+          showRowlines={localShowRowlines}
           onEditModeToggle={() => setIsEditMode(!isEditMode)}
           onUndo={handleUndo}
           onLabelsToggle={() => setShowLabels(!showLabels)}
+          onRowlinesToggle={() => {
+            const newShowRowlines = !localShowRowlines;
+            setLocalShowRowlines(newShowRowlines);
+            if (onShowRowlinesChange) {
+              onShowRowlinesChange(newShowRowlines);
+            }
+          }}
           sizeControlPanel={
             <SizeControlPanel
               fontSize={fontSize}
