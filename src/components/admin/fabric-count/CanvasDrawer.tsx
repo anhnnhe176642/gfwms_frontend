@@ -190,6 +190,16 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
       // Vẽ bounding boxes với hình tròn
       let displayIndex = 0; // Index cho hiển thị (được cập nhật khi lọc theo vùng)
+      // Thu thập thông tin label để vẽ sau cùng
+      const labelQueue: Array<{
+        label: string;
+        coordLabel: string;
+        centerX: number;
+        labelY: number;
+        coordY: number;
+        color: string;
+      }> = [];
+
       currentDetections.forEach((detection, index) => {
         const { class_name, confidence, center, dimensions, row } = detection;
 
@@ -200,16 +210,12 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
             // Không hiển thị điểm nằm ngoài vùng
             return;
           }
-          filteredDetectionCount++; // Đếm các phát hiện nằm trong vùng
-          // Cập nhật count theo class
+          filteredDetectionCount++;
           classCountsInRegion[class_name] = (classCountsInRegion[class_name] || 0) + 1;
         }
 
-        // Nếu có row, sử dụng màu theo row; nếu không có, sử dụng màu theo index
         const colorIndex = row !== undefined ? (row - 1) % rowColors.length : displayIndex % rowColors.length;
-        // Nếu là custom (được vẽ thủ công), dùng màu tuỳ chỉnh; nếu không, dùng màu mặc định
         const circleColor = class_name === 'custom' ? manualCircleColor : rowColors[colorIndex];
-
         const centerX = center.x * calculatedScale;
         const centerY = center.y * calculatedScale;
         const radius = (Math.min(dimensions.width, dimensions.height) * calculatedScale) / 2 * circleScale;
@@ -225,38 +231,48 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Vẽ số thứ tự ở tâm hình tròn (sử dụng displayIndex khi lọc vùng)
+        // Vẽ số thứ tự ở tâm hình tròn
         const orderNumber = isDrawingMode && polygon.polygonPoints.length > 0 ? displayIndex + 1 : index + 1;
-        const baseFontSize = Math.max(Math.floor(radius * 1.5), 14); // Font size ~ 1.5x bán kính, tối thiểu 14px
+        const baseFontSize = Math.max(Math.floor(radius * 1.5), 14);
         const adjustedFontSize = Math.floor(baseFontSize * fontSize);
         ctx.font = `bold ${adjustedFontSize}px Arial`;
-        
-        // Vẽ viền đen cho chữ
         ctx.strokeStyle = '#000000';
-        ctx.lineWidth = Math.max(adjustedFontSize * 0.05, 1); // Độ dày viền ~3% font size, tối thiểu 1px
+        ctx.lineWidth = Math.max(adjustedFontSize * 0.05, 1);
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.strokeText(String(orderNumber), centerX, centerY);
-        
-        // Vẽ chữ trắng
         ctx.fillStyle = '#FFFFFF';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
         ctx.fillText(String(orderNumber), centerX, centerY);
 
-        // Vẽ label ở dưới vòng tròn
-        //const rowLabel = detection.row ? ` (Row ${detection.row})` : '';
-        const label = `${class_name} ${(confidence * 100).toFixed(1)}%`;
-        ctx.font = '12px Arial';
-        ctx.fillStyle = circleColor;
-        ctx.textAlign = 'center';
-        const labelY = centerY + radius + 15;
+        // Thu thập label để vẽ sau cùng
         if (showLabels) {
-          ctx.fillText(label, centerX, labelY);
+          const label = `${class_name} ${(confidence * 100).toFixed(1)}%`;
+          const coordLabel = `(${Math.round(center.x)}, ${Math.round(center.y)})`;
+          const labelY = centerY + radius + 15;
+          const coordY = labelY + 14;
+          labelQueue.push({ label, coordLabel, centerX, labelY, coordY, color: circleColor });
         }
 
-        displayIndex++; // Tăng index cho phần tử kế tiếp được hiển thị
+        displayIndex++;
       });
+
+      // Vẽ toàn bộ label sau cùng để đảm bảo nổi trên cùng
+      if (showLabels) {
+        ctx.textAlign = 'center';
+        ctx.font = '15px Arial';
+        ctx.lineWidth = 1;
+        labelQueue.forEach(({ label, coordLabel, centerX, labelY, coordY, color }) => {
+          // Viền đen
+          ctx.strokeStyle = '#000000';
+          
+          ctx.strokeText(label, centerX, labelY);
+          ctx.strokeText(coordLabel, centerX, coordY);
+          // Màu chính
+            ctx.fillStyle = color;
+          ctx.fillText(label, centerX, labelY);
+          ctx.fillText(coordLabel, centerX, coordY);
+        });
+      }
 
       // Vẽ đa giác (nếu đang vẽ)
       if (isDrawingMode && polygon.polygonPoints.length > 0) {
