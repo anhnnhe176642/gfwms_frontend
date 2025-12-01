@@ -18,6 +18,12 @@ export type CreateExportFabricRequest = {
   exportItems: ExportFabricItem[];
 };
 
+export type CreateExportFabricRequestPayload = {
+  storeId: number;
+  note?: string;
+  exportItems: ExportFabricItem[];
+};
+
 export type ExportFabricCreatedBy = {
   username: string;
   email: string;
@@ -127,6 +133,14 @@ export const exportFabricService = {
         itemShelfSelections,
       }
     );
+    return response.data.exportFabric;
+  },
+
+  /**
+   * Tạo yêu cầu xuất kho mới (không cần chọn kho)
+   */
+  createExportRequest: async (data: CreateExportFabricRequestPayload): Promise<ExportFabricDetail> => {
+    const response = await api.post<CreateExportFabricResponse>(`${BASE_PATH}/request`, data);
     return response.data.exportFabric;
   },
 };

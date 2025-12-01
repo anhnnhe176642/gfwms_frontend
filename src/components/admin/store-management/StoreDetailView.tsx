@@ -15,7 +15,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { PERMISSIONS } from '@/constants/permissions';
 import type { StoreListItem } from '@/types/store';
 import { STORE_ACTIVE_STATUS_CONFIG } from '@/constants/store';
-import { CreateExportFabricDialog } from './CreateExportFabricDialog';
 
 export interface StoreDetailViewProps {
   storeId: string | number;
@@ -29,7 +28,6 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [store, setStore] = useState<StoreListItem | null>(null);
   const [error, setError] = useState('');
-  const [openExportDialog, setOpenExportDialog] = useState(false);
 
   // Fetch store data
   useEffect(() => {
@@ -119,12 +117,12 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
         <div className="flex gap-2">
           {hasPermission(PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key) && (
             <Button 
-              onClick={() => setOpenExportDialog(true)} 
+              onClick={() => router.push(`/admin/stores/${storeId}/export-request`)} 
               variant="outline"
               className="gap-2"
             >
               <Truck className="h-4 w-4" />
-              Tạo xuất kho
+              Tạo yêu cầu xuất kho
             </Button>
           )}
           <Button onClick={handleEdit} className="gap-2">
@@ -153,7 +151,7 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Trạng thái</p>
               <div className="mt-1">
-                <Badge value={store.isActive} config={STORE_ACTIVE_STATUS_CONFIG} />
+                <Badge value={store.isActive ? 'true' : 'false'} config={STORE_ACTIVE_STATUS_CONFIG} />
               </div>
             </div>
           </div>
@@ -207,12 +205,12 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
         </Button>
         {hasPermission(PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key) && (
           <Button 
-            onClick={() => setOpenExportDialog(true)} 
+            onClick={() => router.push(`/admin/stores/${storeId}/export-request`)} 
             variant="outline"
             className="gap-2"
           >
             <Truck className="h-4 w-4" />
-            Tạo xuất kho
+            Tạo yêu cầu xuất kho
           </Button>
         )}
         <Button onClick={handleEdit} className="gap-2">
@@ -220,15 +218,6 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
           Chỉnh sửa cửa hàng
         </Button>
       </div>
-
-      {/* Export Fabric Dialog */}
-      {store && (
-        <CreateExportFabricDialog
-          storeId={store.id}
-          open={openExportDialog}
-          onOpenChange={setOpenExportDialog}
-        />
-      )}
     </div>
   );
 }
