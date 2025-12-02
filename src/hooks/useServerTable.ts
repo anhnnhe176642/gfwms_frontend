@@ -71,8 +71,8 @@ export function useServerTable<TData, TParams extends ServerTableParams = Server
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [pagination, setPagination] = useState<PaginationState>({
-    page: 1,
-    limit: 10,
+    page: initialParams?.page ?? 1,
+    limit: initialParams?.limit ?? 10,
     total: 0,
     totalPages: 0,
     hasNext: false,

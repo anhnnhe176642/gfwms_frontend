@@ -9,5 +9,7 @@ export { CreateShelfForm } from './CreateShelfForm';
 export { EditShelfForm } from './EditShelfForm';
 export { ShelfDetailView } from './ShelfDetailView';
 export { FabricShelfCard } from './FabricShelfCard';
+export { ShelfCard } from './ShelfCard';
+export { ShelfCardGrid } from './ShelfCardGrid';
 export { WarehouseImportFabricsList } from './WarehouseImportFabricsList';
 export { createImportFabricColumns } from './importFabricColumns';

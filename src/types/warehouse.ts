@@ -44,16 +44,19 @@ export type ShelfListResponse = {
   pagination: PaginationState;
 };
 
+export type ShelfGroupByField = 'categoryId' | 'colorId' | 'glossId' | 'supplierId';
+
 export type ShelfListParams = {
   page?: number;
   limit?: number;
   search?: string;
-  warehouseId?: number;
-  fabricId?: number; // Filter shelves that contain specific fabric
-  sortBy?: string; // e.g., "code,createdAt"
-  order?: string; // e.g., "asc,desc"
+  warehouseId?: string; // supports multiple IDs separated by comma, e.g., "1,2,3"
+  fabricId?: string; // supports multiple IDs separated by comma, e.g., "5,10,15"
+  sortBy?: string; // e.g., "id", "code", "currentQuantity", "maxQuantity", "warehouseId", "createdAt", "updatedAt"
+  order?: string; // "asc" or "desc"
   createdFrom?: string; // ISO date string
   createdTo?: string; // ISO date string
+  groupBy?: string; // comma-separated fields: "categoryId", "colorId", "glossId", "supplierId"
 };
 
 export type CreateShelfPayload = {
@@ -133,3 +136,26 @@ export type GetShelfResponse = {
   message: string;
   shelf: ShelfDetail;
 };
+
+// Grouped shelf types for when groupBy param is used
+export type FabricGroup = {
+  totalQuantity: number;
+  category?: CategoryInfo;
+  color?: ColorInfo;
+  gloss?: GlossInfo;
+  supplier?: SupplierInfo;
+};
+
+export type ShelfWithGroups = ShelfListItem & {
+  fabricGroups: FabricGroup[];
+};
+
+export type ShelfWithGroupsListResponse = {
+  message: string;
+  data: ShelfWithGroups[];
+  pagination: PaginationState;
+};
+
+// Union type for shelf list response (either grouped or with fabric details)
+export type ShelfListApiResponse = ShelfListResponse | ShelfWithFabricListResponse | ShelfWithGroupsListResponse;
+
