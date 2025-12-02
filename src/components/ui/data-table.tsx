@@ -110,7 +110,7 @@ export function DataTable<TData, TValue>({
     manualSorting, // Tell table that sorting is handled externally
     manualFiltering, // Tell table that filtering is handled externally
     manualPagination, // Tell table that pagination is handled externally
-    pageCount: externalPageCount ?? -1,
+    ...(manualPagination && { pageCount: externalPageCount ?? -1 }),
     state: {
       sorting,
       columnFilters,
@@ -269,7 +269,7 @@ export function DataTable<TData, TValue>({
           </div>
           <div className="flex w-[100px] items-center justify-center text-sm font-medium">
             Trang {table.getState().pagination.pageIndex + 1} /{" "}
-            {table.getPageCount()}
+            {table.getPageCount() < 0 ? 1 : table.getPageCount()}
           </div>
           <div className="flex items-center space-x-2">
             <Button

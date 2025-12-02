@@ -222,7 +222,7 @@ export function ImportFabricDetailView({ warehouseId, importId }: ImportFabricDe
           </div>
 
           {/* Items Table */}
-          <div className="border-b p-8">
+          <div className="border-b p-8 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-2">
@@ -230,6 +230,7 @@ export function ImportFabricDetailView({ warehouseId, importId }: ImportFabricDe
                   <th className="text-left py-3 px-2 font-semibold text-foreground">Loại vải</th>
                   <th className="text-left py-3 px-2 font-semibold text-foreground">Màu sắc</th>
                   <th className="text-left py-3 px-2 font-semibold text-foreground">Nhà cung cấp</th>
+                  <th className="text-center py-3 px-2 font-semibold text-foreground">Chiều dài (m)</th>
                   <th className="text-right py-3 px-2 font-semibold text-foreground">Số lượng</th>
                   <th className="text-right py-3 px-2 font-semibold text-foreground">Đơn giá</th>
                   <th className="text-right py-3 px-2 font-semibold text-foreground">Thành tiền</th>
@@ -243,17 +244,18 @@ export function ImportFabricDetailView({ warehouseId, importId }: ImportFabricDe
                       <div className="space-y-1">
                         <p className="font-medium text-foreground">{item.fabric.category.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          Độ bóng: {item.fabric.gloss.description}
+                          {item.fabric.gloss.description}
                         </p>
                       </div>
                     </td>
-                    <td className="py-4 px-2">{item.fabric.color.name}</td>
-                    <td className="py-4 px-2 text-sm text-muted-foreground">{item.fabric.supplier.name}</td>
-                    <td className="py-4 px-2 text-right font-medium">{item.quantity.toLocaleString('vi-VN')}</td>
-                    <td className="py-4 px-2 text-right font-medium">
+                    <td className="py-4 px-2 whitespace-nowrap">{item.fabric.color.name}</td>
+                    <td className="py-4 px-2 text-sm text-muted-foreground whitespace-nowrap">{item.fabric.supplier.name}</td>
+                    <td className="py-4 px-2 text-center whitespace-nowrap">{item.fabric.length.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
+                    <td className="py-4 px-2 text-right font-medium whitespace-nowrap">{item.quantity.toLocaleString('vi-VN')}</td>
+                    <td className="py-4 px-2 text-right font-medium whitespace-nowrap">
                       {item.price.toLocaleString('vi-VN')} ₫
                     </td>
-                    <td className="py-4 px-2 text-right font-medium text-foreground">
+                    <td className="py-4 px-2 text-right font-medium text-foreground whitespace-nowrap">
                       {(item.quantity * item.price).toLocaleString('vi-VN')} ₫
                     </td>
                   </tr>

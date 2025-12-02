@@ -47,3 +47,8 @@ export type FabricListParams = {
   sortBy?: string; // e.g., "gloss.description"
   order?: string; // e.g., "asc" or "desc"
 };
+
+export type GetFabricByIdResponse = {
+  message: string;
+  fabric: FabricListItem;
+};

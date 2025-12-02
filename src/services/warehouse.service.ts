@@ -16,6 +16,8 @@ import type {
   ShelfWithFabricListResponse,
   ShelfWithGroupsListResponse,
   ShelfListApiResponse,
+  FabricShelfDetailResponse,
+  FabricShelfDetailData,
 } from '@/types/warehouse';
 import type { CreateWarehouseFormData, UpdateWarehouseFormData } from '@/schemas/warehouse.schema';
 
@@ -146,6 +148,14 @@ export const warehouseService = {
    */
   deleteShelf: async (id: string | number): Promise<void> => {
     await api.delete(`/v1/shelves/${id}`);
+  },
+
+  /**
+   * Lấy chi tiết vải trong kệ
+   */
+  getFabricShelfDetail: async (shelfId: string | number, fabricId: string | number): Promise<FabricShelfDetailData> => {
+    const response = await api.get<FabricShelfDetailResponse>(`/v1/fabric-shelf/shelf/${shelfId}/fabric/${fabricId}/detail`);
+    return response.data.data;
   },
 };
 

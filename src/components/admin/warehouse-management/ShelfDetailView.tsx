@@ -11,7 +11,7 @@ import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit, Camera } from 'lucide-react';
 import { useNavigation } from '@/hooks/useNavigation';
 import type { ShelfDetail, WarehouseListItem } from '@/types/warehouse';
-import { FabricShelfCard } from '@/components/admin/warehouse-management/FabricShelfCard';
+import { FabricShelfTable } from '@/components/admin/warehouse-management/FabricShelfTable';
 import { EditShelfForm } from '@/components/admin/warehouse-management/EditShelfForm';
 import { FabricCountModal } from '@/components/admin/warehouse-management/FabricCountModal';
 
@@ -210,15 +210,12 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {shelf.fabricShelf.map((fabricItem) => (
-                <FabricShelfCard
-                  key={fabricItem.fabricId}
-                  fabricItem={fabricItem}
-                  shelfCapacity={shelf.maxQuantity}
-                />
-              ))}
-            </div>
+            <FabricShelfTable
+              fabricShelf={shelf.fabricShelf}
+              shelfCapacity={shelf.maxQuantity}
+              shelfId={shelfId}
+              warehouseId={shelf.warehouseId}
+            />
           )}
         </CardContent>
       </Card>

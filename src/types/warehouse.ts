@@ -159,3 +159,37 @@ export type ShelfWithGroupsListResponse = {
 // Union type for shelf list response (either grouped or with fabric details)
 export type ShelfListApiResponse = ShelfListResponse | ShelfWithFabricListResponse | ShelfWithGroupsListResponse;
 
+// Fabric Shelf Detail types
+export type FabricShelfImporter = {
+  id: string;
+  fullname: string;
+  username: string;
+};
+
+export type FabricShelfImportItem = {
+  importId: number;
+  currentQuantity: number;
+  importDate: string;
+  importer: FabricShelfImporter;
+  importPrice: number;
+  importStatus: string;
+};
+
+export type FabricShelfDetailData = {
+  shelfId: number;
+  fabricId: number;
+  shelf: {
+    id: number;
+    code: string;
+    warehouseId: number;
+  };
+  totalCurrentQuantity: number;
+  importCount: number;
+  imports: FabricShelfImportItem[];
+};
+
+export type FabricShelfDetailResponse = {
+  message: string;
+  data: FabricShelfDetailData;
+};
+

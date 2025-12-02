@@ -3,6 +3,7 @@ import type {
   FabricListResponse,
   FabricListParams,
   FabricListItem,
+  GetFabricByIdResponse,
 } from '@/types/fabric';
 
 const BASE_PATH = '/v1/fabrics';
@@ -20,8 +21,8 @@ export const fabricService = {
    * Lấy thông tin chi tiết một fabric
    */
   getFabricById: async (id: number | string): Promise<FabricListItem> => {
-    const response = await api.get<FabricListItem>(`${BASE_PATH}/${id}`);
-    return response.data;
+    const response = await api.get<GetFabricByIdResponse>(`${BASE_PATH}/${id}`);
+    return response.data.fabric;
   },
 };
 
