@@ -3,11 +3,13 @@ import type { RoleOption } from '@/types/role';
 import type { DatasetStatus } from '@/types/yolo-dataset';
 import type { ImportFabricStatus } from '@/types/importFabric';
 import type { ExportFabricStatus } from '@/types/exportFabric';
+import type { InvoiceStatus } from '@/types/invoice';
 import { Badge } from '@/components/ui/badge';
 import { USER_STATUS_CONFIG } from '@/constants/user';
 import { IMPORT_FABRIC_STATUS_CONFIG } from '@/constants/importFabric';
 import { DATASET_STATUS_CONFIG } from '@/constants/yolo-dataset';
 import { EXPORT_FABRIC_STATUS_CONFIG } from '@/constants/exportFabric';
+import { INVOICE_STATUS_CONFIG } from '@/constants/invoice';
 
 type StatusBadgeProps = {
   status: UserStatus | string;
@@ -55,6 +57,18 @@ type ExportFabricStatusBadgeProps = {
  */
 export function ExportFabricStatusBadge({ status }: ExportFabricStatusBadgeProps) {
   return <Badge value={status} config={EXPORT_FABRIC_STATUS_CONFIG as any} />;
+}
+
+type InvoiceStatusBadgeProps = {
+  status: InvoiceStatus;
+};
+
+/**
+ * Status badge component for invoices
+ * Uses generic Badge component with invoice status config
+ */
+export function InvoiceStatusBadge({ status }: InvoiceStatusBadgeProps) {
+  return <Badge value={status} config={INVOICE_STATUS_CONFIG as any} />;
 }
 
 type RoleBadgeProps = {
