@@ -4,6 +4,8 @@ export { StoreDetailView } from './StoreDetailView';
 export { StoreManagementTable } from './StoreManagementTable';
 export { createStoreColumns } from './storeColumns';
 export { ExportRequestTable } from './ExportRequestTable';
+export { ExportRequestFlow } from './ExportRequestFlow';
+export { ExportWarehouseAllocation } from './ExportWarehouseAllocation';
 export { ExportRequestPreviewDialog } from './ExportRequestPreviewDialog';
 export { createExportRequestColumns } from './exportRequestColumns';
 export { ExportFabricListTable } from './ExportFabricListTable';

@@ -13,7 +13,7 @@ export default async function WarehouseExportFabricsPage({ params }: { params: P
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Danh sách phiếu xuất vải của kho</h1>
-      <ExportFabricListTable initialParams={{ warehouseId }} hideWarehouseColumn={true} />
+      <ExportFabricListTable initialParams={{ warehouseId }} hideWarehouseColumn={true} warehouseId={warehouseId} />
     </div>
   );
 }

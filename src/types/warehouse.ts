@@ -193,3 +193,121 @@ export type FabricShelfDetailResponse = {
   data: FabricShelfDetailData;
 };
 
+// Fabric Shelves by Warehouse types (for export approval)
+export type FabricBatchInfo = {
+  importId: number;
+  importDate: string;
+  importStatus: string;
+  importPrice: number;
+  currentQuantity: number;
+  originalQuantity: number;
+  importedBy: {
+    id: string;
+    fullname: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FabricShelfWithBatches = {
+  id: number;
+  code: string;
+  currentQuantity: number;
+  maxQuantity: number;
+  totalFabricQuantity: number;
+  batches: FabricBatchInfo[];
+};
+
+export type FabricShelvesData = {
+  warehouseId: number;
+  fabricId: number;
+  fabric: {
+    id: number;
+    thickness: number;
+    length: number;
+    width: number;
+    weight: number;
+    sellingPrice: number;
+    categoryId: number;
+    colorId: string;
+    supplierId: number;
+    category: CategoryInfo;
+    color: ColorInfo;
+    supplier: SupplierInfo;
+    gloss: GlossInfo;
+  };
+  totalShelves: number;
+  totalBatches: number;
+  totalQuantity: number;
+  shelves: FabricShelfWithBatches[];
+};
+
+export type FabricShelvesResponse = {
+  message: string;
+  data: FabricShelvesData;
+};
+
+// Fabric Pickup Priority types
+export type FabricPickupPriority = 
+  | 'NEWEST_FIRST'    // Ưu tiên lấy lô nhập mới nhất trước
+  | 'OLDEST_FIRST'    // Ưu tiên lấy lô nhập cũ nhất trước (FIFO)
+  | 'LOWEST_PRICE'    // Ưu tiên lấy lô có giá nhập thấp nhất trước
+  | 'HIGHEST_PRICE'   // Ưu tiên lấy lô có giá nhập cao nhất trước
+  | 'FEWEST_SHELVES'; // Ưu tiên lấy ít kệ nhất (lấy từ kệ có nhiều hàng trước)
+
+export type FabricPickupBatch = {
+  importId: number;
+  importDate: string;
+  importPrice: number;
+  availableQuantity: number;
+  pickQuantity: number;
+};
+
+export type FabricPickupShelf = {
+  shelfId: number;
+  shelfCode: string;
+  totalPickQuantity: number;
+  batches: FabricPickupBatch[];
+};
+
+export type FabricPickupSummary = {
+  totalShelvesUsed: number;
+  totalBatchesUsed: number;
+  totalPickQuantity: number;
+  totalCost: number;
+  averageCostPerUnit: number;
+};
+
+export type FabricPickupData = {
+  warehouseId: number;
+  fabricId: number;
+  fabric: {
+    id: number;
+    thickness: number;
+    length: number;
+    width: number;
+    weight: number;
+    sellingPrice: number;
+    category: CategoryInfo;
+    color: ColorInfo;
+    supplier: SupplierInfo;
+    gloss: GlossInfo;
+  };
+  requiredQuantity: number;
+  totalAvailable: number;
+  priority: FabricPickupPriority;
+  summary: FabricPickupSummary;
+  shelves: FabricPickupShelf[];
+};
+
+export type FabricPickupResponse = {
+  message: string;
+  data: FabricPickupData;
+};
+
+export type FabricPickupParams = {
+  quantity: number;
+  priority: FabricPickupPriority;
+};
+

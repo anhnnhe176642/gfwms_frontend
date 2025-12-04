@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { VisibilityState } from '@tanstack/react-table';
@@ -11,12 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { createExportRequestColumns } from './exportRequestColumns';
 import { fabricService } from '@/services/fabric.service';
-import { exportFabricService } from '@/services/exportFabric.service';
 import { useServerTable } from '@/hooks/useServerTable';
-import { getServerErrorMessage, extractFieldErrors } from '@/lib/errorHandler';
+import { getServerErrorMessage } from '@/lib/errorHandler';
+import { useExportRequestStore } from '@/store/useExportRequestStore';
 import type { FabricListItem, FabricListParams } from '@/types/fabric';
-import { Search, RefreshCw, ArrowLeft, Send, ShoppingCart } from 'lucide-react';
-import { ExportRequestPreviewDialog } from './ExportRequestPreviewDialog';
+import { Search, RefreshCw, ArrowLeft, ArrowRight, ShoppingCart } from 'lucide-react';
 
 export type ExportRequestItem = {
   fabricId: number;
@@ -48,9 +47,6 @@ export function ExportRequestTable({
   const [quantityInputs, setQuantityInputs] = useState<Map<number, string>>(new Map());
   const [quantityErrors, setQuantityErrors] = useState<Map<number, QuantityError>>(new Map());
   const [note, setNote] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     weight: false,
     thickness: false,
@@ -58,6 +54,36 @@ export function ExportRequestTable({
     glossId: false,
     createdAt: false,
   });
+
+  // Zustand store for step navigation
+  const {
+    setStoreInfo,
+    setSelectedItems: setStoreSelectedItems,
+    setQuantityInputs: setStoreQuantityInputs,
+    setNote: setStoreNote,
+    goToStep2,
+    selectedItems: storeSelectedItems,
+    quantityInputs: storeQuantityInputs,
+    note: storeNote,
+  } = useExportRequestStore();
+
+  // Set store info on mount
+  useEffect(() => {
+    setStoreInfo(storeId, storeName);
+  }, [storeId, storeName, setStoreInfo]);
+
+  // Restore state from store when returning from step 2
+  useEffect(() => {
+    if (storeSelectedItems.size > 0) {
+      setSelectedItems(new Map(storeSelectedItems));
+    }
+    if (storeQuantityInputs.size > 0) {
+      setQuantityInputs(new Map(storeQuantityInputs));
+    }
+    if (storeNote) {
+      setNote(storeNote);
+    }
+  }, []); // Only run once on mount
 
   // Use refs to avoid re-creating columns on every state change
   const selectedItemsRef = useRef(selectedItems);
@@ -270,50 +296,11 @@ export function ExportRequestTable({
       return;
     }
 
-    setPreviewDialogOpen(true);
-  };
-
-  /**
-   * Handle submit request
-   */
-  const handleSubmit = async () => {
-    setFieldErrors({});
-    setIsSubmitting(true);
-
-    try {
-      const items = Array.from(selectedItems.values());
-      
-      await exportFabricService.createExportRequest({
-        storeId,
-        note: note || undefined,
-        exportItems: items.map((item) => ({
-          fabricId: item.fabricId,
-          quantity: item.quantity,
-        })),
-      });
-
-      toast.success('Tạo yêu cầu xuất kho thành công');
-      setPreviewDialogOpen(false);
-      
-      // Reset form
-      setSelectedItems(new Map());
-      setQuantityInputs(new Map());
-      setQuantityErrors(new Map());
-      setNote('');
-      
-      onSuccess?.();
-      
-      // Navigate back
-      router.back();
-    } catch (err) {
-      const fieldErrs = extractFieldErrors(err);
-      setFieldErrors(fieldErrs);
-
-      const message = getServerErrorMessage(err) || 'Không thể tạo yêu cầu xuất kho';
-      toast.error(message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Save to store and navigate to step 2
+    setStoreSelectedItems(selectedItems);
+    setStoreQuantityInputs(quantityInputs);
+    setStoreNote(note);
+    goToStep2();
   };
 
   /**
@@ -387,8 +374,8 @@ export function ExportRequestTable({
             disabled={selectedItems.size === 0}
             className="gap-2"
           >
-            <Send className="h-4 w-4" />
-            Xem trước & Gửi yêu cầu
+            <ArrowRight className="h-4 w-4" />
+            Tiếp theo
           </Button>
         </div>
       </div>
@@ -452,18 +439,6 @@ export function ExportRequestTable({
         pageIndex={pagination.page - 1}
         pageSize={pagination.limit}
         onPaginationChange={handlePaginationChange}
-      />
-
-      {/* Preview Dialog */}
-      <ExportRequestPreviewDialog
-        open={previewDialogOpen}
-        onOpenChange={setPreviewDialogOpen}
-        items={getSelectedItemsArray()}
-        storeName={storeName}
-        note={note}
-        isSubmitting={isSubmitting}
-        fieldErrors={fieldErrors}
-        onSubmit={handleSubmit}
       />
     </div>
   );

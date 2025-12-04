@@ -4,6 +4,9 @@ import type {
   ExportFabricListResponse,
   ExportFabricDetail as ExportFabricDetailType,
   ExportFabricStatus,
+  SuggestAllocationRequest,
+  SuggestAllocationResponse,
+  SuggestFabricAllocation,
 } from '@/types/exportFabric';
 
 export type ExportFabricItem = {
@@ -142,6 +145,42 @@ export const exportFabricService = {
   createExportRequest: async (data: CreateExportFabricRequestPayload): Promise<ExportFabricDetail> => {
     const response = await api.post<CreateExportFabricResponse>(`${BASE_PATH}/request`, data);
     return response.data.exportFabric;
+  },
+
+  /**
+   * Gợi ý phân bổ tối ưu cho các fabric (Greedy Algorithm)
+   */
+  suggestAllocation: async (data: SuggestAllocationRequest): Promise<SuggestFabricAllocation[]> => {
+    const response = await api.post<SuggestAllocationResponse>(`${BASE_PATH}/suggest`, data);
+    return response.data.warehouseAllocations.fabrics;
+  },
+
+  /**
+   * Tạo batch phiếu xuất vải (1 phiếu per warehouse)
+   */
+  createBatchExport: async (data: {
+    storeId: number;
+    note?: string;
+    warehouseAllocations: Array<{
+      warehouseId: number;
+      items: Array<{
+        fabricId: number;
+        quantity: number;
+      }>;
+    }>;
+  }): Promise<{
+    batchId: number;
+    exports: ExportFabricDetail[];
+  }> => {
+    const response = await api.post<{
+      message: string;
+      batchId: number;
+      exports: ExportFabricDetail[];
+    }>(`${BASE_PATH}/batch`, data);
+    return {
+      batchId: response.data.batchId,
+      exports: response.data.exports,
+    };
   },
 };
 

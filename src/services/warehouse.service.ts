@@ -18,6 +18,11 @@ import type {
   ShelfListApiResponse,
   FabricShelfDetailResponse,
   FabricShelfDetailData,
+  FabricShelvesResponse,
+  FabricShelvesData,
+  FabricPickupResponse,
+  FabricPickupData,
+  FabricPickupParams,
 } from '@/types/warehouse';
 import type { CreateWarehouseFormData, UpdateWarehouseFormData } from '@/schemas/warehouse.schema';
 
@@ -155,6 +160,33 @@ export const warehouseService = {
    */
   getFabricShelfDetail: async (shelfId: string | number, fabricId: string | number): Promise<FabricShelfDetailData> => {
     const response = await api.get<FabricShelfDetailResponse>(`/v1/fabric-shelf/shelf/${shelfId}/fabric/${fabricId}/detail`);
+    return response.data.data;
+  },
+
+  /**
+   * Lấy danh sách kệ chứa loại vải trong kho (với thông tin batch)
+   */
+  getFabricShelves: async (warehouseId: string | number, fabricId: string | number): Promise<FabricShelvesData> => {
+    const response = await api.get<FabricShelvesResponse>(`${BASE_PATH}/${warehouseId}/fabrics/${fabricId}/shelves`);
+    return response.data.data;
+  },
+
+  /**
+   * Tính toán phân bổ lấy vải tối ưu từ các kệ/lô
+   * @param warehouseId - ID của kho
+   * @param fabricId - ID của loại vải
+   * @param params - Tham số bao gồm quantity và priority
+   * @returns Kết quả phân bổ tối ưu
+   */
+  getFabricPickup: async (
+    warehouseId: string | number,
+    fabricId: string | number,
+    params: FabricPickupParams
+  ): Promise<FabricPickupData> => {
+    const response = await api.get<FabricPickupResponse>(
+      `${BASE_PATH}/${warehouseId}/fabrics/${fabricId}/pickup`,
+      { params }
+    );
     return response.data.data;
   },
 };

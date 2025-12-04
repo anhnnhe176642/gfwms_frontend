@@ -17,9 +17,10 @@ import { Search, RefreshCw } from 'lucide-react';
 export type ExportFabricListTableProps = {
   initialParams?: ExportFabricListParams;
   hideWarehouseColumn?: boolean;
+  warehouseId?: string | number;
 };
 
-export function ExportFabricListTable({ initialParams, hideWarehouseColumn }: ExportFabricListTableProps) {
+export function ExportFabricListTable({ initialParams, hideWarehouseColumn, warehouseId }: ExportFabricListTableProps) {
   const router = useRouter();
   const { canAccess } = useRouteAccess();
   const { hasPermission } = useAuth();
@@ -82,7 +83,13 @@ export function ExportFabricListTable({ initialParams, hideWarehouseColumn }: Ex
    * Handle view detail
    */
   const handleViewClick = (exportFabricId: number) => {
-    router.push(`/admin/export-fabrics/${exportFabricId}`);
+    // If warehouseId is provided, navigate to warehouse-specific detail page
+    if (warehouseId) {
+      router.push(`/admin/warehouses/${warehouseId}/export-fabrics/${exportFabricId}`);
+    } else {
+      // Otherwise navigate to global export fabric detail page
+      router.push(`/admin/export-fabrics/${exportFabricId}`);
+    }
   };
 
   /**

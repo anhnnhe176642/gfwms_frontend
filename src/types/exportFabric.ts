@@ -93,3 +93,63 @@ export type ExportFabricDetailResponse = {
   message: string;
   exportFabric: ExportFabricDetail;
 };
+
+// Suggest allocation types
+export type SuggestFabricItem = {
+  fabricId: number;
+  quantity: number;
+};
+
+export type SuggestAllocationRequest = {
+  fabricItems: SuggestFabricItem[];
+};
+
+export type WarehouseStock = {
+  warehouseId: number;
+  warehouseName: string;
+  currentStock: number;
+  selected: boolean;
+  takeQuantity: number;
+};
+
+export type SuggestFabricAllocation = {
+  fabricId: number;
+  fabric: {
+    id: number;
+    thickness: number;
+    gloss: {
+      id: number;
+      description: string;
+    };
+    length: number;
+    width: number;
+    weight: number;
+    sellingPrice: number;
+    quantityInStock: number;
+    category: {
+      id: number;
+      name: string;
+    };
+    color: {
+      id: string;
+      name: string;
+    };
+    supplier: {
+      id: number;
+      name: string;
+    };
+    createdAt: string;
+    updatedAt: string;
+  };
+  requestedQuantity: number;
+  availableStocks: WarehouseStock[];
+  totalAvailable: number;
+  isSufficient: boolean;
+};
+
+export type SuggestAllocationResponse = {
+  message: string;
+  warehouseAllocations: {
+    fabrics: SuggestFabricAllocation[];
+  };
+};

@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
-import { ExportRequestTable } from '@/components/admin/store-management/ExportRequestTable';
+import { ExportRequestFlow } from '@/components/admin/store-management/ExportRequestFlow';
 import { ROUTES } from '@/config/routes';
 import { storeService } from '@/services/store.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
-import { Loader, RefreshCw } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { StoreListItem } from '@/types/store';
 
@@ -79,7 +79,7 @@ export default function ExportRequestPage() {
   return (
     <ProtectedRoute routeConfig={ROUTES.ADMIN.STORES.DETAIL}>
       <div className="container mx-auto py-8 px-4">
-        <ExportRequestTable
+        <ExportRequestFlow
           storeId={store.id}
           storeName={store.name}
           onSuccess={handleSuccess}

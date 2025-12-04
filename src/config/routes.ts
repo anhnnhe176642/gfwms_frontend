@@ -304,6 +304,16 @@ export const ROUTES = {
         name: 'Chi tiết phiếu nhập',
         requiredPermission: PERMISSIONS.IMPORT_FABRICS.VIEW_DETAIL.key,
       },
+      EXPORT_FABRICS_DETAIL: {
+        path: '/admin/warehouses/:id/export-fabrics/:exportFabricId',
+        name: 'Chi tiết phiếu xuất',
+        requiredPermission: PERMISSIONS.EXPORT_FABRICS.VIEW_DETAIL.key,
+      },
+      EXPORT_FABRICS_PREVIEW: {
+        path: '/admin/warehouses/:id/export-fabrics/:exportFabricId/preview',
+        name: 'Xử lý phiếu xuất',
+        requiredPermission: PERMISSIONS.EXPORT_FABRICS.CHANGE_STATUS.key,
+      },
     },
 
     // Shelf Management
