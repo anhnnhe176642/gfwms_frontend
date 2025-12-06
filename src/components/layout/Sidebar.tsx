@@ -18,7 +18,8 @@ import {
   ChevronDown,
   Loader2,
   Eye,
-  Tag
+  Tag,
+  ShoppingCart
 } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -182,6 +183,12 @@ export const Sidebar: React.FC = () => {
       href: ROUTES.ADMIN.INVOICES.LIST.path,
       icon: FileText,
       requiredPermission: PERMISSIONS.INVOICES.VIEW_LIST.key,
+    },
+    {
+      label: 'Đơn hàng',
+      href: ROUTES.ADMIN.ORDERS.LIST.path,
+      icon: ShoppingCart,
+      requiredPermission: PERMISSIONS.ORDERS.VIEW_LIST.key,
     },
     {
       label: 'Xuất kho',

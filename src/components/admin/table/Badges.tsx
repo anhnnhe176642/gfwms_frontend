@@ -4,12 +4,14 @@ import type { DatasetStatus } from '@/types/yolo-dataset';
 import type { ImportFabricStatus } from '@/types/importFabric';
 import type { ExportFabricStatus } from '@/types/exportFabric';
 import type { InvoiceStatus } from '@/types/invoice';
+import type { OrderStatus, PaymentType } from '@/types/order';
 import { Badge } from '@/components/ui/badge';
 import { USER_STATUS_CONFIG } from '@/constants/user';
 import { IMPORT_FABRIC_STATUS_CONFIG } from '@/constants/importFabric';
 import { DATASET_STATUS_CONFIG } from '@/constants/yolo-dataset';
 import { EXPORT_FABRIC_STATUS_CONFIG } from '@/constants/exportFabric';
 import { INVOICE_STATUS_CONFIG } from '@/constants/invoice';
+import { ORDER_STATUS_CONFIG, PAYMENT_TYPE_CONFIG } from '@/constants/order';
 
 type StatusBadgeProps = {
   status: UserStatus | string;
@@ -69,6 +71,30 @@ type InvoiceStatusBadgeProps = {
  */
 export function InvoiceStatusBadge({ status }: InvoiceStatusBadgeProps) {
   return <Badge value={status} config={INVOICE_STATUS_CONFIG as any} />;
+}
+
+type OrderStatusBadgeProps = {
+  status: OrderStatus;
+};
+
+/**
+ * Status badge component for orders
+ * Uses generic Badge component with order status config
+ */
+export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
+  return <Badge value={status} config={ORDER_STATUS_CONFIG as any} />;
+}
+
+type PaymentTypeBadgeProps = {
+  type: PaymentType;
+};
+
+/**
+ * Payment type badge component for orders
+ * Uses generic Badge component with payment type config
+ */
+export function PaymentTypeBadge({ type }: PaymentTypeBadgeProps) {
+  return <Badge value={type} config={PAYMENT_TYPE_CONFIG as any} />;
 }
 
 type RoleBadgeProps = {

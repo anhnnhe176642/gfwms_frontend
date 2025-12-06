@@ -407,6 +407,20 @@ export const ROUTES = {
       },
     },
 
+    // Order Management
+    ORDERS: {
+      LIST: {
+        path: '/admin/orders',
+        name: 'Quản lý đơn hàng',
+        requiredPermission: PERMISSIONS.ORDERS.VIEW_LIST.key,
+      },
+      DETAIL: {
+        path: '/admin/orders/:id',
+        name: 'Chi tiết đơn hàng',
+        requiredPermission: PERMISSIONS.ORDERS.VIEW_DETAIL.key,
+      },
+    },
+
     // Export Fabric Management
     EXPORT_FABRICS: {
       LIST: {

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function InvoicesPage() {
   return (
     <ProtectedRoute routeConfig={ROUTES.ADMIN.INVOICES.LIST}>
-      <div className="space-y-6">
+      <div className="container mx-auto py-8 px-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Quản lý hóa đơn</h1>
           <p className="text-muted-foreground mt-1">
