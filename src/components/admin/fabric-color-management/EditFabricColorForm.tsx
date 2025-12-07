@@ -12,7 +12,7 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { updateFabricColorSchema, type UpdateFabricColorFormData } from '@/schemas/fabricColor.schema';
 import { fabricColorService } from '@/services/fabricColor.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
-import { ArrowLeft, Loader, RefreshCw, Pipette } from 'lucide-react';
+import { ArrowLeft, Loader, RefreshCw } from 'lucide-react';
 import type { FabricColorListItem } from '@/types/fabricColor';
 
 export interface EditFabricColorFormProps {
@@ -174,11 +174,18 @@ export function EditFabricColorForm({ colorId }: EditFabricColorFormProps) {
               )}
             </div>
 
-            {/* Color Hex Code */}
+            {/* Color Code */}
             <div className="space-y-2">
               <Label htmlFor="hexCode">Mã màu HEX (tùy chọn)</Label>
               <div className="flex gap-2">
-                <div className="flex-1 relative">
+                <div className="flex-1 flex gap-2 items-center">
+                  <input
+                    id="colorPickerDirect"
+                    type="color"
+                    value={values.hexCode ?? '#FF0000'}
+                    onChange={(e) => setFieldValue('hexCode', e.target.value.toUpperCase())}
+                    className="w-12 h-10 rounded cursor-pointer border border-input"
+                  />
                   <Input
                     id="hexCode"
                     name="hexCode"
@@ -191,32 +198,12 @@ export function EditFabricColorForm({ colorId }: EditFabricColorFormProps) {
                   />
                   {values.hexCode && (
                     <div
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded border border-gray-200"
+                      className="w-8 h-8 rounded border border-input shrink-0"
                       style={{ backgroundColor: values.hexCode }}
                       title={values.hexCode}
                     />
                   )}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    document.getElementById('color-input-edit')?.click();
-                  }}
-                  disabled={isLoading}
-                >
-                  <Pipette className="w-4 h-4" />
-                </Button>
-                <input
-                  id="color-input-edit"
-                  type="color"
-                  value={values.hexCode ?? '#FF0000'}
-                  onChange={(e) => {
-                    setFieldValue('hexCode', e.target.value.toUpperCase());
-                  }}
-                  className="hidden"
-                />
               </div>
               {errors.hexCode && touched.hexCode && (
                 <p className="text-sm text-destructive">{errors.hexCode}</p>
