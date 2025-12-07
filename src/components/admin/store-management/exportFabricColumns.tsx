@@ -24,10 +24,11 @@ export type ExportFabricColumnActions = {
   onEdit?: (exportFabricId: number) => void
   onDelete?: (exportFabricId: number) => void
   hideWarehouseColumn?: boolean
+  hideStoreColumn?: boolean
 }
 
 export const createExportFabricColumns = (
-  { onView, hideWarehouseColumn }: ExportFabricColumnActions
+  { onView, hideWarehouseColumn, hideStoreColumn }: ExportFabricColumnActions
 ): ColumnDef<ExportFabricListItem>[] => {
   const columns: ColumnDef<ExportFabricListItem>[] = [
     {
@@ -75,7 +76,7 @@ export const createExportFabricColumns = (
         title: "Kho xuất"
       }
     } as ColumnDef<ExportFabricListItem>]),
-    {
+    ...(hideStoreColumn ? [] : [{
       accessorKey: "store",
       header: ({ column }) => (
         <InfiniteScrollStoreFilter column={column} title="Cửa hàng nhận" />
@@ -93,7 +94,7 @@ export const createExportFabricColumns = (
       meta: {
         title: "Cửa hàng nhận"
       }
-    },
+    } as ColumnDef<ExportFabricListItem>]),
     {
       accessorKey: "status",
       header: ({ column }) => (

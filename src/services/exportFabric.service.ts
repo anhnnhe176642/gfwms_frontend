@@ -123,17 +123,52 @@ export const exportFabricService = {
    */
   approveExport: async (
     exportFabricId: number | string,
-    itemShelfSelections: Array<{
+    batchPickupDetails: Array<{
       fabricId: number;
-      shelfId: number;
-      quantityToTake: number;
-    }>
+      batches: Array<{
+        importId: number;
+        shelfId: number;
+        pickQuantity: number;
+      }>;
+    }>,
+    note?: string
   ): Promise<ExportFabricDetail> => {
     const response = await api.patch<{ message: string; exportFabric: ExportFabricDetail }>(
       `${BASE_PATH}/${exportFabricId}/status`,
       {
         status: 'APPROVED',
-        itemShelfSelections,
+        batchPickupDetails,
+        ...(note && { note }),
+      }
+    );
+    return response.data.exportFabric;
+  },
+
+  /**
+   * Xác nhận nhận hàng từ cửa hàng (APPROVED -> COMPLETED)
+   * Chuyển status từ APPROVED sang COMPLETED
+   * Tự động cộng vải vào FabricStore
+   */
+  completeExport: async (exportFabricId: number | string): Promise<ExportFabricDetail> => {
+    const response = await api.post<{ message: string; exportFabric: ExportFabricDetail }>(
+      `${BASE_PATH}/${exportFabricId}/complete`
+    );
+    return response.data.exportFabric;
+  },
+
+  /**
+   * Từ chối phiếu xuất kho (PENDING -> REJECTED)
+   * Nhân viên kho từ chối yêu cầu xuất với lí do
+   */
+  rejectExport: async (
+    exportFabricId: number | string,
+    note: string
+  ): Promise<ExportFabricDetail> => {
+    const response = await api.patch<{ message: string; exportFabric: ExportFabricDetail }>(
+      `${BASE_PATH}/${exportFabricId}/status`,
+      {
+        status: 'REJECTED',
+        note,
       }
     );
     return response.data.exportFabric;

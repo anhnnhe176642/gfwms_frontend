@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { PERMISSIONS } from '@/constants/permissions';
 import { ROUTES } from '@/config/routes';
 import { warehouseService } from '@/services/warehouse.service';
+import { storeService } from '@/services/store.service';
 import { extractIdFromPath } from '@/lib/extractIdFromPath';
 
 type MenuItem = {
@@ -42,6 +43,8 @@ export const Sidebar: React.FC = () => {
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [warehouseName, setWarehouseName] = useState<string | null>(null);
   const [loadingWarehouse, setLoadingWarehouse] = useState(false);
+  const [storeName, setStoreName] = useState<string | null>(null);
+  const [loadingStore, setLoadingStore] = useState(false);
   const pathname = usePathname();
   const { isAuthenticated, hasPermission } = useAuth();
 
@@ -168,9 +171,29 @@ export const Sidebar: React.FC = () => {
     },
     {
       label: 'Quản lý cửa hàng',
-      href: ROUTES.ADMIN.STORES.LIST.path,
       icon: Package,
       requiredPermission: PERMISSIONS.STORES.VIEW_LIST.key,
+      href: ROUTES.ADMIN.STORES.LIST.path,
+      dynamicSubmenu: (id: string) => [
+        {
+          label: 'Chi tiết cửa hàng',
+          href: `/admin/stores/${id}`,
+          icon: Package,
+          requiredPermission: PERMISSIONS.STORES.VIEW_DETAIL.key,
+        },
+        {
+          label: 'Danh sách vải',
+          href: `/admin/stores/${id}/fabrics`,
+          icon: Package,
+          requiredPermission: PERMISSIONS.STORES.VIEW_DETAIL.key,
+        },
+        {
+          label: 'Yêu cầu xuất kho',
+          href: `/admin/stores/${id}/export-requests`,
+          icon: TruckIcon,
+          requiredPermission: PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key,
+        },
+      ],
     },
     {
       label: 'Đăng ký tín dụng',
@@ -206,6 +229,7 @@ export const Sidebar: React.FC = () => {
 
   // Extract ID from URL params (e.g., /admin/warehouses/123 -> 123)
   const warehouseId = extractIdFromPath(pathname, '/admin/warehouses/:id');
+  const storeId = extractIdFromPath(pathname, '/admin/stores/:id');
 
   // Fetch warehouse name when ID changes
   React.useEffect(() => {
@@ -227,14 +251,42 @@ export const Sidebar: React.FC = () => {
     }
   }, [warehouseId]);
 
+  // Fetch store name when ID changes
+  React.useEffect(() => {
+    if (storeId && !isNaN(Number(storeId))) {
+      setLoadingStore(true);
+      storeService
+        .getStoreById(storeId)
+        .then((store) => {
+          setStoreName(store.name);
+        })
+        .catch(() => {
+          setStoreName(null);
+        })
+        .finally(() => {
+          setLoadingStore(false);
+        });
+    } else {
+      setStoreName(null);
+    }
+  }, [storeId]);
+
   // Generate all menu items with dynamic submenu
   const getMenuItemsWithDynamic = (items: MenuItem[]): MenuItem[] => {
     return items.map((item) => {
-      if (item.dynamicSubmenu && warehouseId) {
-        return {
-          ...item,
-          submenu: item.dynamicSubmenu(warehouseId),
-        };
+      if (item.dynamicSubmenu) {
+        let id: string | null = null;
+        if (item.label === 'Quản lý kho') {
+          id = warehouseId;
+        } else if (item.label === 'Quản lý cửa hàng') {
+          id = storeId;
+        }
+        if (id) {
+          return {
+            ...item,
+            submenu: item.dynamicSubmenu(id),
+          };
+        }
       }
       return item;
     });
@@ -301,6 +353,7 @@ export const Sidebar: React.FC = () => {
     const isSubmenu = level > 0;
     const textSize = isSubmenu ? 'text-sm' : 'text-base';
     const isWarehouseMenu = item.label === 'Quản lý kho' && item.dynamicSubmenu;
+    const isStoreMenu = item.label === 'Quản lý cửa hàng' && item.dynamicSubmenu;
 
     return (
       <div key={item.label}>
@@ -355,6 +408,22 @@ export const Sidebar: React.FC = () => {
                   </div>
                 ) : (
                   <span>Kho #{warehouseId}</span>
+                )}
+              </div>
+            )}
+            {isStoreMenu && storeId && (
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted/10 rounded mb-2">
+                {loadingStore ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Đang tải...</span>
+                  </div>
+                ) : storeName ? (
+                  <div className="truncate" title={storeName}>
+                     {storeName}
+                  </div>
+                ) : (
+                  <span>Cửa hàng #{storeId}</span>
                 )}
               </div>
             )}

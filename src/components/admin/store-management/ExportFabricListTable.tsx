@@ -17,10 +17,12 @@ import { Search, RefreshCw } from 'lucide-react';
 export type ExportFabricListTableProps = {
   initialParams?: ExportFabricListParams;
   hideWarehouseColumn?: boolean;
+  hideStoreColumn?: boolean;
   warehouseId?: string | number;
+  storeId?: string | number;
 };
 
-export function ExportFabricListTable({ initialParams, hideWarehouseColumn, warehouseId }: ExportFabricListTableProps) {
+export function ExportFabricListTable({ initialParams, hideWarehouseColumn, hideStoreColumn, warehouseId, storeId }: ExportFabricListTableProps) {
   const router = useRouter();
   const { canAccess } = useRouteAccess();
   const { hasPermission } = useAuth();
@@ -66,10 +68,17 @@ export function ExportFabricListTable({ initialParams, hideWarehouseColumn, ware
         // Handle warehouse filter - extract ID from nested object
         if (filter.id === 'warehouse' && filter.value && filter.value.length > 0) {
           result['warehouseId'] = filter.value.join(',');
+          return result;
         }
         // Handle store filter - extract ID from nested object
         if (filter.id === 'store' && filter.value && filter.value.length > 0) {
           result['storeId'] = filter.value.join(',');
+          return result;
+        }
+        // Handle status filter
+        if (filter.id === 'status' && filter.value && filter.value.length > 0) {
+          result['status'] = filter.value.join(',');
+          return result;
         }
         return result;
       },
@@ -114,6 +123,7 @@ export function ExportFabricListTable({ initialParams, hideWarehouseColumn, ware
   const columns = createExportFabricColumns({
     onView: handleViewClick,
     hideWarehouseColumn,
+    hideStoreColumn,
   });
 
   // Show loading state

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { storeService } from '@/services/store.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
-import { ArrowLeft, Edit, Loader, Truck } from 'lucide-react';
+import { ArrowLeft, Edit, Loader, Truck, Package } from 'lucide-react';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useAuth } from '@/hooks/useAuth';
 import { PERMISSIONS } from '@/constants/permissions';
@@ -115,14 +115,22 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button 
+            onClick={() => router.push(`/admin/stores/${storeId}/fabrics`)} 
+            variant="outline"
+            className="gap-2"
+          >
+            <Package className="h-4 w-4" />
+            Xem danh sách vải
+          </Button>
           {hasPermission(PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key) && (
             <Button 
-              onClick={() => router.push(`/admin/stores/${storeId}/export-request`)} 
+              onClick={() => router.push(`/admin/stores/${storeId}/export-requests`)} 
               variant="outline"
               className="gap-2"
             >
               <Truck className="h-4 w-4" />
-              Tạo yêu cầu xuất kho
+              Xem yêu cầu xuất kho
             </Button>
           )}
           <Button onClick={handleEdit} className="gap-2">
@@ -203,14 +211,22 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
         <Button variant="outline" onClick={handleGoBack}>
           Quay lại
         </Button>
+        <Button 
+          onClick={() => router.push(`/admin/stores/${storeId}/fabrics`)} 
+          variant="outline"
+          className="gap-2"
+        >
+          <Package className="h-4 w-4" />
+          Xem danh sách vải
+        </Button>
         {hasPermission(PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key) && (
           <Button 
-            onClick={() => router.push(`/admin/stores/${storeId}/export-request`)} 
+            onClick={() => router.push(`/admin/stores/${storeId}/export-requests`)} 
             variant="outline"
             className="gap-2"
           >
             <Truck className="h-4 w-4" />
-            Tạo yêu cầu xuất kho
+            Xem yêu cầu xuất kho
           </Button>
         )}
         <Button onClick={handleEdit} className="gap-2">

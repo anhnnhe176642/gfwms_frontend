@@ -5,6 +5,16 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ExportFabricStatusBadge } from '@/components/admin/table/Badges';
 import { exportFabricService } from '@/services/exportFabric.service';
 import type { ExportFabricDetail } from '@/services/exportFabric.service';
@@ -20,6 +30,8 @@ import {
   Package,
   CheckCircle2,
   RefreshCw,
+  Check,
+  X,
 } from 'lucide-react';
 
 interface ExportFabricDetailViewProps {
@@ -35,6 +47,10 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
 
   const fetchDetail = async () => {
     try {
@@ -81,6 +97,43 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
 
   const handleProcessExport = () => {
     router.push(`/admin/warehouses/${warehouseId}/export-fabrics/${exportFabricId}/preview`);
+  };
+
+  const handleCompleteExport = async () => {
+    try {
+      setCompleting(true);
+      const updatedFabric = await exportFabricService.completeExport(exportFabricId);
+      setExportFabric(updatedFabric);
+      toast.success('Xác nhận nhận hàng thành công');
+    } catch (err) {
+      const errorMessage = getServerErrorMessage(err) || 'Không thể xác nhận nhận hàng';
+      toast.error(errorMessage);
+      console.error('Failed to complete export:', err);
+    } finally {
+      setCompleting(false);
+    }
+  };
+
+  const handleRejectExport = async () => {
+    if (!rejectReason.trim()) {
+      toast.error('Vui lòng nhập lí do từ chối');
+      return;
+    }
+
+    try {
+      setRejecting(true);
+      const updatedFabric = await exportFabricService.rejectExport(exportFabricId, rejectReason);
+      setExportFabric(updatedFabric);
+      setShowRejectDialog(false);
+      setRejectReason('');
+      toast.success('Từ chối phiếu xuất thành công');
+    } catch (err) {
+      const errorMessage = getServerErrorMessage(err) || 'Không thể từ chối phiếu xuất';
+      toast.error(errorMessage);
+      console.error('Failed to reject export:', err);
+    } finally {
+      setRejecting(false);
+    }
   };
 
   if (loading) {
@@ -190,6 +243,36 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
               Xử lý xuất kho
             </Button>
           )}
+          {exportFabric.status === 'APPROVED' && (
+            <Button
+              onClick={handleCompleteExport}
+              disabled={completing}
+              className="gap-2 bg-blue-600 hover:bg-blue-700"
+            >
+              {completing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang xác nhận...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  Xác nhận nhận hàng
+                </>
+              )}
+            </Button>
+          )}
+          {exportFabric.status === 'PENDING' && (
+            <Button
+              onClick={() => setShowRejectDialog(true)}
+              disabled={rejecting}
+              variant="destructive"
+              className="gap-2"
+            >
+              <X className="h-4 w-4" />
+              Từ chối
+            </Button>
+          )}
         </div>
       </div>
 
@@ -291,7 +374,7 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
                 {exportFabric.exportItems.map((item, index) => {
                   const unitPrice = item.price || item.fabric.sellingPrice;
                   return (
-                    <tr key={item.fabricId} className="border-b hover:bg-muted/50">
+                    <tr key={`${item.fabricId}-${index}`} className="border-b hover:bg-muted/50">
                       <td className="py-4 px-2 text-center font-medium">{index + 1}</td>
                       <td className="py-4 px-2">
                         <span className="font-mono text-sm">#{item.fabricId}</span>
@@ -379,6 +462,57 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
           }
         }
       `}</style>
+
+      {/* Reject Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Từ chối phiếu xuất</DialogTitle>
+            <DialogDescription>
+              Vui lòng nhập lí do từ chối phiếu xuất #{exportFabric?.id}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Textarea
+              placeholder="Nhập lí do từ chối..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              disabled={rejecting}
+              className="min-h-[120px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRejectDialog(false);
+                setRejectReason('');
+              }}
+              disabled={rejecting}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectExport}
+              disabled={rejecting || !rejectReason.trim()}
+              className="gap-2"
+            >
+              {rejecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang từ chối...
+                </>
+              ) : (
+                <>
+                  <X className="h-4 w-4" />
+                  Xác nhận từ chối
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

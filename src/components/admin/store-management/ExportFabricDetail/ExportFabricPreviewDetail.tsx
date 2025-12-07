@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -117,6 +118,7 @@ export function ExportFabricPreviewDetail({ warehouseId, exportFabricId }: Expor
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState(false);
+  const [approvalNote, setApprovalNote] = useState('');
 
   // Track allocations for each fabric item
   const [itemAllocations, setItemAllocations] = useState<Map<number, ItemAllocationState>>(new Map());
@@ -520,27 +522,44 @@ export function ExportFabricPreviewDetail({ warehouseId, exportFabricId }: Expor
     try {
       setIsApproving(true);
 
-      // Build itemShelfSelections from allocations
-      const itemShelfSelections: Array<{
+      // Build batchPickupDetails from allocations
+      const batchPickupDetails: Array<{
         fabricId: number;
-        shelfId: number;
-        quantityToTake: number;
+        batches: Array<{
+          importId: number;
+          shelfId: number;
+          pickQuantity: number;
+        }>;
       }> = [];
 
       itemAllocations.forEach((allocation) => {
+        const batches: Array<{
+          importId: number;
+          shelfId: number;
+          pickQuantity: number;
+        }> = [];
+
         allocation.shelfSelections.forEach((shelfSelection) => {
-          const totalFromShelf = shelfSelection.batches.reduce((sum, b) => sum + b.quantity, 0);
-          if (totalFromShelf > 0) {
-            itemShelfSelections.push({
-              fabricId: allocation.fabricId,
-              shelfId: shelfSelection.shelfId,
-              quantityToTake: totalFromShelf,
-            });
-          }
+          shelfSelection.batches.forEach((batch) => {
+            if (batch.quantity > 0) {
+              batches.push({
+                importId: batch.importId,
+                shelfId: shelfSelection.shelfId,
+                pickQuantity: batch.quantity,
+              });
+            }
+          });
         });
+
+        if (batches.length > 0) {
+          batchPickupDetails.push({
+            fabricId: allocation.fabricId,
+            batches,
+          });
+        }
       });
 
-      await exportFabricService.approveExport(exportFabricId, itemShelfSelections);
+      await exportFabricService.approveExport(exportFabricId, batchPickupDetails, approvalNote || undefined);
 
       toast.success('Phiếu xuất kho đã được duyệt thành công');
       router.back();
@@ -613,6 +632,24 @@ export function ExportFabricPreviewDetail({ warehouseId, exportFabricId }: Expor
             </p>
           </div>
         </div>
+
+        {/* Approval Note Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Ghi chú phê duyệt (tuỳ chọn)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              placeholder="Nhập ghi chú khi duyệt phiếu xuất..."
+              value={approvalNote}
+              onChange={(e) => setApprovalNote(e.target.value)}
+              disabled={isApproving}
+              className="min-h-[80px]"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"

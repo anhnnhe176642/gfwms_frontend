@@ -11,11 +11,19 @@ export const EXPORT_FABRIC_STATUS_CONFIG = createEnumConfig<ExportFabricStatus>(
   },
   APPROVED: {
     label: 'Phê duyệt',
+    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+  },
+  COMPLETED: {
+    label: 'Hoàn thành',
     className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
   },
   REJECTED: {
     label: 'Từ chối',
     className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+  },
+  CANCELLED: {
+    label: 'Hủy',
+    className: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
   },
 });
 
