@@ -157,7 +157,15 @@ export function ImportFabricItemCard({
         </div>
         <div>
           <p className="text-muted-foreground dark:text-slate-400">Màu sắc</p>
-          <p className="font-medium text-foreground dark:text-slate-100">{item.fabric.color.name}</p>
+          <div className="flex items-center gap-2">
+            {item.fabric.color.hexCode && (
+              <div
+                className="w-4 h-4 rounded border border-input"
+                style={{ backgroundColor: item.fabric.color.hexCode }}
+              />
+            )}
+            <p className="font-medium text-foreground dark:text-slate-100">{item.fabric.color.name}</p>
+          </div>
         </div>
         <div>
           <p className="text-muted-foreground dark:text-slate-400">Độ bóng</p>

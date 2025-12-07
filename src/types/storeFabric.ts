@@ -7,6 +7,7 @@ export type StoreFabricInfo = {
   categoryDescription?: string;
   color: string;
   colorId: string;
+  colorHexCode?: string;
   gloss: string;
   glossId: number;
   supplier: string;

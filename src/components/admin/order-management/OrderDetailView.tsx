@@ -326,7 +326,17 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                         </p>
                       </div>
                     </td>
-                    <td className="py-4 px-2 whitespace-nowrap">{item.fabric.color.name}</td>
+                    <td className="py-4 px-2 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {item.fabric.color.hexCode && (
+                          <div
+                            className="w-4 h-4 rounded border border-input"
+                            style={{ backgroundColor: item.fabric.color.hexCode }}
+                          />
+                        )}
+                        <span>{item.fabric.color.name}</span>
+                      </div>
+                    </td>
                     <td className="py-4 px-2 text-center whitespace-nowrap text-xs">
                       {item.fabric.length}m × {item.fabric.width}m
                     </td>

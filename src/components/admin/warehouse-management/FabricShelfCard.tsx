@@ -34,9 +34,17 @@ export function FabricShelfCard({ fabricItem, shelfCapacity }: FabricShelfCardPr
           {fabric.color && (
             <div className="flex flex-col">
               <p className="text-xs font-medium text-muted-foreground">Màu sắc</p>
-              <p className="text-xs font-medium truncate">
-                {fabric.color.name}
-              </p>
+              <div className="flex items-center gap-2">
+                {fabric.color.hexCode && (
+                  <div
+                    className="w-4 h-4 rounded border border-input"
+                    style={{ backgroundColor: fabric.color.hexCode }}
+                  />
+                )}
+                <p className="text-xs font-medium truncate">
+                  {fabric.color.name}
+                </p>
+              </div>
             </div>
           )}
 

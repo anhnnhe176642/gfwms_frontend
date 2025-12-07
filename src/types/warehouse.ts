@@ -95,6 +95,7 @@ export type CategoryInfo = {
 export type ColorInfo = {
   id?: string;
   name: string;
+  hexCode?: string;
 };
 
 export type SupplierInfo = {

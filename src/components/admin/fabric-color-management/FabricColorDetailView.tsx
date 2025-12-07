@@ -122,6 +122,20 @@ export function FabricColorDetailView({ colorId, onEdit }: FabricColorDetailView
             <p className="text-sm font-medium text-muted-foreground">Mã màu vải</p>
             <p className="text-base font-mono">{color.id}</p>
           </div>
+
+          {/* Color Swatch */}
+          {color.hexCode && (
+            <>
+              <Separator />
+              <div className="flex items-center justify-center">
+                <div
+                  className="w-20 h-20 rounded-lg border-2 border-input"
+                  style={{ backgroundColor: color.hexCode }}
+                  title={color.hexCode}
+                />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

@@ -133,6 +133,7 @@ export type SuggestFabricAllocation = {
     color: {
       id: string;
       name: string;
+      hexCode?: string;
     };
     supplier: {
       id: number;

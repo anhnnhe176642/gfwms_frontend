@@ -644,7 +644,7 @@ export function ExportFabricPreviewDetail({ warehouseId, exportFabricId }: Expor
               value={approvalNote}
               onChange={(e) => setApprovalNote(e.target.value)}
               disabled={isApproving}
-              className="min-h-[80px]"
+              className="min-h-20"
             />
           </CardContent>
         </Card>
@@ -868,9 +868,17 @@ export function ExportFabricPreviewDetail({ warehouseId, exportFabricId }: Expor
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="text-muted-foreground">Màu sắc:</span>
-                            <span className="ml-2 font-medium">
-                              {allocation.shelvesData.fabric.color.name}
-                            </span>
+                            <div className="flex items-center gap-2 ml-2">
+                              {allocation.shelvesData.fabric.color.hexCode && (
+                                <div
+                                  className="w-4 h-4 rounded border border-input"
+                                  style={{ backgroundColor: allocation.shelvesData.fabric.color.hexCode }}
+                                />
+                              )}
+                              <span className="font-medium">
+                                {allocation.shelvesData.fabric.color.name}
+                              </span>
+                            </div>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Độ bóng:</span>

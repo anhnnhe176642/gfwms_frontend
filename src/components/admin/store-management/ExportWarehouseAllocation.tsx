@@ -360,7 +360,15 @@ export function ExportWarehouseAllocation() {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-muted-foreground">Màu sắc:</span>
-                        <span className="ml-2 font-medium">{fabricAllocation.fabric.color.name}</span>
+                        <div className="flex items-center gap-2 ml-2">
+                          {fabricAllocation.fabric.color.hexCode && (
+                            <div
+                              className="w-4 h-4 rounded border border-input"
+                              style={{ backgroundColor: fabricAllocation.fabric.color.hexCode }}
+                            />
+                          )}
+                          <span className="font-medium">{fabricAllocation.fabric.color.name}</span>
+                        </div>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Độ bóng:</span>

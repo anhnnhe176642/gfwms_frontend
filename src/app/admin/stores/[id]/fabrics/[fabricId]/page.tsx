@@ -121,14 +121,12 @@ export default function StoreFabricDetailPage() {
               <div>
                 <span className="text-muted-foreground text-sm">Màu sắc</span>
                 <div className="flex items-center gap-2 mt-1">
-                  <div
-                    className="w-6 h-6 rounded border border-gray-300"
-                    style={{
-                      backgroundColor: fabricInfo.colorId.toLowerCase().startsWith('mau')
-                        ? '#' + Math.floor(Math.random() * 16777215).toString(16)
-                        : '#ddd',
-                    }}
-                  />
+                  {fabricInfo.colorHexCode && (
+                    <div
+                      className="w-6 h-6 rounded border border-input"
+                      style={{ backgroundColor: fabricInfo.colorHexCode }}
+                    />
+                  )}
                   <span className="font-medium">{fabricInfo.color}</span>
                 </div>
               </div>

@@ -19,6 +19,7 @@ export type FabricListItem = {
   color: {
     id: string;
     name: string;
+    hexCode?: string;
   };
   supplier: {
     id: number;

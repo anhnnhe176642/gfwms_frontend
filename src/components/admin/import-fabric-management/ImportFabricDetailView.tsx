@@ -248,7 +248,17 @@ export function ImportFabricDetailView({ warehouseId, importId }: ImportFabricDe
                         </p>
                       </div>
                     </td>
-                    <td className="py-4 px-2 whitespace-nowrap">{item.fabric.color.name}</td>
+                    <td className="py-4 px-2 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {item.fabric.color.hexCode && (
+                          <div
+                            className="w-4 h-4 rounded border border-input"
+                            style={{ backgroundColor: item.fabric.color.hexCode }}
+                          />
+                        )}
+                        <span>{item.fabric.color.name}</span>
+                      </div>
+                    </td>
                     <td className="py-4 px-2 text-sm text-muted-foreground whitespace-nowrap">{item.fabric.supplier.name}</td>
                     <td className="py-4 px-2 text-center whitespace-nowrap">{item.fabric.length.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
                     <td className="py-4 px-2 text-right font-medium whitespace-nowrap">{item.quantity.toLocaleString('vi-VN')}</td>

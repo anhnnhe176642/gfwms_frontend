@@ -227,8 +227,8 @@ export default function FabricCategoryDetail({ categoryId }: FabricCategoryDetai
                     {/* Color Preview */}
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-12 h-12 rounded-lg border-2 border-gray-200"
-                        style={{ backgroundColor: fabric.color.name }}
+                        className="w-12 h-12 rounded-lg border-2 border-input"
+                        style={{ backgroundColor: fabric.color.hexCode || '#999' }}
                       />
                       <div>
                         <p className="font-semibold">{fabric.color.name}</p>

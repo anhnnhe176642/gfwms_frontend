@@ -12,16 +12,21 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { createFabricColorSchema, type CreateFabricColorFormData } from '@/schemas/fabricColor.schema';
 import { fabricColorService } from '@/services/fabricColor.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, Loader, Camera, Upload } from 'lucide-react';
+import { ImageCapture } from './ImageCapture';
+import { ColorExtractor } from './ColorExtractor';
 
 export function CreateFabricColorForm() {
   const router = useRouter();
   const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [showImageCapture, setShowImageCapture] = useState(false);
+  const [showColorExtractor, setShowColorExtractor] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<File | null>(null);
 
   // Form validation and state management
-  const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors } =
+  const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors, setFieldValue } =
     useFormValidation<CreateFabricColorFormData>(createFabricColorSchema, async (data: CreateFabricColorFormData) => {
       setIsLoading(true);
       setServerError('');
@@ -42,6 +47,26 @@ export function CreateFabricColorForm() {
         setIsLoading(false);
       }
     });
+
+  const handleImageCapture = (file: File) => {
+    setCapturedImage(file);
+    setShowImageCapture(false);
+    setShowColorExtractor(true);
+  };
+
+  const handleColorExtracted = (hexCode: string) => {
+    setFieldValue('hexCode', hexCode);
+    setShowColorExtractor(false);
+    toast.success(`Đã chọn màu: ${hexCode}`);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCapturedImage(file);
+      setShowColorExtractor(true);
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -119,6 +144,81 @@ export function CreateFabricColorForm() {
                 <p className="text-sm text-destructive">{errors.name}</p>
               )}
             </div>
+
+            {/* Color Code */}
+            <div className="space-y-2">
+              <Label htmlFor="hexCode">Mã màu HEX (tùy chọn)</Label>
+              <div className="flex gap-2">
+                <div className="flex-1 flex gap-2 items-center">
+                  <input
+                    id="colorPickerDirect"
+                    type="color"
+                    value={values.hexCode ?? '#FF0000'}
+                    onChange={(e) => setFieldValue('hexCode', e.target.value.toUpperCase())}
+                    className="w-12 h-10 rounded cursor-pointer border border-input"
+                  />
+                  <Input
+                    id="hexCode"
+                    name="hexCode"
+                    placeholder="#FF0000"
+                    value={values.hexCode ?? ''}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    disabled={isLoading}
+                    className={`font-mono ${errors.hexCode && touched.hexCode ? 'border-destructive' : ''}`}
+                  />
+                  {values.hexCode && (
+                    <div
+                      className="w-8 h-8 rounded border border-input shrink-0"
+                      style={{ backgroundColor: values.hexCode }}
+                      title={values.hexCode}
+                    />
+                  )}
+                </div>
+              </div>
+              {errors.hexCode && touched.hexCode && (
+                <p className="text-sm text-destructive">{errors.hexCode}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Image Capture Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Trích xuất màu từ ảnh</CardTitle>
+            <CardDescription>Chụp ảnh hoặc tải lên ảnh để trích xuất màu tự động</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowImageCapture(true)}
+                disabled={isLoading}
+                className="flex-1 gap-2"
+              >
+                <Camera className="w-4 h-4" />
+                Chụp ảnh
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById('file-upload')?.click()}
+                disabled={isLoading}
+                className="flex-1 gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Tải lên ảnh
+              </Button>
+              <input
+                id="file-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -138,6 +238,23 @@ export function CreateFabricColorForm() {
           </Button>
         </div>
       </form>
+
+      {/* Image Capture Modal */}
+      <ImageCapture
+        isOpen={showImageCapture}
+        onClose={() => setShowImageCapture(false)}
+        onCapture={handleImageCapture}
+      />
+
+      {/* Color Extractor Modal */}
+      {capturedImage && (
+        <ColorExtractor
+          isOpen={showColorExtractor}
+          onClose={() => setShowColorExtractor(false)}
+          imageFile={capturedImage}
+          onColorExtracted={handleColorExtracted}
+        />
+      )}
     </div>
   );
 }

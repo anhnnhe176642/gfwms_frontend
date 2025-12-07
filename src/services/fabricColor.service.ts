@@ -54,6 +54,32 @@ export const fabricColorService = {
   deleteFabricColor: async (id: string): Promise<void> => {
     await api.delete(`${BASE_PATH}/${id}`);
   },
+
+  /**
+   * Tạo fabric color với ảnh để trích xuất màu
+   * Gửi FormData với image file và dữ liệu màu
+   */
+  createFabricColorWithImage: async (
+    data: CreateFabricColorPayload,
+    imageFile?: File
+  ): Promise<FabricColorListItem> => {
+    const formData = new FormData();
+    formData.append('id', data.id);
+    formData.append('name', data.name);
+    if (data.hexCode) {
+      formData.append('hexCode', data.hexCode);
+    }
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
+    const response = await api.post<CreateFabricColorResponse>(`${BASE_PATH}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.fabricColor;
+  },
 };
 
 export default fabricColorService;

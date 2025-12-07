@@ -63,6 +63,7 @@ export interface FabricCategory {
 export interface FabricColor {
   id: string;
   name: string;
+  hexCode?: string;
 }
 
 export interface FabricSupplier {

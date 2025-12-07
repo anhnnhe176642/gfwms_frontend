@@ -62,6 +62,24 @@ export const createFabricColorColumns = (
     }
   },
   {
+    accessorKey: "hexCode",
+    header: "Mã màu",
+    cell: ({ row }) => {
+      const hexCode = row.getValue("hexCode") as string | undefined
+      if (!hexCode) return "-"
+      return (
+        <div
+          className="w-6 h-6 rounded border border-input"
+          style={{ backgroundColor: hexCode }}
+          title={hexCode}
+        />
+      )
+    },
+    meta: {
+      title: "Mã màu"
+    }
+  },
+  {
     accessorKey: "createdAt",
     header: ({ column }) => <DateRangeFilterHeader column={column} title="Ngày tạo" />,
     cell: ({ row }) => {

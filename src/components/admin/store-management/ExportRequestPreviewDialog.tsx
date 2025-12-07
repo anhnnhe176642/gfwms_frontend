@@ -118,7 +118,17 @@ export function ExportRequestPreviewDialog({
                     <TableRow key={item.fabricId} className={hasError ? 'bg-destructive/10' : ''}>
                       <TableCell className="font-medium">{index + 1}</TableCell>
                       <TableCell>{item.fabric.category.name}</TableCell>
-                      <TableCell>{item.fabric.color.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {item.fabric.color.hexCode && (
+                            <div
+                              className="w-4 h-4 rounded border border-input"
+                              style={{ backgroundColor: item.fabric.color.hexCode }}
+                            />
+                          )}
+                          <span>{item.fabric.color.name}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>{item.fabric.supplier.name}</TableCell>
                       <TableCell className="text-right">
                         {new Intl.NumberFormat('vi-VN').format(item.fabric.quantityInStock)}

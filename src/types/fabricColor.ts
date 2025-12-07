@@ -27,10 +27,12 @@ export type FabricColorListParams = {
 export type CreateFabricColorPayload = {
   id: string;
   name: string;
+  hexCode?: string;
 };
 
 export type UpdateFabricColorPayload = {
   name?: string;
+  hexCode?: string;
 };
 
 export type CreateFabricColorResponse = {

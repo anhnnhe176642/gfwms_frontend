@@ -14,6 +14,10 @@ export const createFabricColorSchema = yup.object().shape({
     .required('Tên màu vải là bắt buộc')
     .min(1, 'Tên màu vải không được rỗng')
     .max(255, 'Tên màu vải không được vượt quá 255 ký tự'),
+  hexCode: yup
+    .string()
+    .optional()
+    .matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Mã hex không hợp lệ (vd: #FF5733)'),
 });
 
 export type CreateFabricColorFormData = yup.InferType<typeof createFabricColorSchema>;
@@ -27,6 +31,10 @@ export const updateFabricColorSchema = yup.object().shape({
     .required('Tên màu vải là bắt buộc')
     .min(1, 'Tên màu vải không được rỗng')
     .max(255, 'Tên màu vải không được vượt quá 255 ký tự'),
+  hexCode: yup
+    .string()
+    .optional()
+    .matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Mã hex không hợp lệ (vd: #FF5733)'),
 });
 
 export type UpdateFabricColorFormData = yup.InferType<typeof updateFabricColorSchema>;

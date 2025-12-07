@@ -49,6 +49,7 @@ export type ImportFabricListParams = {
 export type ImportFabricColor = {
   id: string;
   name: string;
+  hexCode?: string;
 };
 
 export type ImportFabricGloss = {

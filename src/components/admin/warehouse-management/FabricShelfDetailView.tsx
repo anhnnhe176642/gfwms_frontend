@@ -195,7 +195,15 @@ export function FabricShelfDetailView({ shelfId, fabricId, warehouseId }: Fabric
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{fabric?.color.name || '—'}</p>
+            <div className="flex items-center gap-3">
+              {fabric?.color.hexCode && (
+                <div
+                  className="w-8 h-8 rounded-lg border-2 border-input"
+                  style={{ backgroundColor: fabric.color.hexCode }}
+                />
+              )}
+              <p className="text-2xl font-bold">{fabric?.color.name || '—'}</p>
+            </div>
           </CardContent>
         </Card>
 

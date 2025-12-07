@@ -25,6 +25,7 @@ export interface OrderItemFabricCategory {
 export interface OrderItemFabricColor {
   id: string;
   name: string;
+  hexCode?: string;
 }
 
 export interface OrderItemFabricGloss {
