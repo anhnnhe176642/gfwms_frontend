@@ -2,7 +2,7 @@ import api from '@/lib/api';
 import type {
   ExportFabricListParams,
   ExportFabricListResponse,
-  ExportFabricDetail as ExportFabricDetailType,
+  ExportFabricDetail,
   ExportFabricStatus,
   SuggestAllocationRequest,
   SuggestAllocationResponse,
@@ -25,53 +25,6 @@ export type CreateExportFabricRequestPayload = {
   storeId: number;
   note?: string;
   exportItems: ExportFabricItem[];
-};
-
-export type ExportFabricCreatedBy = {
-  username: string;
-  email: string;
-};
-
-export type ExportFabricWarehouse = {
-  name: string;
-};
-
-export type ExportFabricStore = {
-  name: string;
-};
-
-export type ExportFabricItemDetail = {
-  fabricId: number;
-  quantity: number;
-  price: number | null;
-  fabric: {
-    id: number;
-    colorId: string;
-    categoryId: number;
-    sellingPrice: number;
-    supplierId: number;
-  };
-  shelfSuggestions?: Array<{
-    shelfId: number;
-    shelfCode: string;
-    availableQuantity: number;
-  }>;
-};
-
-export type ExportFabricDetail = {
-  id: number;
-  warehouseId: number;
-  warehouse: ExportFabricWarehouse;
-  store: ExportFabricStore;
-  status: ExportFabricStatus;
-  note: string | null;
-  createdAt: string;
-  updatedAt: string;
-  createdById: string;
-  createdBy: ExportFabricCreatedBy;
-  receivedById: string | null;
-  receivedBy: ExportFabricCreatedBy | null;
-  exportItems: ExportFabricItemDetail[];
 };
 
 export type CreateExportFabricResponse = {
@@ -223,6 +176,7 @@ export default exportFabricService;
 
 // Re-export types for convenience
 export type {
+  ExportFabricDetail,
   ExportFabricListItem,
   ExportFabricListResponse,
   ExportFabricListParams,

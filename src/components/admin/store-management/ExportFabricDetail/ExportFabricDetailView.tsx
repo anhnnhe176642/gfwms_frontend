@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { ExportFabricStatusBadge } from '@/components/admin/table/Badges';
 import { exportFabricService } from '@/services/exportFabric.service';
-import type { ExportFabricDetail } from '@/services/exportFabric.service';
+import type { ExportFabricDetail } from '@/types/exportFabric';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { exportInvoiceToPDF } from '@/lib/pdf';
 import { useNavigation } from '@/hooks/useNavigation';
@@ -37,9 +37,10 @@ import {
 interface ExportFabricDetailViewProps {
   warehouseId: string | number;
   exportFabricId: string | number;
+  hideActionButtons?: boolean;
 }
 
-export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFabricDetailViewProps) {
+export function ExportFabricDetailView({ warehouseId, exportFabricId, hideActionButtons = false }: ExportFabricDetailViewProps) {
   const router = useRouter();
   const { handleGoBack } = useNavigation();
   const invoiceRef = useRef<HTMLDivElement>(null);
@@ -234,44 +235,48 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
             <Printer className="h-4 w-4" />
             In
           </Button>
-          {exportFabric.status === 'PENDING' && (
-            <Button
-              onClick={handleProcessExport}
-              className="gap-2 bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Xử lý xuất kho
-            </Button>
-          )}
-          {exportFabric.status === 'APPROVED' && (
-            <Button
-              onClick={handleCompleteExport}
-              disabled={completing}
-              className="gap-2 bg-blue-600 hover:bg-blue-700"
-            >
-              {completing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Đang xác nhận...
-                </>
-              ) : (
-                <>
-                  <Check className="h-4 w-4" />
-                  Xác nhận nhận hàng
-                </>
+          {!hideActionButtons && (
+            <>
+              {exportFabric.status === 'PENDING' && (
+                <Button
+                  onClick={handleProcessExport}
+                  className="gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Xử lý xuất kho
+                </Button>
               )}
-            </Button>
-          )}
-          {exportFabric.status === 'PENDING' && (
-            <Button
-              onClick={() => setShowRejectDialog(true)}
-              disabled={rejecting}
-              variant="destructive"
-              className="gap-2"
-            >
-              <X className="h-4 w-4" />
-              Từ chối
-            </Button>
+              {exportFabric.status === 'APPROVED' && (
+                <Button
+                  onClick={handleCompleteExport}
+                  disabled={completing}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  {completing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Đang xác nhận...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Xác nhận nhận hàng
+                    </>
+                  )}
+                </Button>
+              )}
+              {exportFabric.status === 'PENDING' && (
+                <Button
+                  onClick={() => setShowRejectDialog(true)}
+                  disabled={rejecting}
+                  variant="destructive"
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Từ chối
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -309,30 +314,41 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
           <div className="border-b p-8">
             <div className="grid grid-cols-2 gap-8">
               {/* Warehouse Info */}
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                  Kho xuất
-                </h3>
-                <p className="font-medium text-foreground">{exportFabric.warehouse.name}</p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                    Kho xuất
+                  </h3>
+                  <p className="font-medium text-foreground mt-1">{exportFabric.warehouse.name}</p>
+                  <p className="text-sm text-muted-foreground mt-2">{exportFabric.warehouse.address}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                      {exportFabric.warehouse.status}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Store Info */}
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                  Cửa hàng nhận
-                </h3>
-                <p className="font-medium text-foreground">{exportFabric.store.name}</p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                    Cửa hàng nhận
+                  </h3>
+                  <p className="font-medium text-foreground mt-1">{exportFabric.store.name}</p>
+                  <p className="text-sm text-muted-foreground mt-2">{exportFabric.store.address}</p>
+                </div>
               </div>
             </div>
 
             {/* Creator and Receiver Info */}
-            <div className="grid grid-cols-2 gap-8 mt-6">
+            <div className="grid grid-cols-2 gap-8 mt-8">
               {/* Creator Info */}
               <div className="space-y-2">
                 <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                   Người tạo
                 </h3>
-                <p className="font-medium text-foreground">{exportFabric.createdBy.username}</p>
+                <p className="font-medium text-foreground">{exportFabric.createdBy.fullname || exportFabric.createdBy.username}</p>
                 <p className="text-sm text-muted-foreground">{exportFabric.createdBy.email}</p>
               </div>
 
@@ -342,7 +358,7 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
                   <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                     Người nhận
                   </h3>
-                  <p className="font-medium text-foreground">{exportFabric.receivedBy.username}</p>
+                  <p className="font-medium text-foreground">{exportFabric.receivedBy.fullname || exportFabric.receivedBy.username}</p>
                   <p className="text-sm text-muted-foreground">{exportFabric.receivedBy.email}</p>
                 </div>
               ) : (
@@ -365,6 +381,8 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
                   <th className="text-left py-3 px-2 font-semibold text-foreground">Mã vải</th>
                   <th className="text-left py-3 px-2 font-semibold text-foreground">Loại vải</th>
                   <th className="text-left py-3 px-2 font-semibold text-foreground">Màu sắc</th>
+                  <th className="text-left py-3 px-2 font-semibold text-foreground">Kích thước</th>
+                  <th className="text-left py-3 px-2 font-semibold text-foreground">Độ bóng</th>
                   <th className="text-right py-3 px-2 font-semibold text-foreground">Số lượng</th>
                   <th className="text-right py-3 px-2 font-semibold text-foreground">Đơn giá</th>
                   <th className="text-right py-3 px-2 font-semibold text-foreground">Thành tiền</th>
@@ -382,10 +400,28 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFa
                       <td className="py-4 px-2">
                         <div className="flex items-center gap-2">
                           <Package className="h-4 w-4 text-muted-foreground" />
-                          <span>Loại #{item.fabric.categoryId}</span>
+                          <span>{item.fabric.category.name}</span>
                         </div>
                       </td>
-                      <td className="py-4 px-2 whitespace-nowrap">{item.fabric.colorId}</td>
+                      <td className="py-4 px-2 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-4 h-4 rounded border"
+                            style={{
+                              backgroundColor: item.fabric.color.hexCode || '#ccc',
+                            }}
+                            title={item.fabric.color.name}
+                          />
+                          <span className="text-xs">{item.fabric.color.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-2 text-xs text-muted-foreground">
+                        <div className="space-y-0.5">
+                          <p>D: {item.fabric.length}m × R: {item.fabric.width}m</p>
+                          <p>T: {item.fabric.thickness}mm, K: {item.fabric.weight}kg</p>
+                        </div>
+                      </td>
+                      <td className="py-4 px-2 text-xs">{item.fabric.gloss.description}</td>
                       <td className="py-4 px-2 text-right font-medium whitespace-nowrap">
                         {item.quantity.toLocaleString('vi-VN')}
                       </td>

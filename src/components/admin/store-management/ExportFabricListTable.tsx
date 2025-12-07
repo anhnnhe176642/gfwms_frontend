@@ -92,8 +92,11 @@ export function ExportFabricListTable({ initialParams, hideWarehouseColumn, hide
    * Handle view detail
    */
   const handleViewClick = (exportFabricId: number) => {
-    // If warehouseId is provided, navigate to warehouse-specific detail page
-    if (warehouseId) {
+    // If storeId is provided, navigate to store-specific detail page
+    if (storeId) {
+      router.push(`/admin/stores/${storeId}/export-requests/${exportFabricId}`);
+    } else if (warehouseId) {
+      // If warehouseId is provided, navigate to warehouse-specific detail page
       router.push(`/admin/warehouses/${warehouseId}/export-fabrics/${exportFabricId}`);
     } else {
       // Otherwise navigate to global export fabric detail page

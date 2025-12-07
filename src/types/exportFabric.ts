@@ -49,43 +49,101 @@ export type ShelfSuggestion = {
   availableQuantity: number;
 };
 
-export type ExportFabricItem = {
+export type FabricColor = {
+  id: string;
+  name: string;
+  hexCode?: string;
+};
+
+export type FabricCategory = {
+  id: number;
+  name: string;
+  description?: string;
+  sellingPricePerMeter?: number;
+  sellingPricePerRoll?: number;
+};
+
+export type FabricGloss = {
+  id: number;
+  description: string;
+};
+
+export type FabricSupplier = {
+  id: number;
+  name: string;
+  address?: string;
+  phone?: string;
+};
+
+export type ExportFabricItemDetail = {
+  id: number;
+  exportFabricId: number;
   fabricId: number;
   quantity: number;
   price: number | null;
+  createdAt: string;
+  updatedAt: string;
   fabric: {
     id: number;
+    thickness: number;
+    length: number;
+    width: number;
+    weight: number;
+    quantityInStock: number;
+    sellingPrice: number;
     colorId: string;
     categoryId: number;
-    sellingPrice: number;
     supplierId: number;
+    color: FabricColor;
+    category: FabricCategory;
+    gloss: FabricGloss;
+    supplier: FabricSupplier;
   };
   shelfSuggestions?: ShelfSuggestion[];
+};
+
+export type ExportFabricItem = ExportFabricItemDetail;
+
+export type ExportFabricWarehouse = {
+  id: number;
+  name: string;
+  address: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExportFabricStoreDetail = {
+  id: number;
+  name: string;
+  address: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ExportFabricUser = {
+  id: string;
+  username: string;
+  email: string;
+  fullname?: string;
+  createdAt?: string;
 };
 
 export type ExportFabricDetail = {
   id: number;
   warehouseId: number;
-  warehouse: {
-    name: string;
-  };
-  store: {
-    name: string;
-  };
+  storeId: number;
   status: ExportFabricStatus;
   note: string | null;
+  batchId: number | null;
   createdAt: string;
   updatedAt: string;
   createdById: string;
-  createdBy: {
-    username: string;
-    email: string;
-  };
   receivedById: string | null;
-  receivedBy: {
-    username: string;
-    email: string;
-  } | null;
+  warehouse: ExportFabricWarehouse;
+  store: ExportFabricStoreDetail;
+  createdBy: ExportFabricUser;
+  receivedBy: ExportFabricUser | null;
   exportItems: ExportFabricItem[];
 };
 

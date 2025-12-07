@@ -633,22 +633,6 @@ export function ExportFabricPreviewDetail({ warehouseId, exportFabricId }: Expor
           </div>
         </div>
 
-        {/* Approval Note Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Ghi chú phê duyệt (tuỳ chọn)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Nhập ghi chú khi duyệt phiếu xuất..."
-              value={approvalNote}
-              onChange={(e) => setApprovalNote(e.target.value)}
-              disabled={isApproving}
-              className="min-h-20"
-            />
-          </CardContent>
-        </Card>
-
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <Button
