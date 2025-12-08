@@ -15,6 +15,7 @@ import { IMAGE_STATUS_CONFIG } from '@/constants/yolo-dataset';
 import { SortButton } from '@/components/admin/table/SortButton';
 import { CheckboxFilterHeader } from '@/components/admin/table/CheckboxFilterHeader';
 import { DateRangeFilterHeader } from '@/components/admin/table/DateRangeFilterHeader';
+import { buildImageUrl } from '@/lib/utils';
 import type { DatasetImage } from '@/types/yolo-dataset';
 import { Eye, Download, ImageOff, MoreHorizontal, Tag, Trash2, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
@@ -57,7 +58,7 @@ export function createDatasetImageColumns(
         return (
           <div className="relative w-16 h-16 rounded overflow-hidden bg-muted shrink-0">
             <Image
-              src={imageUrl}
+              src={buildImageUrl(imageUrl)}
               alt="preview"
               fill
               className="object-cover"

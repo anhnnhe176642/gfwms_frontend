@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { yoloDatasetService } from '@/services/yolo-dataset.service';
 import type { DatasetImageDetail } from '@/types/yolo-dataset';
 import { getServerErrorMessage } from '@/lib/errorHandler';
+import { buildImageUrl } from '@/lib/utils';
 import { Loader2, ArrowLeft, Lightbulb } from 'lucide-react';
 
 interface ImageLabelPageParams {
@@ -71,7 +72,8 @@ const ImageLabelPage: React.FC = () => {
 
         if (imageDetail.imageUrl) {
           setImageDetail(imageDetail);
-          setImageUrl(imageDetail.imageUrl);
+          const fullImageUrl = buildImageUrl(imageDetail.imageUrl);
+          setImageUrl(fullImageUrl);
           if (imageDetail.width && imageDetail.height) {
             setImageDimensions({ width: imageDetail.width, height: imageDetail.height });
           }
@@ -84,7 +86,7 @@ const ImageLabelPage: React.FC = () => {
           img.onerror = () => {
             console.warn('Failed to load image dimensions');
           };
-          img.src = imageDetail.imageUrl;
+          img.src = fullImageUrl;
         } else {
           throw new Error('Ảnh không có URL');
         }

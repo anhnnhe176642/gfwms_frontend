@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { DatasetImagesTable, ImportDatasetToExistingDialog } from '@/components/admin/yolo-dataset-management';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { buildImageUrl } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -161,7 +162,7 @@ export default function DatasetImagesPage({
         toast.error('Không thể tải ảnh');
       };
 
-      img.src = selectedImage.imageUrl || '';
+      img.src = buildImageUrl(selectedImage.imageUrl || '');
     }, 200);
 
     return () => clearTimeout(timer);

@@ -11,6 +11,7 @@ import { useBoundingBox, BoundingBox } from '@/hooks/useBoundingBox';
 import { yoloService } from '@/services/yolo.service';
 import { BoxesList } from './BoxesList';
 import ReviewPanel from './ReviewPanel';
+import { buildImageUrl } from '@/lib/utils';
 import { 
   isValidBoundingBox,
   normalizeBoundingBox,
@@ -649,7 +650,7 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     img.onerror = () => {
       toast.error('Không thể tải ảnh');
     };
-    img.src = imageSrc;
+    img.src = buildImageUrl(imageSrc);
   }, [imageSrc]);
 
   useEffect(() => {
@@ -902,7 +903,8 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     setIsAutoLabeling(true);
     try {
       // Fetch image as blob
-      const response = await fetch(imageSrc);
+      const fullImageUrl = buildImageUrl(imageSrc);
+      const response = await fetch(fullImageUrl);
       const blob = await response.blob();
       const file = new File([blob], 'image.jpg', { type: blob.type });
 
