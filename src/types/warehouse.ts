@@ -312,3 +312,36 @@ export type FabricPickupParams = {
   priority: FabricPickupPriority;
 };
 
+// Warehouse Manager Assignment Types
+export type WarehouseManagerAssignment = {
+  userId: string;
+  warehouseId: number;
+  assignedAt: string;
+  warehouse: {
+    id: number;
+    name: string;
+    address: string;
+  };
+};
+
+export type UserWarehousesResponse = {
+  message: string;
+  data: WarehouseManagerAssignment[];
+};
+
+export type AssignUserWarehousesPayload = {
+  userId: string;
+  warehouseIds: number[];
+};
+
+export type AssignUserWarehousesResult = {
+  totalAssigned: number;
+  successful: number[];
+  failed: number[];
+  userId: string;
+};
+
+export type AssignUserWarehousesResponse = {
+  message: string;
+  data: AssignUserWarehousesResult;
+};

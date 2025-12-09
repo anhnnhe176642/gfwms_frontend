@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import { InfiniteScrollRoleFilter } from "@/components/admin/table/InfiniteScrol
 import { DateRangeFilterHeader } from "@/components/admin/table/DateRangeFilterHeader"
 import { StatusBadge, RoleBadge } from "@/components/admin/table/Badges"
 import { USER_STATUS_OPTIONS } from "@/constants/user"
+import { useRouter } from "next/navigation"
 
 export type UserColumnActions = {
   onStatusChange: (userId: string, status: UserStatus) => void
@@ -169,65 +170,81 @@ export const createUserColumns = (
     },
     cell: ({ row }) => {
       const user = row.original
+      const router = useRouter()
+
+      const handleViewDetails = () => {
+        router.push(`/admin/users/${user.id}`)
+      }
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Mở menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            
-            <DropdownMenuLabel className="text-xs font-normal text-gray-500">
-              Thay đổi trạng thái
-            </DropdownMenuLabel>
-            {USER_STATUS_OPTIONS.map((status) => (
-              <DropdownMenuItem
-                key={status.value}
-                onClick={() => actions.onStatusChange(user.id, status.value)}
-                disabled={user.status === status.value}
-              >
-                {status.label}
-              </DropdownMenuItem>
-            ))}
-            
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs font-normal text-gray-500">
-              Thay đổi vai trò
-            </DropdownMenuLabel>
-            {options.roleOptionsLoading ? (
-              <DropdownMenuItem disabled>
-                Đang tải...
-              </DropdownMenuItem>
-            ) : options.roleOptions.length === 0 ? (
-              <DropdownMenuItem disabled>
-                Không có vai trò
-              </DropdownMenuItem>
-            ) : (
-              options.roleOptions.map((role) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleViewDetails}
+            className="gap-1"
+          >
+            <Eye className="h-4 w-4" />
+            Chi tiết
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Mở menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuLabel className="text-xs font-normal text-gray-500">
+                Thay đổi trạng thái
+              </DropdownMenuLabel>
+              {USER_STATUS_OPTIONS.map((status) => (
                 <DropdownMenuItem
-                  key={role.value}
-                  onClick={() => actions.onRoleChange(user.id, role.value)}
-                  disabled={user.role.name === role.value}
+                  key={status.value}
+                  onClick={() => actions.onStatusChange(user.id, status.value)}
+                  disabled={user.status === status.value}
                 >
-                  {role.label}
+                  {status.label}
                 </DropdownMenuItem>
-              ))
-            )}
-            
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => actions.onDelete(user.id)}
-              className="text-red-600"
-            >
-              Xóa
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              ))}
+              
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs font-normal text-gray-500">
+                Thay đổi vai trò
+              </DropdownMenuLabel>
+              {options.roleOptionsLoading ? (
+                <DropdownMenuItem disabled>
+                  Đang tải...
+                </DropdownMenuItem>
+              ) : options.roleOptions.length === 0 ? (
+                <DropdownMenuItem disabled>
+                  Không có vai trò
+                </DropdownMenuItem>
+              ) : (
+                options.roleOptions.map((role) => (
+                  <DropdownMenuItem
+                    key={role.value}
+                    onClick={() => actions.onRoleChange(user.id, role.value)}
+                    disabled={user.role.name === role.value}
+                  >
+                    {role.label}
+                  </DropdownMenuItem>
+                ))
+              )}
+              
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => actions.onDelete(user.id)}
+                className="text-red-600"
+              >
+                Xóa
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )
     },
   },

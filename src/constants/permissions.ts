@@ -223,6 +223,24 @@ export const PERMISSIONS = {
       parentPermissionKey: 'store:view_list',
       level: 2,
     },
+    MANAGER: {
+      key: 'store:manager',
+      description: 'Là quản lý cửa hàng (quản lý cửa hàng cụ thể được assign)',
+      parentPermissionKey: 'system:admin',
+      level: 1,
+    },
+    MANAGER_ALL: {
+      key: 'store:manager_all',
+      description: 'Quản lý tất cả cửa hàng (quyền cao cấp)',
+      parentPermissionKey: 'system:admin',
+      level: 1,
+    },
+    MANAGE_MANAGERS: {
+      key: 'store:manage_managers',
+      description: 'Quản lý người quản lý cửa hàng',
+      parentPermissionKey: 'system:admin',
+      level: 1,
+    },
   },
 
   // Users (admin/users)
@@ -318,6 +336,24 @@ export const PERMISSIONS = {
       description: 'Quản lý trạng thái kho',
       parentPermissionKey: 'warehouse:view_list',
       level: 2,
+    },
+    MANAGER: {
+      key: 'warehouse:manager',
+      description: 'Là quản lý kho (quản lý kho cụ thể được assign)',
+      parentPermissionKey: 'system:admin',
+      level: 1,
+    },
+    MANAGER_ALL: {
+      key: 'warehouse:manager_all',
+      description: 'Quản lý tất cả kho (quyền cao cấp)',
+      parentPermissionKey: 'system:admin',
+      level: 1,
+    },
+    MANAGE_MANAGERS: {
+      key: 'warehouse:manage_managers',
+      description: 'Quản lý người quản lý kho',
+      parentPermissionKey: 'system:admin',
+      level: 1,
     },
   },
 
