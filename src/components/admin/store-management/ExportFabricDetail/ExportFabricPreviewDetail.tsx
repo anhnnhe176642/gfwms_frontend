@@ -800,7 +800,7 @@ export function ExportFabricPreviewDetail({ warehouseId, exportFabricId }: Expor
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold">
-                            {allocation.shelvesData?.fabric.category.name || `Vải #${allocation.fabricId}`}
+                            {allocation.shelvesData?.fabric?.category?.name || `Vải #${allocation.fabricId}`}
                           </h3>
                           <p className="text-sm text-muted-foreground">
                             ID: #{allocation.fabricId}
@@ -853,47 +853,47 @@ export function ExportFabricPreviewDetail({ warehouseId, exportFabricId }: Expor
                           <div>
                             <span className="text-muted-foreground">Màu sắc:</span>
                             <div className="flex items-center gap-2 ml-2">
-                              {allocation.shelvesData.fabric.color.hexCode && (
+                              {allocation.shelvesData?.fabric?.color?.hexCode && (
                                 <div
                                   className="w-4 h-4 rounded border border-input"
-                                  style={{ backgroundColor: allocation.shelvesData.fabric.color.hexCode }}
+                                  style={{ backgroundColor: allocation.shelvesData?.fabric?.color?.hexCode }}
                                 />
                               )}
                               <span className="font-medium">
-                                {allocation.shelvesData.fabric.color.name}
+                                {allocation.shelvesData?.fabric?.color?.name}
                               </span>
                             </div>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Độ bóng:</span>
                             <span className="ml-2 font-medium">
-                              {allocation.shelvesData.fabric.gloss.description}
+                              {allocation.shelvesData?.fabric?.gloss?.description}
                             </span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Nhà cung cấp:</span>
                             <span className="ml-2 font-medium">
-                              {allocation.shelvesData.fabric.supplier.name}
+                              {allocation.shelvesData?.fabric?.supplier?.name}
                             </span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Chiều dài:</span>
                             <span className="ml-2 font-medium">
-                              {allocation.shelvesData.fabric.length}m
+                              {allocation.shelvesData?.fabric?.length}m
                             </span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Giá bán:</span>
                             <span className="ml-2 font-medium">
-                              {allocation.shelvesData.fabric.sellingPrice.toLocaleString('vi-VN')}₫
+                              {allocation.shelvesData?.fabric?.sellingPrice.toLocaleString('vi-VN')}₫
                             </span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Tồn kho tổng:</span>
                             <span className="ml-2 font-medium">
-                              {allocation.shelvesData.totalQuantity}
+                              {allocation.shelvesData?.totalQuantity}
                             </span>
-                            {allocation.shelvesData.totalQuantity < allocation.quantityNeeded && (
+                            {allocation.shelvesData && allocation.shelvesData.totalQuantity < allocation.quantityNeeded && (
                               <span className="ml-2 text-red-500 text-xs">⚠️ Không đủ</span>
                             )}
                           </div>

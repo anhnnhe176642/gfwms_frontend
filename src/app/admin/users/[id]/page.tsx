@@ -199,18 +199,22 @@ export default function UserDetailPage() {
         {/* User Stores Select & User Warehouses Select - Hiển thị cạnh nhau */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* User Stores Select - Hiển thị nếu:
-              1. User hiện tại có quyền MANAGE_MANAGERS (quản lý người quản lý cửa hàng)
-              2. User được xem có quyền MANAGER (là quản lý cửa hàng) dựa vào API /permissions/user/{userId}
+              1. User hiện tại có quyền MANAGE_MANAGERS của STORES
+              2. User được xem có quyền MANAGER của STORES
           */}
-          {user && hasPermission(PERMISSIONS.STORES.MANAGE_MANAGERS.key) && userPermissions?.permissions?.some((p) => p.key === PERMISSIONS.STORES.MANAGER.key) && (
+          {user && 
+            hasPermission(PERMISSIONS.STORES.MANAGE_MANAGERS.key) && 
+            userPermissions?.permissions?.some((p) => p.key === PERMISSIONS.STORES.MANAGER.key) && (
             <UserStoresSelect userId={userId} />
           )}
 
           {/* User Warehouses Select - Hiển thị nếu:
-              1. User hiện tại có quyền MANAGE_MANAGERS (quản lý người quản lý kho)
-              2. User được xem có quyền MANAGER (là quản lý kho) dựa vào API /permissions/user/{userId}
+              1. User hiện tại có quyền MANAGE_MANAGERS của WAREHOUSES
+              2. User được xem có quyền MANAGER của WAREHOUSES
           */}
-          {user && hasPermission(PERMISSIONS.WAREHOUSES.MANAGE_MANAGERS.key) && userPermissions?.permissions?.some((p) => p.key === PERMISSIONS.WAREHOUSES.MANAGER.key) && (
+          {user && 
+            hasPermission(PERMISSIONS.WAREHOUSES.MANAGE_MANAGERS.key) && 
+            userPermissions?.permissions?.some((p) => p.key === PERMISSIONS.WAREHOUSES.MANAGER.key) && (
             <UserWarehousesSelect userId={userId} />
           )}
         </div>
