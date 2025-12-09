@@ -114,7 +114,9 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   }
 
   const totalItems = order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
-  const remainingAmount = order.totalAmount - order.paidAmount;
+  const remainingAmount = order.invoice
+    ? order.invoice.totalAmount - order.invoice.paidAmount
+    : order.totalAmount;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -207,14 +209,6 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                     {new Date(order.orderDate).toLocaleDateString('vi-VN')}
                   </span>
                 </p>
-                {order.paymentDeadline && (
-                  <p className="text-sm text-muted-foreground">
-                    Hạn thanh toán:{' '}
-                    <span className="font-semibold text-foreground">
-                      {new Date(order.paymentDeadline).toLocaleDateString('vi-VN')}
-                    </span>
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -246,25 +240,31 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                   <CreditCard className="h-4 w-4" />
                   Thanh toán
                 </h3>
-                <div className="flex items-center gap-2">
-                  <PaymentTypeBadge type={order.paymentType} />
-                </div>
-                <div className="text-sm space-y-1">
-                  <p className="text-muted-foreground">
-                    Đã thanh toán:{' '}
-                    <span className="font-semibold text-green-600">
-                      {order.paidAmount.toLocaleString('vi-VN')} ₫
-                    </span>
-                  </p>
-                  {order.creditAmount > 0 && (
-                    <p className="text-muted-foreground">
-                      Công nợ:{' '}
-                      <span className="font-semibold text-amber-600">
-                        {order.creditAmount.toLocaleString('vi-VN')} ₫
-                      </span>
-                    </p>
-                  )}
-                </div>
+                {order.invoice ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <PaymentTypeBadge type={order.invoice.paymentType} />
+                    </div>
+                    <div className="text-sm space-y-1">
+                      <p className="text-muted-foreground">
+                        Đã thanh toán:{' '}
+                        <span className="font-semibold text-green-600">
+                          {order.invoice.paidAmount.toLocaleString('vi-VN')} ₫
+                        </span>
+                      </p>
+                      {order.invoice.creditAmount > 0 && (
+                        <p className="text-muted-foreground">
+                          Công nợ:{' '}
+                          <span className="font-semibold text-amber-600">
+                            {order.invoice.creditAmount.toLocaleString('vi-VN')} ₫
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Chưa có hóa đơn</p>
+                )}
               </div>
             </div>
 
@@ -376,19 +376,23 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                     {order.orderItems.length} loại
                   </span>
                 </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Đã thanh toán:</span>
-                  <span className="font-medium text-green-600">
-                    {order.paidAmount.toLocaleString('vi-VN')} ₫
-                  </span>
-                </div>
-                {remainingAmount > 0 && (
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Còn lại:</span>
-                    <span className="font-medium text-amber-600">
-                      {remainingAmount.toLocaleString('vi-VN')} ₫
-                    </span>
-                  </div>
+                {order.invoice && (
+                  <>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Đã thanh toán:</span>
+                      <span className="font-medium text-green-600">
+                        {order.invoice.paidAmount.toLocaleString('vi-VN')} ₫
+                      </span>
+                    </div>
+                    {remainingAmount > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Còn lại:</span>
+                        <span className="font-medium text-amber-600">
+                          {remainingAmount.toLocaleString('vi-VN')} ₫
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div className="border-t-2 border-b-2 py-3 flex justify-between font-bold text-base">
                   <span>Tổng đơn hàng:</span>
@@ -419,9 +423,9 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                   </div>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Hạn thanh toán</p>
+                  <p className="text-muted-foreground">Loại thanh toán</p>
                   <p className="font-medium">
-                    {new Date(order.invoice.dueDate).toLocaleDateString('vi-VN')}
+                    {order.invoice.paymentType === 'CASH' ? 'Tiền mặt' : 'Nợ'}
                   </p>
                 </div>
                 <div>
@@ -430,6 +434,14 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                     {order.invoice.totalAmount.toLocaleString('vi-VN')} ₫
                   </p>
                 </div>
+                {order.invoice.paymentDeadline && (
+                  <div>
+                    <p className="text-muted-foreground">Hạn thanh toán</p>
+                    <p className="font-medium">
+                      {new Date(order.invoice.paymentDeadline).toLocaleDateString('vi-VN')}
+                    </p>
+                  </div>
+                )}
                 {order.invoice.notes && (
                   <div className="col-span-4">
                     <p className="text-muted-foreground">Ghi chú</p>

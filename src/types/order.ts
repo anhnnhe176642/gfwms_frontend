@@ -60,7 +60,9 @@ export interface OrderInvoice {
   totalAmount: number;
   paidAmount: number;
   creditAmount: number;
-  dueDate: string;
+  paymentType: PaymentType;
+  paymentDeadline: string | null;
+  creditInvoiceId: number | null;
   notes: string | null;
 }
 
@@ -78,14 +80,12 @@ export interface OrderListItem {
   user: OrderUser;
   orderDate: string;
   status: OrderStatus;
-  paymentType: PaymentType;
   totalAmount: number;
-  paidAmount: number;
-  creditAmount: number;
-  paymentDeadline: string | null;
   isOffline: boolean;
   customerPhone: string | null;
   notes: string | null;
+  storeId: string | null;
+  store: unknown | null;
   createdAt: string;
   updatedAt: string;
   orderItems: OrderItem[];
