@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StoreFabricManagementTable } from '@/components/admin/store-management/StoreFabricManagement';
@@ -21,25 +21,35 @@ export default function StoreFabricsPage() {
     router.push(`/admin/stores/${storeId}/fabrics/${fabricId}`);
   };
 
+  const handleCreateOrder = () => {
+    router.push(`/admin/stores/${storeId}/create-order`);
+  };
+
   return (
     <ProtectedRoute routeConfig={ROUTES.ADMIN.STORES.LIST}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleGoBack}
-            className="h-9 w-9"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Danh sách vải trong cửa hàng</h1>
-            <p className="text-muted-foreground mt-1">
-              Quản lý các loại vải có sẵn trong cửa hàng
-            </p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleGoBack}
+              className="h-9 w-9"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Danh sách vải trong cửa hàng</h1>
+              <p className="text-muted-foreground mt-1">
+                Quản lý các loại vải có sẵn trong cửa hàng
+              </p>
+            </div>
           </div>
+          <Button onClick={handleCreateOrder} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Tạo đơn hàng
+          </Button>
         </div>
 
         {/* Content Card */}

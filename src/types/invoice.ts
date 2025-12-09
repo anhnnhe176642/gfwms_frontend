@@ -93,6 +93,7 @@ export interface OrderItem {
   id: number;
   quantity: number;
   price: number;
+  saleUnit?: 'ROLL' | 'METER';
   createdAt: string;
   updatedAt: string;
   fabric: OrderItemFabric;
@@ -107,7 +108,7 @@ export interface InvoicePayment {
   paymentDate: string;
   amount: number;
   paymentMethod: PaymentMethod;
-  transactionId: string;
+  transactionId: string | null;
   notes?: string | null;
 }
 
@@ -116,12 +117,18 @@ export interface InvoiceDetail {
   orderId: number;
   order: InvoiceOrderDetail;
   invoiceDate: string;
-  dueDate: string;
   invoiceStatus: InvoiceStatus;
   totalAmount: number;
+  notes?: string | null;
+  paymentType?: string;
+  paymentDeadline?: string | null;
+  creditAmount?: number;
+  paidAmount?: number;
+  payment?: InvoicePayment | null;
+  creditInvoiceId?: number | null;
+  creditInvoice?: any | null;
   createdAt: string;
   updatedAt: string;
-  payment?: InvoicePayment | null;
 }
 
 export interface InvoiceDetailResponse {

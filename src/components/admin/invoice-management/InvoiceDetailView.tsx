@@ -117,7 +117,13 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
     );
   }
 
-  const totalItems = invoice.order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalMeter = invoice.order.orderItems
+    .filter(item => item.saleUnit === 'METER')
+    .reduce((sum, item) => sum + item.quantity, 0);
+  const totalRoll = invoice.order.orderItems
+    .filter(item => item.saleUnit === 'ROLL')
+    .reduce((sum, item) => sum + item.quantity, 0);
+  const totalItems = invoice.order.orderItems.length;
   const orderTotal = invoice.order.orderItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -206,12 +212,14 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
                     {new Date(invoice.invoiceDate).toLocaleDateString('vi-VN')}
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Hạn thanh toán:{' '}
-                  <span className="font-semibold text-foreground">
-                    {new Date(invoice.dueDate).toLocaleDateString('vi-VN')}
-                  </span>
-                </p>
+                {invoice.paymentDeadline && (
+                  <p className="text-sm text-muted-foreground">
+                    Hạn thanh toán:{' '}
+                    <span className="font-semibold text-foreground">
+                      {new Date(invoice.paymentDeadline).toLocaleDateString('vi-VN')}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -256,6 +264,7 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
                   <th className="text-left py-3 px-2 font-semibold text-foreground">Màu sắc</th>
                   <th className="text-center py-3 px-2 font-semibold text-foreground">Kích thước</th>
                   <th className="text-right py-3 px-2 font-semibold text-foreground">SL</th>
+                  <th className="text-center py-3 px-2 font-semibold text-foreground">Đơn vị</th>
                   <th className="text-right py-3 px-2 font-semibold text-foreground">Đơn giá</th>
                   <th className="text-right py-3 px-2 font-semibold text-foreground">Thành tiền</th>
                 </tr>
@@ -282,6 +291,9 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
                     <td className="py-4 px-2 text-right font-medium whitespace-nowrap">
                       {item.quantity.toLocaleString('vi-VN')}
                     </td>
+                    <td className="py-4 px-2 text-center whitespace-nowrap text-sm font-medium">
+                      {item.saleUnit === 'METER' ? 'Mét' : item.saleUnit === 'ROLL' ? 'Cuộn' : item.saleUnit}
+                    </td>
                     <td className="py-4 px-2 text-right font-medium whitespace-nowrap">
                       {item.price.toLocaleString('vi-VN')} ₫
                     </td>
@@ -298,16 +310,26 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
           <div className="p-8">
             <div className="flex justify-end">
               <div className="w-full max-w-xs space-y-3">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Tổng số lượng:</span>
-                  <span className="font-medium text-foreground">
-                    {totalItems.toLocaleString('vi-VN')} sản phẩm
-                  </span>
-                </div>
+                {totalMeter > 0 && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Tổng mét:</span>
+                    <span className="font-medium text-foreground">
+                      {totalMeter.toLocaleString('vi-VN')} m
+                    </span>
+                  </div>
+                )}
+                {totalRoll > 0 && (
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Tổng cuộn:</span>
+                    <span className="font-medium text-foreground">
+                      {totalRoll.toLocaleString('vi-VN')} cuộn
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Số mặt hàng:</span>
                   <span className="font-medium text-foreground">
-                    {invoice.order.orderItems.length} loại
+                    {totalItems} loại
                   </span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
@@ -336,7 +358,7 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/50 p-4 rounded-lg">
                 <div>
                   <p className="text-muted-foreground">Mã giao dịch</p>
-                  <p className="font-mono font-medium">{invoice.payment.transactionId}</p>
+                  <p className="font-mono font-medium">{invoice.payment.transactionId || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Phương thức</p>

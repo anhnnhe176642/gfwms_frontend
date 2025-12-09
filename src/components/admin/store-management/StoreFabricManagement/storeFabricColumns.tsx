@@ -96,19 +96,19 @@ export const createStoreFabricColumns = (
     }
   },
   {
-    accessorKey: "inventory.quantity",
+    accessorKey: "inventory.uncutRolls",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
-        <span className="font-medium">Số lượng</span>
-        <SortButton column={column} label="Sắp xếp theo số lượng" />
+        <span className="font-medium">Cuộn chưa cắt</span>
+        <SortButton column={column} label="Sắp xếp theo cuộn chưa cắt" />
       </div>
     ),
     cell: ({ row }) => {
-      const quantity = row.original.inventory.quantity
-      return new Intl.NumberFormat('vi-VN').format(quantity)
+      const uncutRolls = row.original.inventory.uncutRolls
+      return new Intl.NumberFormat('vi-VN').format(uncutRolls)
     },
     meta: {
-      title: "Số lượng"
+      title: "Cuộn chưa cắt"
     }
   },
   {
@@ -166,22 +166,6 @@ export const createStoreFabricColumns = (
     },
     meta: {
       title: "Giá trị tồn"
-    }
-  },
-  {
-    accessorKey: "inventory.uncutRolls",
-    header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Cuộn chưa cắt</span>
-        <SortButton column={column} label="Sắp xếp theo cuộn chưa cắt" />
-      </div>
-    ),
-    cell: ({ row }) => {
-      const uncutRolls = row.original.inventory.uncutRolls
-      return new Intl.NumberFormat('vi-VN').format(uncutRolls)
-    },
-    meta: {
-      title: "Cuộn chưa cắt"
     }
   },
   {

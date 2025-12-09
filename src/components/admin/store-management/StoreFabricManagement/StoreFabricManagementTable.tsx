@@ -67,7 +67,6 @@ export function StoreFabricManagementTable({
         'fabricInfo.color': 'color',
         'fabricInfo.gloss': 'gloss',
         'fabricInfo.supplier': 'supplier',
-        'inventory.quantity': 'quantity',
         'inventory.totalMeters': 'totalMeters',
         'fabricInfo.sellingPrice': 'sellingPrice',
         'inventory.totalValue': 'totalValue',

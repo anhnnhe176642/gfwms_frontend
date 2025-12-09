@@ -189,10 +189,10 @@ export default function StoreFabricDetailPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="p-4 border rounded-lg">
-                <span className="text-muted-foreground text-sm">Số lượng cuộn</span>
-                <p className="text-3xl font-bold mt-2">{inventory.quantity}</p>
+                <span className="text-muted-foreground text-sm">Cuộn chưa cắt</span>
+                <p className="text-3xl font-bold mt-2">{inventory.uncutRolls}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Cuộn chưa cắt: {inventory.uncutRolls}
+                  Cuộn chưa cắt
                 </p>
               </div>
               <div className="p-4 border rounded-lg">
