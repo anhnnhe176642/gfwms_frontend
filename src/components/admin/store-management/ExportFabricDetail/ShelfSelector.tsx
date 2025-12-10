@@ -11,7 +11,7 @@ import {
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { warehouseService } from '@/services/warehouse.service';
 import type { ShelfListItem } from '@/types/warehouse';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 interface ShelfSelectorProps {
   warehouseId: number | string;
@@ -66,7 +66,16 @@ export function ShelfSelector({
       <SelectTrigger className="w-full">
         <SelectValue
           placeholder={
-            error ? '⚠️ Lỗi tải kệ' : isLoading ? 'Đang tải...' : placeholder
+            error ? (
+              <span className="flex items-center gap-1">
+                <AlertTriangle className="h-4 w-4" />
+                Lỗi tải kệ
+              </span>
+            ) : isLoading ? (
+              'Đang tải...'
+            ) : (
+              placeholder
+            )
           }
         />
       </SelectTrigger>

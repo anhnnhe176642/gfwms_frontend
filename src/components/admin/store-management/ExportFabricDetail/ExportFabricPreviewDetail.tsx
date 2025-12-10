@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { AlertTriangle } from 'lucide-react';
 import { ExportFabricStatusBadge } from '@/components/admin/table/Badges';
 import { exportFabricService } from '@/services/exportFabric.service';
 import { warehouseService } from '@/services/warehouse.service';
@@ -894,7 +895,10 @@ export function ExportFabricPreviewDetail({ warehouseId, exportFabricId }: Expor
                               {allocation.shelvesData?.totalQuantity}
                             </span>
                             {allocation.shelvesData && allocation.shelvesData.totalQuantity < allocation.quantityNeeded && (
-                              <span className="ml-2 text-red-500 text-xs">⚠️ Không đủ</span>
+                              <span className="ml-2 text-red-500 text-xs flex items-center gap-1 inline-flex">
+                                <AlertTriangle className="h-3 w-3" />
+                                Không đủ
+                              </span>
                             )}
                           </div>
                         </div>

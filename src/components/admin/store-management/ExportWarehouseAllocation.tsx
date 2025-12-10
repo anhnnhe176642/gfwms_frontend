@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { AlertTriangle } from 'lucide-react';
 import { useExportRequestStore } from '@/store/useExportRequestStore';
 import { exportFabricService } from '@/services/exportFabric.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
@@ -390,7 +391,10 @@ export function ExportWarehouseAllocation() {
                         <span className="text-muted-foreground">Tồn kho tổng:</span>
                         <span className="ml-2 font-medium">{fabricAllocation.totalAvailable}</span>
                         {!fabricAllocation.isSufficient && (
-                          <span className="ml-2 text-red-500 text-xs">⚠️ Không đủ</span>
+                          <span className="ml-2 text-red-500 text-xs flex items-center gap-1 inline-flex">
+                            <AlertTriangle className="h-3 w-3" />
+                            Không đủ
+                          </span>
                         )}
                       </div>
                     </div>

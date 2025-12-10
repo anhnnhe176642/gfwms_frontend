@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ShelfSelector } from './ShelfSelector';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, AlertTriangle } from 'lucide-react';
 
 export interface ShelfAllocation {
   id: string; // unique identifier for this allocation
@@ -142,10 +142,13 @@ export function MultiShelfSelector({
 
       {/* Status */}
       {!isValid && (
-        <div className="text-sm text-red-600">
-          {remainingQuantity > 0
-            ? `⚠️ Cần phân bổ thêm ${remainingQuantity} sản phẩm`
-            : '⚠️ Tất cả các kệ phải được chọn'}
+        <div className="text-sm text-red-600 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span>
+            {remainingQuantity > 0
+              ? `Cần phân bổ thêm ${remainingQuantity} sản phẩm`
+              : 'Tất cả các kệ phải được chọn'}
+          </span>
         </div>
       )}
       {isValid && (

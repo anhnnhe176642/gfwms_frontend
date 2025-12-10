@@ -12,6 +12,7 @@ import {
   Store,
   Warehouse,
   TrendingUp,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface UserStatsOverviewProps {
@@ -316,8 +317,9 @@ export function UserStatsOverview({ stats, isLoading }: UserStatsOverviewProps) 
                   {creditInfo.status}
                 </span>
                 {creditInfo.isCritical && (
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300">
-                    ⚠️ Nguy hiểm
+                  <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Nguy hiểm
                   </span>
                 )}
               </div>
