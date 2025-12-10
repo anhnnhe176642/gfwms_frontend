@@ -38,7 +38,16 @@ export const roleService = {
    */
   getRoleDetail: async (roleId: number | string): Promise<RoleDetailResponse> => {
     const response = await api.get<RoleDetailResponse>(`${BASE_PATH}/${roleId}`);
-    return response.data;
+    const data = response.data;
+    
+    // Transform rolePermissions to permissions array for easier use
+    return {
+      ...data,
+      data: {
+        ...data.data,
+        permissions: data.data.rolePermissions?.map(rp => rp.permission.key) || [],
+      }
+    };
   },
 
   /**

@@ -58,9 +58,10 @@ export type RolePermission = {
 
 export type RoleDetail = {
   name: string;
-  fullName: string;
+  fullName: string | null;
   description: string | null;
   rolePermissions?: RolePermission[];
+  permissions?: string[]; // Extracted permission keys array
 };
 
 export type RoleDetailResponse = {

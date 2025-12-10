@@ -17,6 +17,7 @@ import { roleService } from '@/services/role.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
 import { PermissionTree } from './PermissionTree';
 import { addParentPermissions } from '@/constants/permissions';
+import { useDuplicateRoleStore } from '@/store/useDuplicateRoleStore';
 
 export function CreateRoleForm() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export function CreateRoleForm() {
   const [serverError, setServerError] = useState('');
   const [isNameEditable, setIsNameEditable] = useState(true);
   const generateNameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { duplicateData, clearDuplicateData } = useDuplicateRoleStore();
 
   // Form validation and state management
   const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors, setFieldValue } =
@@ -59,6 +61,16 @@ export function CreateRoleForm() {
   // Use role permissions hook
   const { togglePermission: handleTogglePermission, toggleGroupPermissions: handleToggleGroupPermissions, generateDescriptionFromPermissions } =
     useRolePermissions(setFieldValue);
+
+  // Load duplicate data if available
+  useEffect(() => {
+    if (duplicateData) {
+      if (duplicateData.fullName) setFieldValue('fullName', duplicateData.fullName);
+      if (duplicateData.description) setFieldValue('description', duplicateData.description);
+      if (duplicateData.permissions) setFieldValue('permissions', duplicateData.permissions);
+      clearDuplicateData(); // Clear after loading
+    }
+  }, [duplicateData, setFieldValue, clearDuplicateData]);
 
   // Auto-generate role name from fullName with debounce (300ms)
   useEffect(() => {

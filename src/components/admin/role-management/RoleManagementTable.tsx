@@ -20,6 +20,7 @@ import { useServerTable } from '@/hooks/useServerTable';
 import { useRouteAccess } from '@/hooks/useRouteAccess';
 import { useAuth } from '@/hooks/useAuth';
 import { getServerErrorMessage } from '@/lib/errorHandler';
+import { useDuplicateRoleStore } from '@/store/useDuplicateRoleStore';
 import type { Role, RoleListParams } from '@/types/role';
 import { Search, RefreshCw } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
@@ -37,6 +38,7 @@ export function RoleManagementTable({ initialParams }: RoleManagementTableProps)
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<string | null>(null);
+  const { setDuplicateData } = useDuplicateRoleStore();
 
   // Use custom hook for table state and data fetching
   const {
@@ -84,6 +86,32 @@ export function RoleManagementTable({ initialParams }: RoleManagementTableProps)
   };
 
   /**
+   * Handle duplicate role
+   */
+  const handleDuplicateRole = async (roleName: string) => {
+    setActionLoading(true);
+    try {
+      const response = await roleService.getRoleDetail(roleName);
+      const roleDetail = response.data;
+      
+      // Lưu dữ liệu role vào store để sử dụng khi tạo role mới
+      const fullName = roleDetail.fullName || roleDetail.name;
+      setDuplicateData({
+        fullName: `${fullName}-Copy`,
+        description: roleDetail.description || '',
+        permissions: roleDetail.permissions || [],
+      });
+      toast.success('Đã sao chép role, hãy điều chỉnh thông tin');
+      router.push('/admin/roles/create');
+    } catch (err) {
+      const message = getServerErrorMessage(err) || 'Không thể sao chép role';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  /**
    * Confirm and execute delete
    */
   const confirmDelete = async () => {
@@ -124,6 +152,7 @@ export function RoleManagementTable({ initialParams }: RoleManagementTableProps)
     onDelete: hasPermission(PERMISSIONS.ROLES.DELETE.key) ? handleDeleteClick : undefined,
     onEdit: canAccess(ROUTES.ADMIN.ROLES.EDIT) ? handleEditRole : undefined,
     onView: canAccess(ROUTES.ADMIN.ROLES.DETAIL) ? handleViewRole : undefined,
+    onDuplicate: canAccess(ROUTES.ADMIN.ROLES.CREATE) ? handleDuplicateRole : undefined,
   });
 
   if (loading && roles.length === 0) {

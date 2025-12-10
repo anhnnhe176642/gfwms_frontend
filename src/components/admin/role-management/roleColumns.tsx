@@ -18,6 +18,7 @@ export type RoleColumnActions = {
   onDelete?: (roleName: string) => void
   onEdit?: (roleName: string) => void
   onView?: (roleName: string) => void
+  onDuplicate?: (roleName: string) => void
 }
 
 export const createRoleColumns = (
@@ -138,6 +139,13 @@ export const createRoleColumns = (
                 onClick={() => actions.onEdit?.(role.name)}
               >
                 Chỉnh sửa
+              </DropdownMenuItem>
+            )}
+            {actions.onDuplicate && (
+              <DropdownMenuItem
+                onClick={() => actions.onDuplicate?.(role.name)}
+              >
+                Sao chép
               </DropdownMenuItem>
             )}
             {actions.onDelete && (
