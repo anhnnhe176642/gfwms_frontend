@@ -783,7 +783,7 @@ export const PERMISSIONS = {
     CREATE: {
       key: 'creadit_request:create',
       description: 'Tạo đơn đăng ký nợ mới',
-      parentPermissionKey: 'creadit_request:view_list',
+      parentPermissionKey: null,
       level: 2,
     },
     APPROVE: {
