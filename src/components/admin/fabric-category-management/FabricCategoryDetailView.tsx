@@ -10,6 +10,7 @@ import { fabricCategoryService } from '@/services/fabricCategory.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit } from 'lucide-react';
 import { useNavigation } from '@/hooks/useNavigation';
+import { CategoryImageUpload } from './CategoryImageUpload';
 import type { FabricCategoryListItem } from '@/types/fabricCategory';
 
 export interface FabricCategoryDetailViewProps {
@@ -164,6 +165,23 @@ export function FabricCategoryDetailView({ categoryId, onEdit }: FabricCategoryD
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Category Image Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Ảnh đại diện</CardTitle>
+          <CardDescription>Tải lên hoặc cập nhật ảnh đại diện loại vải</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CategoryImageUpload
+            categoryId={category.id}
+            currentCategory={category}
+            onSuccess={(updatedCategory) => {
+              setCategory(updatedCategory);
+            }}
+          />
         </CardContent>
       </Card>
 

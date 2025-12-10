@@ -6,6 +6,8 @@ export type FabricCategoryListItem = {
   description?: string;
   sellingPricePerMeter?: number;
   sellingPricePerRoll?: number;
+  image?: string;
+  imagePublicId?: string;
   createdAt: string;
   updatedAt: string;
 };

@@ -54,6 +54,21 @@ export const fabricCategoryService = {
   deleteFabricCategory: async (id: string | number): Promise<void> => {
     await api.delete(`${BASE_PATH}/${id}`);
   },
+
+  /**
+   * Tải ảnh lên cho fabric category
+   */
+  uploadFabricCategoryImage: async (id: string | number, file: File): Promise<FabricCategoryListItem> => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await api.put<UpdateFabricCategoryResponse>(`${BASE_PATH}/${id}/image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
+  },
 };
 
 export default fabricCategoryService;
