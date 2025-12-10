@@ -129,8 +129,9 @@ function PermissionTreeItem({
           }}
         >
           <p className={`text-sm font-medium ${isDisabledBool ? 'text-muted-foreground' : isGroupNode ? 'text-foreground font-semibold' : 'text-foreground'}`}>
-            {node.description}
+            {node.groupTitle || node.description}
           </p>
+          {isGroupNode && node.groupDescription && <p className="text-xs text-muted-foreground">{node.groupDescription}</p>}
           {!isGroupNode && <p className="text-xs text-muted-foreground">{node.key}</p>}
         </div>
       </div>
