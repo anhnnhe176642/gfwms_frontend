@@ -369,6 +369,21 @@ export const ROUTES = {
       },
     },
 
+    // Credit Request Management
+    CREDIT_REQUESTS: {
+      LIST: {
+        path: '/admin/credit-requests',
+        name: 'Quản lý đơn hạn mức',
+        description: 'Danh sách lịch sử đơn đăng ký hạn mức',
+        requiredPermission: PERMISSIONS.CREADIT_REQUEST.VIEW_LIST.key,
+      },
+      DETAIL: {
+        path: '/admin/credit-requests/:id',
+        name: 'Chi tiết đơn hạn mức',
+        requiredPermission: PERMISSIONS.CREADIT_REQUEST.VIEW_DETAIL.key,
+      },
+    },
+
     // Role Management
     ROLES: {
       LIST: {

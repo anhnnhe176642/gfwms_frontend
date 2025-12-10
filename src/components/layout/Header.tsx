@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { LogOut, User, Settings, LayoutDashboard } from 'lucide-react';
+import { LogOut, User, Settings, LayoutDashboard, CreditCard } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -67,9 +67,9 @@ export const Header: React.FC = () => {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href={ROUTES.ADMIN.DASHBOARD.path} className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Dashboard
+                    <Link href="/profile/credit-request" className="cursor-pointer">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Đăng ký hạn mức
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

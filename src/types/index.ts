@@ -79,6 +79,17 @@ export type {
   ExportFabricListParams,
 } from './exportFabric';
 
+// Credit Request types
+export type {
+  CreditRequestStatus,
+  CreditRequestType,
+  CreditRequest,
+  CreditRequestListItem,
+  CreditRequestListResponse,
+  CreditRequestListParams,
+  UpdateCreditRequestStatusPayload,
+} from './creditRequest';
+
 // Auth types 
 export type * from './auth';
 

@@ -5,6 +5,7 @@ import type { ImportFabricStatus } from '@/types/importFabric';
 import type { ExportFabricStatus } from '@/types/exportFabric';
 import type { InvoiceStatus } from '@/types/invoice';
 import type { OrderStatus, PaymentType } from '@/types/order';
+import type { CreditRequestStatus, CreditRequestType } from '@/types/creditRequest';
 import { Badge } from '@/components/ui/badge';
 import { USER_STATUS_CONFIG } from '@/constants/user';
 import { IMPORT_FABRIC_STATUS_CONFIG } from '@/constants/importFabric';
@@ -12,6 +13,7 @@ import { DATASET_STATUS_CONFIG } from '@/constants/yolo-dataset';
 import { EXPORT_FABRIC_STATUS_CONFIG } from '@/constants/exportFabric';
 import { INVOICE_STATUS_CONFIG } from '@/constants/invoice';
 import { ORDER_STATUS_CONFIG, PAYMENT_TYPE_CONFIG } from '@/constants/order';
+import { CREDIT_REQUEST_STATUS_CONFIG, CREDIT_REQUEST_TYPE_CONFIG } from '@/constants/creditRequest';
 
 type StatusBadgeProps = {
   status: UserStatus | string;
@@ -95,6 +97,30 @@ type PaymentTypeBadgeProps = {
  */
 export function PaymentTypeBadge({ type }: PaymentTypeBadgeProps) {
   return <Badge value={type} config={PAYMENT_TYPE_CONFIG as any} />;
+}
+
+type CreditRequestStatusBadgeProps = {
+  status: CreditRequestStatus;
+};
+
+/**
+ * Status badge component for credit requests
+ * Uses generic Badge component with credit request status config
+ */
+export function CreditRequestStatusBadge({ status }: CreditRequestStatusBadgeProps) {
+  return <Badge value={status} config={CREDIT_REQUEST_STATUS_CONFIG as any} />;
+}
+
+type CreditRequestTypeBadgeProps = {
+  type: CreditRequestType;
+};
+
+/**
+ * Type badge component for credit requests
+ * Uses generic Badge component with credit request type config
+ */
+export function CreditRequestTypeBadge({ type }: CreditRequestTypeBadgeProps) {
+  return <Badge value={type} config={CREDIT_REQUEST_TYPE_CONFIG as any} />;
 }
 
 type RoleBadgeProps = {

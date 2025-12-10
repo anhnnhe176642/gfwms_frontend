@@ -196,10 +196,23 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      label: 'Đăng ký tín dụng',
-      href: ROUTES.ADMIN.CREDITS.LIST.path,
+      label: 'Quản lí tín dụng',
       icon: CreditCard,
-      requiredPermission: PERMISSIONS.CREDITS.VIEW_LIST.key,
+      requiredPermission: null,
+      submenu: [
+        {
+          label: 'Đăng ký tín dụng',
+          href: ROUTES.ADMIN.CREDITS.LIST.path,
+          icon: CreditCard,
+          requiredPermission: PERMISSIONS.CREDITS.VIEW_LIST.key,
+        },
+        {
+          label: 'Đơn hạn mức',
+          href: ROUTES.ADMIN.CREDIT_REQUESTS.LIST.path,
+          icon: CreditCard,
+          requiredPermission: PERMISSIONS.CREADIT_REQUEST.VIEW_LIST.key,
+        },
+      ],
     },
     {
       label: 'Hóa đơn',
