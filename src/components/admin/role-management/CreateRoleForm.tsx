@@ -54,11 +54,15 @@ export function CreateRoleForm() {
     );
 
   // Use role permissions hook
-  const { togglePermission: handleTogglePermission, generateDescriptionFromPermissions } =
+  const { togglePermission: handleTogglePermission, toggleGroupPermissions: handleToggleGroupPermissions, generateDescriptionFromPermissions } =
     useRolePermissions(setFieldValue);
 
   const togglePermission = (permissionKey: string) => {
     handleTogglePermission(permissionKey, values.permissions || []);
+  };
+
+  const toggleGroupPermissions = (groupNodes: any[]) => {
+    handleToggleGroupPermissions(groupNodes, values.permissions || []);
   };
 
   const handleGenerateSummary = async () => {
@@ -202,6 +206,7 @@ export function CreateRoleForm() {
           errors={errors.permissions}
           touched={touched.permissions}
           onTogglePermission={togglePermission}
+          onToggleGroupPermissions={toggleGroupPermissions}
         />
 
         {/* Action Buttons */}

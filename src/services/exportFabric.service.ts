@@ -33,8 +33,17 @@ export type CreateExportFabricResponse = {
 };
 
 const BASE_PATH = '/v1/export-fabrics';
+const REQUESTS_PATH = '/v1/export-fabrics/requests';
 
 export const exportFabricService = {
+  /**
+   * Lấy danh sách yêu cầu xuất vải từ cửa hàng
+   */
+  listRequests: async (params?: ExportFabricListParams): Promise<ExportFabricListResponse> => {
+    const response = await api.get<ExportFabricListResponse>(REQUESTS_PATH, { params });
+    return response.data;
+  },
+
   /**
    * Lấy danh sách phiếu xuất vải theo kho
    */

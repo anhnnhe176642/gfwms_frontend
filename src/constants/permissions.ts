@@ -492,7 +492,17 @@ export const PERMISSIONS = {
     },
   },
 
-  // Export Fabric Management
+  // Export Fabric Requests (Store)
+  EXPORT_FABRIC_REQUESTS: {
+    VIEW_LIST: {
+      key: 'exportFabricRequest:view_list',
+      description: 'Xem danh sách yêu cầu xuất vải',
+      parentPermissionKey: 'system:admin',
+      level: 1,
+    },
+  },
+
+  // Export Fabric Management (Warehouse)
   EXPORT_FABRICS: {
     VIEW_LIST: {
       key: 'exportFabric:view_list',
@@ -503,7 +513,7 @@ export const PERMISSIONS = {
     VIEW_DETAIL: {
       key: 'exportFabric:view_detail',
       description: 'Xem chi tiết các đơn yêu cầu xuất kho',
-      parentPermissionKey: 'exportFabric:view_list',
+      parentPermissionKey: 'exportFabricRequest:view_list',
       level: 2,
     },
     VIEW_DETAIL_WAREHOUSE: {
@@ -515,7 +525,7 @@ export const PERMISSIONS = {
     CREATE: {
       key: 'exportFabric:create',
       description: 'Tạo đơn yêu cầu xuất kho mới',
-      parentPermissionKey: 'exportFabric:view_list',
+      parentPermissionKey: 'exportFabricRequest:view_list',
       level: 2,
     },
     CHANGE_STATUS: {
@@ -527,7 +537,7 @@ export const PERMISSIONS = {
     RECEIVE: {
       key: 'exportFabric:receive',
       description: 'Xác nhận nhận hàng từ cửa hàng',
-      parentPermissionKey: 'exportFabric:view_list',
+      parentPermissionKey: 'exportFabricRequest:view_list',
       level: 2,
     },
   },

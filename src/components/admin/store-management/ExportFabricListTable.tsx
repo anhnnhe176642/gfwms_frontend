@@ -45,7 +45,7 @@ export function ExportFabricListTable({ initialParams, hideWarehouseColumn, hide
     refresh,
     reset
   } = useServerTable<ExportFabricListItem, ExportFabricListParams>({
-    fetchData: exportFabricService.list,
+    fetchData: storeId ? exportFabricService.listRequests : exportFabricService.list,
     initialParams: initialParams || { page: 1, limit: 10 },
     filterConfig: {
       arrayFilters: {

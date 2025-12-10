@@ -154,7 +154,8 @@ export function RoleDetailView({ roleName }: RoleDetailViewProps) {
       <PermissionTree
         selectedPermissions={selectedPermissions}
         isFetching={false}
-        onTogglePermission={() => {}} // Read-only mode, no toggle allowed
+        onTogglePermission={() => {}}
+        isReadOnly={true}
       />
 
       {/* Action Buttons */}

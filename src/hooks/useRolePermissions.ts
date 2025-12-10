@@ -11,6 +11,29 @@ import {
 type SetFieldValue = (field: string, value: any) => void;
 
 /**
+ * Lấy tất cả permission keys từ các children node (recursive)
+ */
+const getAllPermissionKeysFromNodes = (nodes: any[]): string[] => {
+  const keys: string[] = [];
+  
+  const traverse = (nodeList: any[]) => {
+    nodeList.forEach(node => {
+      // Chỉ thêm nếu có key thực (không phải group node)
+      if (node.key && node.key !== null && !node.isGroupNode) {
+        keys.push(node.key);
+      }
+      // Recursively traverse children
+      if (node.children && node.children.length > 0) {
+        traverse(node.children);
+      }
+    });
+  };
+  
+  traverse(nodes);
+  return keys;
+};
+
+/**
  * Hook để quản lý logic quyền trong role form
  * - Toggle permission với 3 trạng thái: none → partial → full → none
  * - Tự động tóm tắt mô tả từ quyền được chọn
@@ -49,6 +72,33 @@ export const useRolePermissions = (setFieldValue: SetFieldValue) => {
       );
       setFieldValue('permissions', updated);
     }
+  };
+
+  /**
+   * Toggle tất cả permissions trong một group
+   * - Nếu chưa có quyền nào được chọn trong group: chọn tất cả
+   * - Nếu đã có một số quyền được chọn: chọn tất cả
+   * - Nếu đã chọn hết: bỏ chọn tất cả
+   */
+  const toggleGroupPermissions = (groupNodes: any[], currentPermissions: string[]) => {
+    const permissionKeysInGroup = getAllPermissionKeysFromNodes(groupNodes);
+    const selectedKeysInGroup = currentPermissions.filter(key => permissionKeysInGroup.includes(key));
+    
+    let updated: string[];
+    
+    if (selectedKeysInGroup.length === permissionKeysInGroup.length) {
+      // Tất cả đã được chọn -> bỏ chọn tất cả
+      updated = currentPermissions.filter(key => !permissionKeysInGroup.includes(key));
+    } else {
+      // Chưa chọn hết hoặc chưa có gì -> chọn tất cả + thêm parent permissions
+      const newPermissions = [
+        ...currentPermissions,
+        ...permissionKeysInGroup.filter(key => !currentPermissions.includes(key))
+      ];
+      updated = addParentPermissions(newPermissions);
+    }
+    
+    setFieldValue('permissions', updated);
   };
 
   /**
@@ -106,6 +156,7 @@ Hãy giải thích vai trò này có thể làm được những gì và không 
 
   return {
     togglePermission,
+    toggleGroupPermissions,
     generateDescriptionFromPermissions,
   };
 };

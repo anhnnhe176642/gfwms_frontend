@@ -11,6 +11,7 @@ import {
   getPermissionState,
   type PermissionTreeNode,
 } from '@/constants/permissions';
+import { PERMISSIONS_TREE } from '@/constants/permissions-tree';
 
 type PermissionTreeProps = {
   selectedPermissions: string[];
@@ -18,6 +19,8 @@ type PermissionTreeProps = {
   errors?: string;
   touched?: boolean;
   onTogglePermission: (permissionKey: string) => void;
+  onToggleGroupPermissions?: (groupNodes: any[], currentPermissions: string[]) => void;
+  isReadOnly?: boolean; // New: true for view-only mode
 };
 
 /**
@@ -29,48 +32,50 @@ function PermissionTreeItem({
   expandedNodes,
   onToggleExpand,
   onTogglePermission,
+  onToggleGroupNodes,
   isParentDisabled,
+  isReadOnly,
 }: {
-  node: PermissionTreeNode;
+  node: any; // Can be from PERMISSIONS_TREE or PermissionTreeNode
   selectedPermissions: Set<string>;
   expandedNodes: Set<string>;
   onToggleExpand: (key: string) => void;
   onTogglePermission: (key: string) => void;
+  onToggleGroupNodes?: (groupNodes: any[], currentPermissions: string[]) => void;
   isParentDisabled: boolean;
+  isReadOnly?: boolean;
 }) {
-  const isExpanded = expandedNodes.has(node.key);
-  const hasChildren = node.children.length > 0;
+  // Check if this is a group node (no actual permission key)
+  const isGroupNode = node.key === null || node.isGroupNode === true;
+  const nodeKey = isGroupNode ? `group-${node.description}` : node.key;
+  
+  const isExpanded = expandedNodes.has(nodeKey);
+  const hasChildren = node.children && node.children.length > 0;
 
-  // Get permission state (none, partial, full)
+  // Get permission state (none, partial, full) - for actual permission nodes and group nodes
   const selectedArray = Array.from(selectedPermissions);
-  const permissionState = getPermissionState(node.key, selectedArray);
+  const permissionState = !isGroupNode ? getPermissionState(node.key, selectedArray) : getGroupNodePermissionState(node.children, selectedPermissions);
 
   // Parent is disabled if it doesn't exist in selected permissions and has a parent
-  const isDisabled = node.parentKey && !selectedPermissions.has(node.parentKey);
+  const isDisabled = !isGroupNode && node.parentKey && !selectedPermissions.has(node.parentKey);
   const isDisabledBool = !!isDisabled;
 
   return (
     <div className="space-y-1">
-      {/* Node Header - Make entire row clickable */}
+      {/* Node Header */}
       <div
         className={`flex items-center gap-2 p-3 rounded-md transition-colors ${
-          isDisabledBool ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-accent/50'
+          isDisabledBool ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent/50'
         }`}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!isDisabledBool) {
-            onTogglePermission(node.key);
-          }
-        }}
       >
-        {/* Expand/Collapse Button - Stop propagation to prevent toggle on expand click */}
+        {/* Expand/Collapse Button */}
         {hasChildren && (
           <button
             type="button"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onToggleExpand(node.key);
+              onToggleExpand(nodeKey);
             }}
             disabled={isDisabledBool}
             className="p-2 -ml-2 hover:bg-accent rounded-md transition-colors shrink-0"
@@ -84,60 +89,66 @@ function PermissionTreeItem({
         )}
         {!hasChildren && <div className="w-9" />}
 
-        {/* Checkbox Display */}
-        <div className="flex items-center shrink-0">
-          <div className="relative h-5 w-5">
-            {permissionState === 'full' ? (
-              <CheckCircle2 className="h-5 w-5 text-primary" />
-            ) : permissionState === 'partial' ? (
-              <MinusCircle className="h-5 w-5 text-amber-500" />
-            ) : (
-              <Circle className="h-5 w-5 text-border" />
-            )}
-          </div>
-        </div>
+        {/* Checkbox Display - Show for actual permission nodes and group nodes */}
+        {!isReadOnly && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isGroupNode && onToggleGroupNodes && hasChildren) {
+                // Toggle group node
+                onToggleGroupNodes(node.children, selectedArray);
+              } else if (!isGroupNode && !isDisabledBool) {
+                // Toggle regular permission node
+                onTogglePermission(node.key);
+              }
+            }}
+            className="flex items-center shrink-0 -ml-1 cursor-pointer"
+            disabled={isDisabledBool}
+          >
+            <div className="relative h-5 w-5">
+              {permissionState === 'full' ? (
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+              ) : permissionState === 'partial' ? (
+                <MinusCircle className="h-5 w-5 text-amber-500" />
+              ) : (
+                <Circle className="h-5 w-5 text-border" />
+              )}
+            </div>
+          </button>
+        )}
+        {isReadOnly && <div className="w-9" />}
 
         {/* Label */}
-        <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium ${isDisabledBool ? 'text-muted-foreground' : 'text-foreground'}`}>
+        <div 
+          className={`flex-1 min-w-0 ${hasChildren && !isReadOnly ? 'cursor-pointer' : ''}`}
+          onClick={() => {
+            if (hasChildren && !isReadOnly) {
+              onToggleExpand(nodeKey);
+            }
+          }}
+        >
+          <p className={`text-sm font-medium ${isDisabledBool ? 'text-muted-foreground' : isGroupNode ? 'text-foreground font-semibold' : 'text-foreground'}`}>
             {node.description}
           </p>
-          <p className="text-xs text-muted-foreground">{node.key}</p>
+          {!isGroupNode && <p className="text-xs text-muted-foreground">{node.key}</p>}
         </div>
       </div>
 
-      {/* Children - Level 1 children show horizontally */}
-      {hasChildren && isExpanded && node.level === 0 && (
-        <div className="ml-4 border-l border-border/50 pl-3 space-y-3">
-          {/* First level children in horizontal grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-x-auto">
-            {node.children.map(child => (
-              <PermissionTreeItem
-                key={child.key}
-                node={child}
-                selectedPermissions={selectedPermissions}
-                expandedNodes={expandedNodes}
-                onToggleExpand={onToggleExpand}
-                onTogglePermission={onTogglePermission}
-                isParentDisabled={isDisabledBool}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Children - Deeper levels (2+) show vertically like normal tree */}
-      {hasChildren && isExpanded && (node.level ?? 0) > 0 && (
+      {/* Children */}
+      {hasChildren && isExpanded && (
         <div className="ml-4 border-l border-border/50 pl-3 space-y-1">
-          {node.children.map(child => (
+          {node.children.map((child: any, index: number) => (
             <PermissionTreeItem
-              key={child.key}
+              key={child.key || `group-${child.description}-${index}`}
               node={child}
               selectedPermissions={selectedPermissions}
               expandedNodes={expandedNodes}
               onToggleExpand={onToggleExpand}
               onTogglePermission={onTogglePermission}
+              onToggleGroupNodes={onToggleGroupNodes}
               isParentDisabled={isDisabledBool}
+              isReadOnly={isReadOnly}
             />
           ))}
         </div>
@@ -146,15 +157,72 @@ function PermissionTreeItem({
   );
 }
 
+/**
+ * Recursive function to count all permissions including nested children
+ */
+function countAllPermissions(nodes: any[]): number {
+  return nodes.reduce((total, node) => {
+    // Count this node if it has a real permission key (not a group node)
+    const nodeCount = node.key !== null && !node.isGroupNode ? 1 : 0;
+    // Add children count recursively
+    const childrenCount = node.children ? countAllPermissions(node.children) : 0;
+    return total + nodeCount + childrenCount;
+  }, 0);
+}
+
+/**
+ * Recursive function to count selected permissions including nested children
+ */
+function countSelectedPermissions(nodes: any[], selectedSet: Set<string>): number {
+  return nodes.reduce((total, node) => {
+    // Count this node if it has a real permission key and is selected
+    const nodeCount = node.key !== null && !node.isGroupNode && selectedSet.has(node.key) ? 1 : 0;
+    // Add children count recursively
+    const childrenCount = node.children ? countSelectedPermissions(node.children, selectedSet) : 0;
+    return total + nodeCount + childrenCount;
+  }, 0);
+}
+
+/**
+ * Lấy state của group node (bao gồm children)
+ */
+function getGroupNodePermissionState(nodes: any[], selectedSet: Set<string>): 'none' | 'partial' | 'full' {
+  if (!nodes || nodes.length === 0) return 'none';
+  const totalPermissions = countAllPermissions(nodes);
+  const selectedPermissions = countSelectedPermissions(nodes, selectedSet);
+  
+  if (selectedPermissions === 0) return 'none';
+  if (selectedPermissions === totalPermissions) return 'full';
+  return 'partial';
+}
+
+/**
+ * Lấy state của group: none (không có gì được chọn), partial (một số được chọn), full (tất cả được chọn)
+ */
+function getGroupPermissionState(nodes: any[], selectedSet: Set<string>): 'none' | 'partial' | 'full' {
+  const totalPermissions = countAllPermissions(nodes);
+  const selectedPermissions = countSelectedPermissions(nodes, selectedSet);
+  
+  if (selectedPermissions === 0) return 'none';
+  if (selectedPermissions === totalPermissions) return 'full';
+  return 'partial';
+}
+
 export function PermissionTree({
   selectedPermissions,
   isFetching,
   errors,
   touched,
   onTogglePermission: onTogglePermissionProp,
+  onToggleGroupPermissions,
+  isReadOnly = false,
 }: PermissionTreeProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(
-    new Set(['system:admin']) // Expand system by default
+    new Set() // Không auto-expand, để người dùng tự mở
+  );
+
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    new Set() // Trạng thái mở/thu gọn các nhóm
   );
 
   const selectedSet = new Set(selectedPermissions);
@@ -167,18 +235,24 @@ export function PermissionTree({
       newExpanded.add(key);
     }
     setExpandedNodes(newExpanded);
-    // Important: This function should NOT trigger any form changes
+  };
+
+  const toggleGroupExpand = (groupKey: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupKey)) {
+      newExpanded.delete(groupKey);
+    } else {
+      newExpanded.add(groupKey);
+    }
+    setExpandedGroups(newExpanded);
   };
 
   const handleTogglePermission = (key: string) => {
     const perm = findPermissionByKey(key);
     if (!perm) return;
 
-    // Just pass the key to toggle - let the parent handle all logic
     onTogglePermissionProp(key);
   };
-
-  const tree = buildPermissionTree(selectedPermissions);
 
   // Validate hierarchy and show warnings
   const missingParents = validatePermissionHierarchy(selectedPermissions);
@@ -208,27 +282,125 @@ export function PermissionTree({
 
         {/* Loading State */}
         {isFetching ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-muted-foreground">Đang tải danh sách quyền...</div>
-          </div>
-        ) : tree.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Không có quyền nào để hiển thị
+          <div className="flex items-center justify-center py-12">
+            <div className="space-y-3 text-center">
+              <div className="inline-block">
+                <div className="h-8 w-8 border-4 border-muted-foreground border-t-primary rounded-full animate-spin" />
+              </div>
+              <div className="text-muted-foreground text-sm">Đang tải danh sách quyền từ backend...</div>
+            </div>
           </div>
         ) : (
-          <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-2">
-            {tree.map(node => (
-              <PermissionTreeItem
-                key={node.key}
-                node={node}
-                selectedPermissions={selectedSet}
-                expandedNodes={expandedNodes}
-                onToggleExpand={toggleExpand}
-                onTogglePermission={handleTogglePermission}
-                isParentDisabled={false}
-              />
-            ))}
-          </div>
+          <>
+            {/* Mode Indicator */}
+            {isReadOnly && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">Chế độ xem - Không thể chỉnh sửa quyền</span>
+              </div>
+            )}
+            
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            {/* Render PERMISSIONS_TREE groups */}
+            {Object.entries(PERMISSIONS_TREE).map(([groupKey, group]: any) => {
+              const isGroupExpanded = expandedGroups.has(group.groupKey);
+              const totalPermissions = countAllPermissions(group.children);
+              const selectedPermissions = countSelectedPermissions(group.children, selectedSet);
+              const groupState = getGroupPermissionState(group.children, selectedSet);
+
+              return (
+                <div key={group.groupKey} className="border rounded-lg overflow-hidden">
+                  {/* Group Header - Collapsible */}
+                  <div className={`flex items-center gap-3 p-4 transition-colors ${
+                    isReadOnly 
+                      ? 'bg-gray-50 dark:bg-gray-900' 
+                      : 'bg-accent/50 hover:bg-accent'
+                  }`}
+                  >
+                    {/* Expand/Collapse Button */}
+                    <button
+                      type="button"
+                      onClick={() => toggleGroupExpand(group.groupKey)}
+                      className="p-2 -ml-2 hover:bg-accent rounded-md transition-colors shrink-0"
+                    >
+                      <ChevronDown
+                        className={`h-5 w-5 text-muted-foreground transition-transform ${
+                          isGroupExpanded ? 'rotate-0' : '-rotate-90'
+                        }`}
+                      />
+                    </button>
+
+                    {/* Group Checkbox */}
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onToggleGroupPermissions) {
+                            onToggleGroupPermissions(group.children, selectedPermissions as any);
+                          }
+                        }}
+                        className="flex items-center shrink-0 -ml-1"
+                      >
+                        <div className="relative h-5 w-5">
+                          {groupState === 'full' ? (
+                            <CheckCircle2 className="h-5 w-5 text-primary" />
+                          ) : groupState === 'partial' ? (
+                            <MinusCircle className="h-5 w-5 text-amber-500" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-border" />
+                          )}
+                        </div>
+                      </button>
+                    )}
+                    {isReadOnly && <div className="w-9" />}
+
+                    {/* Group Info */}
+                    <div 
+                      className={`flex-1 cursor-pointer ${!isReadOnly ? 'hover:opacity-80' : ''}`}
+                      onClick={() => toggleGroupExpand(group.groupKey)}
+                    >
+                      <h3 className={`text-sm font-semibold ${isReadOnly ? 'text-muted-foreground' : 'text-foreground'}`}>
+                        {group.groupTitle}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1">{group.groupDescription}</p>
+                    </div>
+
+                    {/* Counter */}
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium px-2 py-1 rounded ${
+                        isReadOnly
+                          ? 'text-muted-foreground bg-gray-100 dark:bg-gray-800'
+                          : 'text-muted-foreground bg-background'
+                      }`}>
+                        {selectedPermissions}/{totalPermissions}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Group Children - Collapsible Content */}
+                  {isGroupExpanded && (
+                    <div className={`p-4 space-y-1 border-t ${isReadOnly ? 'bg-gray-50 dark:bg-gray-900' : 'bg-card'}`}>
+                      {group.children.map((node: any, index: number) => (
+                        <PermissionTreeItem
+                          key={node.key || `group-${node.description}-${index}`}
+                          node={node}
+                          selectedPermissions={selectedSet}
+                          expandedNodes={expandedNodes}
+                          onToggleExpand={toggleExpand}
+                          onTogglePermission={handleTogglePermission}
+                          onToggleGroupNodes={onToggleGroupPermissions}
+                          isParentDisabled={false}
+                          isReadOnly={isReadOnly}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            </div>
+          </>
         )}
 
         {/* Error Message */}

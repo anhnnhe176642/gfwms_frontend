@@ -204,7 +204,7 @@ export const Sidebar: React.FC = () => {
           label: 'Đăng ký tín dụng',
           href: ROUTES.ADMIN.CREDITS.LIST.path,
           icon: CreditCard,
-          requiredPermission: PERMISSIONS.CREDITS.VIEW_LIST.key,
+          requiredPermission: PERMISSIONS.CREADIT_REGISTRATION.VIEW_LIST.key,
         },
         {
           label: 'Đơn hạn mức',
