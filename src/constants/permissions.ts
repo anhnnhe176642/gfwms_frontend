@@ -506,6 +506,12 @@ export const PERMISSIONS = {
       parentPermissionKey: 'exportFabric:view_list',
       level: 2,
     },
+    VIEW_DETAIL_WAREHOUSE: {
+      key: 'exportFabric:view_detail_warehouse',
+      description: 'Xem chi tiết các đơn yêu cầu xuất kho (warehouse)',
+      parentPermissionKey: 'exportFabric:view_list',
+      level: 2,
+    },
     CREATE: {
       key: 'exportFabric:create',
       description: 'Tạo đơn yêu cầu xuất kho mới',
