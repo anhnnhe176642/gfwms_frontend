@@ -72,6 +72,14 @@ export const roleService = {
     const response = await api.delete<{ message: string }>(`${BASE_PATH}/${roleId}`);
     return response.data;
   },
+
+  /**
+   * Generate role name từ fullName
+   */
+  generateRoleName: async (input: string): Promise<{ message: string; data: { suggestion: string; baseName: string } }> => {
+    const response = await api.post<{ message: string; data: { suggestion: string; baseName: string } }>(`${BASE_PATH}/generate-name`, { input });
+    return response.data;
+  },
 };
 
 export default roleService;

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader, Wand2 } from 'lucide-react';
+import { ArrowLeft, Loader, Wand2, Lightbulb, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +23,10 @@ export function CreateRoleForm() {
   const { handleGoBack } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [isGeneratingName, setIsGeneratingName] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [isNameEditable, setIsNameEditable] = useState(true);
+  const generateNameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Form validation and state management
   const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors, setFieldValue } =
@@ -57,6 +60,39 @@ export function CreateRoleForm() {
   const { togglePermission: handleTogglePermission, toggleGroupPermissions: handleToggleGroupPermissions, generateDescriptionFromPermissions } =
     useRolePermissions(setFieldValue);
 
+  // Auto-generate role name from fullName with debounce (300ms)
+  useEffect(() => {
+    if (generateNameTimeoutRef.current) {
+      clearTimeout(generateNameTimeoutRef.current);
+    }
+
+    const fullName = values.fullName?.trim();
+    if (!fullName) {
+      return;
+    }
+
+    setIsGeneratingName(true);
+
+    generateNameTimeoutRef.current = setTimeout(async () => {
+      try {
+        const result = await roleService.generateRoleName(fullName);
+        setFieldValue('name', result.data.suggestion);
+        setIsNameEditable(true); // Allow user to edit after generation
+      } catch (err) {
+        // Silent fail on generate name error
+        console.error('Error generating role name:', err);
+      } finally {
+        setIsGeneratingName(false);
+      }
+    }, 300);
+
+    return () => {
+      if (generateNameTimeoutRef.current) {
+        clearTimeout(generateNameTimeoutRef.current);
+      }
+    };
+  }, [values.fullName, setFieldValue]);
+
   const togglePermission = (permissionKey: string) => {
     handleTogglePermission(permissionKey, values.permissions || []);
   };
@@ -75,6 +111,11 @@ export function CreateRoleForm() {
     } finally {
       setIsGeneratingSummary(false);
     }
+  };
+
+  const handleClearName = () => {
+    setFieldValue('name', '');
+    setIsNameEditable(true);
   };
 
   return (
@@ -114,23 +155,58 @@ export function CreateRoleForm() {
             <CardDescription>Nhập tên và mô tả cho vai trò mới</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Name */}
+            {/* Name - Auto-generated */}
             <div className="space-y-2">
-              <Label htmlFor="name">
-                Tên vai trò <span className="text-destructive">*</span>
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="name">
+                  Tên vai trò <span className="text-destructive">*</span>
+                </Label>
+                <div className="flex items-center gap-2">
+                  {isGeneratingName && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Loader className="h-3 w-3 animate-spin" />
+                      Đang tạo...
+                    </span>
+                  )}
+                  {!isGeneratingName && values.name && (
+                    <>
+                      <span className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded">
+                        <Lightbulb className="h-3 w-3" />
+                        Gợi ý
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearName}
+                        disabled={isLoading}
+                        className="h-8 w-8 p-0"
+                        title="Xóa gợi ý"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
               <Input
                 id="name"
                 name="name"
-                placeholder="vd: Manager, Editor, Viewer"
+                placeholder="Sẽ tự động tạo từ tên đầy đủ"
                 value={values.name ?? ''}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 disabled={isLoading}
-                className={errors.name && touched.name ? 'border-destructive' : ''}
+                readOnly={!isNameEditable && !!values.name}
+                className={`${
+                  errors.name && touched.name ? 'border-destructive' : ''
+                } ${!isNameEditable && values.name ? 'bg-muted cursor-not-allowed' : ''}`}
               />
               {errors.name && touched.name && (
                 <p className="text-sm text-destructive">{errors.name}</p>
+              )}
+              {values.name && !errors.name && (
+                <p className="text-xs text-muted-foreground">Bạn có thể chỉnh sửa tên này</p>
               )}
             </div>
 

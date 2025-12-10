@@ -7,8 +7,8 @@ import * as yup from 'yup';
 export const createRoleSchema = yup.object().shape({
   name: yup
     .string()
-    .required('Tên vai trò là bắt buộc')
-    .min(2, 'Tên vai trò phải ít nhất 2 ký tự')
+    .default('')
+    .min(0, 'Tên vai trò phải ít nhất 2 ký tự')
     .max(100, 'Tên vai trò không được quá 100 ký tự'),
   fullName: yup
     .string()
