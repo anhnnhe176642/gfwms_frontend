@@ -47,7 +47,7 @@ function PermissionTreeItem({
 }) {
   // Check if this is a group node (no actual permission key)
   const isGroupNode = node.key === null || node.isGroupNode === true;
-  const nodeKey = isGroupNode ? `group-${node.description}` : node.key;
+  const nodeKey = isGroupNode ? `group-${node.groupKey || node.description}` : node.key;
   
   const isExpanded = expandedNodes.has(nodeKey);
   const hasChildren = node.children && node.children.length > 0;
