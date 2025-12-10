@@ -104,13 +104,20 @@ export function CreateOrderFabricTable({
     fetchData: storeFabricService.list,
     initialParams,
     filterConfig: {
+      arrayFilters: {
+        category: 'categoryId',
+        color: 'colorId',
+        gloss: 'glossId',
+        supplier: 'supplierId',
+      },
       sortingFieldMap: {
-        'fabricInfo.category': 'category',
-        'fabricInfo.color': 'color',
-        'fabricInfo.gloss': 'gloss',
-        'fabricInfo.supplier': 'supplier',
-        'inventory.totalMeters': 'totalMeters',
-        'fabricInfo.sellingPrice': 'sellingPrice',
+        'category': 'fabric.category.name',
+        'color': 'fabric.color.name',
+        'gloss': 'fabric.gloss.description',
+        'supplier': 'fabric.supplier.name',
+        'totalMeters': 'totalMeters',
+        'uncutRolls': 'uncutRolls',
+        'sellingPrice': 'fabric.sellingPrice',
       },
     },
     onError: (err) => {
@@ -396,6 +403,13 @@ export function CreateOrderFabricTable({
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
+      </div>
+
+      {/* Info bar */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Tổng: <span className="font-medium">{pagination.total}</span> loại vải
+        </p>
       </div>
 
       {/* Data Table */}

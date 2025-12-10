@@ -13,6 +13,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { StoreFabricListItem } from "@/types/storeFabric"
 import { SortButton } from "@/components/admin/table/SortButton"
+import { InfiniteScrollCategoryFilter } from "@/components/admin/table/InfiniteScrollCategoryFilter"
+import { InfiniteScrollColorFilter } from "@/components/admin/table/InfiniteScrollColorFilter"
+import { InfiniteScrollGlossFilter } from "@/components/admin/table/InfiniteScrollGlossFilter"
+import { InfiniteScrollSupplierFilter } from "@/components/admin/table/InfiniteScrollSupplierFilter"
 
 export type StoreFabricColumnActions = {
   onView?: (fabricId: number) => void
@@ -36,66 +40,75 @@ export const createStoreFabricColumns = (
     }
   },
   {
-    id: "fabricInfo.categoryId",
+    id: "category",
     accessorKey: "fabricInfo.category",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Loại vải</span>
-        <SortButton column={column} label="Sắp xếp theo loại vải" />
-      </div>
+      <InfiniteScrollCategoryFilter column={column} title="Loại vải" />
     ),
     cell: ({ row }) => row.original.fabricInfo.category,
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true
+      const categoryId = row.original.fabricInfo.categoryId
+      return value.includes(String(categoryId))
+    },
     sortingFn: "text",
     meta: {
       title: "Loại vải"
     }
   },
   {
-    id: "fabricInfo.colorId",
+    id: "color",
     accessorKey: "fabricInfo.color",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Màu sắc</span>
-        <SortButton column={column} label="Sắp xếp theo màu sắc" />
-      </div>
+      <InfiniteScrollColorFilter column={column} title="Màu sắc" />
     ),
     cell: ({ row }) => row.original.fabricInfo.color,
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true
+      const colorId = row.original.fabricInfo.colorId
+      return value.includes(colorId)
+    },
     sortingFn: "text",
     meta: {
       title: "Màu sắc"
     }
   },
   {
-    id: "fabricInfo.gloss",
+    id: "gloss",
     accessorKey: "fabricInfo.gloss",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Độ bóng</span>
-        <SortButton column={column} label="Sắp xếp theo độ bóng" />
-      </div>
+      <InfiniteScrollGlossFilter column={column} title="Độ bóng" />
     ),
     cell: ({ row }) => row.original.fabricInfo.gloss,
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true
+      const glossId = row.original.fabricInfo.glossId
+      return value.includes(String(glossId))
+    },
     sortingFn: "text",
     meta: {
       title: "Độ bóng"
     }
   },
   {
-    id: "fabricInfo.supplier",
+    id: "supplier",
     accessorKey: "fabricInfo.supplier",
     header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Nhà cung cấp</span>
-        <SortButton column={column} label="Sắp xếp theo nhà cung cấp" />
-      </div>
+      <InfiniteScrollSupplierFilter column={column} title="Nhà cung cấp" />
     ),
     cell: ({ row }) => row.original.fabricInfo.supplier,
+    filterFn: (row, id, value) => {
+      if (!value || value.length === 0) return true
+      const supplierId = row.original.fabricInfo.supplierId
+      return value.includes(String(supplierId))
+    },
     sortingFn: "text",
     meta: {
       title: "Nhà cung cấp"
     }
   },
   {
+    id: "uncutRolls",
     accessorKey: "inventory.uncutRolls",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
@@ -107,11 +120,13 @@ export const createStoreFabricColumns = (
       const uncutRolls = row.original.inventory.uncutRolls
       return new Intl.NumberFormat('vi-VN').format(uncutRolls)
     },
+    sortingFn: "auto",
     meta: {
       title: "Cuộn chưa cắt"
     }
   },
   {
+    id: "totalMeters",
     accessorKey: "inventory.totalMeters",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
@@ -126,11 +141,13 @@ export const createStoreFabricColumns = (
         minimumFractionDigits: 2,
       }).format(meters) + ' m'
     },
+    sortingFn: "auto",
     meta: {
       title: "Tổng mét"
     }
   },
   {
+    id: "sellingPrice",
     accessorKey: "fabricInfo.sellingPrice",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
@@ -145,11 +162,13 @@ export const createStoreFabricColumns = (
         currency: 'VND'
       }).format(price)
     },
+    sortingFn: "auto",
     meta: {
       title: "Giá bán/cuộn"
     }
   },
   {
+    id: "totalValue",
     accessorKey: "inventory.totalValue",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
@@ -164,11 +183,13 @@ export const createStoreFabricColumns = (
         currency: 'VND'
       }).format(value)
     },
+    sortingFn: "auto",
     meta: {
       title: "Giá trị tồn"
     }
   },
   {
+    id: "cuttingRollMeters",
     accessorKey: "inventory.cuttingRollMeters",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
@@ -183,6 +204,7 @@ export const createStoreFabricColumns = (
         minimumFractionDigits: 2,
       }).format(meters) + ' m'
     },
+    sortingFn: "auto",
     meta: {
       title: "Mét lẻ"
     }
