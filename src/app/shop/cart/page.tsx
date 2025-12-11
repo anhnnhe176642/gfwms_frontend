@@ -22,6 +22,7 @@ import Footer from '@/components/layout/Footer';
 import StoreSelection from '@/components/shop/StoreSelection';
 import CheckoutHandler from '@/components/shop/CheckoutHandler';
 import PaymentDisplay from '@/components/shop/PaymentDisplay';
+import { useAuth } from '@/hooks/useAuth';
 import type { CartItem } from '@/types/cart';
 
 export default function CartPage() {
@@ -49,20 +50,25 @@ export default function CartPage() {
   const selectedStoreId = useCartCheckoutStore((state) => state.selectedStoreId);
   const setSelectedStore = useCartCheckoutStore((state) => state.setSelectedStore);
 
-  const user = useAuthStore((state) => state.user);
+  const { user, isReady: isAuthReady } = useAuth();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
-    if (isClient && user?.id) {
-      if (!isInitialized) {
-        initCart(String(user.id));
+    if (isClient && isAuthReady && user?.id) {
+      const userIdStr = String(user.id);
+      // Check if cart belongs to current user, if not reinitialize
+      if (!cart || cart.userId !== userIdStr) {
+        initCart(userIdStr);
       }
       setIsInitializing(false);
+    } else if (isClient && isAuthReady && !user) {
+      // User is authenticated but logged out
+      setIsInitializing(false);
     }
-  }, [isClient, user?.id, isInitialized, initCart]);
+  }, [isClient, isAuthReady, user?.id]);
 
   if (!isClient || isInitializing) {
     return <IsLoading />;
