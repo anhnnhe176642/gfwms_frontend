@@ -22,6 +22,7 @@ export type WarehouseColumnActions = {
   onView?: (warehouseId: number) => void
   onEdit?: (warehouseId: number) => void
   onDelete?: (warehouseId: number) => void
+  onViewShelves?: (warehouseId: number) => void
 }
 
 export const createWarehouseColumns = (
@@ -128,6 +129,14 @@ export const createWarehouseColumns = (
             <DropdownMenuLabel>Hành động</DropdownMenuLabel>
             <DropdownMenuSeparator />
             
+            {actions.onViewShelves && (
+              <DropdownMenuItem
+                onClick={() => actions.onViewShelves?.(warehouse.id)}
+              >
+                Xem kệ
+              </DropdownMenuItem>
+            )}
+
             {actions.onView && (
               <DropdownMenuItem
                 onClick={() => actions.onView?.(warehouse.id)}

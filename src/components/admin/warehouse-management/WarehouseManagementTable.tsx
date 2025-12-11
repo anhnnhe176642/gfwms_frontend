@@ -81,6 +81,13 @@ export function WarehouseManagementTable({ initialParams }: WarehouseManagementT
   };
 
   /**
+   * Handle view shelves
+   */
+  const handleViewShelvesClick = (warehouseId: number) => {
+    router.push(`/admin/warehouses/${warehouseId}/shelves`);
+  };
+
+  /**
    * Handle edit
    */
   const handleEditClick = (warehouseId: number) => {
@@ -136,6 +143,7 @@ export function WarehouseManagementTable({ initialParams }: WarehouseManagementT
     onDelete: hasPermission(PERMISSIONS.WAREHOUSES.DELETE.key) ? handleDeleteClick : undefined,
     onEdit: canAccess(ROUTES.ADMIN.WAREHOUSES.EDIT) ? handleEditClick : undefined,
     onView: canAccess(ROUTES.ADMIN.WAREHOUSES.DETAIL) ? handleViewClick : undefined,
+    onViewShelves: canAccess(ROUTES.ADMIN.WAREHOUSES.SHELVES) ? handleViewShelvesClick : undefined,
   });
 
   if (loading && warehouses.length === 0) {
