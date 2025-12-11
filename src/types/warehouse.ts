@@ -6,6 +6,8 @@ export type WarehouseListItem = {
   id: number;
   name: string;
   address: string;
+  latitude: number;
+  longitude: number;
   status: WarehouseStatus;
   createdAt: string;
   updatedAt: string;

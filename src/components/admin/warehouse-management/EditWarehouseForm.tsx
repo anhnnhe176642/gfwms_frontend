@@ -22,6 +22,7 @@ import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, Loader, RefreshCw } from 'lucide-react';
 import type { WarehouseListItem } from '@/types/warehouse';
 import { WAREHOUSE_STATUS_OPTIONS } from '@/constants/warehouse';
+import LocationPicker from '@/components/map/LocationPicker';
 
 const WAREHOUSE_STATUSES = [
   { value: 'ACTIVE', label: 'Hoạt động' },
@@ -87,6 +88,8 @@ export function EditWarehouseForm({ warehouseId }: EditWarehouseFormProps) {
     if (warehouse) {
       setFieldValue('name', warehouse.name);
       setFieldValue('address', warehouse.address);
+      setFieldValue('latitude', warehouse.latitude);
+      setFieldValue('longitude', warehouse.longitude);
       setFieldValue('status', warehouse.status);
     }
   }, [warehouse, setFieldValue]);
@@ -206,6 +209,24 @@ export function EditWarehouseForm({ warehouseId }: EditWarehouseFormProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Location Picker */}
+        <LocationPicker
+          latitude={values.latitude}
+          longitude={values.longitude}
+          onLocationChange={(lat, lng) => {
+            setFieldValue('latitude', lat);
+            setFieldValue('longitude', lng);
+          }}
+        />
+
+        {/* Location validation errors */}
+        {(errors.latitude || errors.longitude) && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md text-sm space-y-1">
+            {errors.latitude && <p>{errors.latitude}</p>}
+            {errors.longitude && <p>{errors.longitude}</p>}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4 justify-end">
