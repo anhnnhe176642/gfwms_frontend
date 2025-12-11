@@ -110,6 +110,20 @@ export interface OrderListParams {
   createdTo?: string;
 }
 
+// Create order payload
+export interface CreateOrderItem {
+  fabricId: number;
+  quantity: number;
+  saleUnit: 'METER' | 'ROLL';
+}
+
+export interface CreateOrderPayload {
+  storeId: string | number;
+  orderItems: CreateOrderItem[];
+  paymentType: 'CASH' | 'CREDIT';
+  notes?: string;
+}
+
 // API responses
 export interface OrderListResponse {
   message: string;
@@ -120,4 +134,14 @@ export interface OrderListResponse {
 export interface OrderDetailResponse {
   message: string;
   data: OrderDetail;
+}
+
+export interface CreateOrderResponse {
+  message: string;
+  data: {
+    order: OrderDetail;
+    paymentAmount: number;
+    deadline: string;
+    paymentInstructions: string;
+  };
 }

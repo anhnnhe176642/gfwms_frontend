@@ -9,31 +9,8 @@ import fabricCategoryService from '@/services/fabricCategory.service';
 import type { FabricCategoryListItem } from '@/types/fabricCategory';
 
 interface Category extends FabricCategoryListItem {
-  color: string;
   image?: string;
 }
-
-// Màu gradient tạm thời cho các category (API chưa có ảnh)
-const GRADIENT_COLORS = [
-  'from-blue-400 to-blue-600',
-  'from-purple-400 to-purple-600',
-  'from-orange-400 to-orange-600',
-  'from-pink-400 to-pink-600',
-  'from-green-400 to-green-600',
-  'from-red-400 to-red-600',
-  'from-indigo-400 to-indigo-600',
-  'from-cyan-400 to-cyan-600',
-];
-
-// Link ảnh từ mockup cũ - sử dụng tạm thời khi API chưa có ảnh
-const PLACEHOLDER_IMAGES = [
-  'https://onoff.vn/blog/wp-content/uploads/2018/11/vai-cotton.jpg',
-  'https://hoangphuconline.vn/media/magefan_blog/2022/02/vai-poly-ava-e1646023341901.jpg',
-  'https://ducthao.vn/storage/product/2/vai-len.webp',
-  'https://app.gak.vn/storage/uploads/RVWoTp7zcbCJQt5gakhSUDSTH53TCE3ZmH8qkFnk.jpg',
-  'https://bizweb.dktcdn.net/100/364/149/products/dsc09323-f058bc45-5ad5-4d13-912e-2ce2fa75fa87.jpg?v=1638777846393',
-  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSaWsvihWr8nbmD4OJ9849lKQ0jx-BDF5B_bg&s',
-];
 
 interface CategoriesProps {
   title?: string;
@@ -55,12 +32,11 @@ export default function Categories({ title = 'Danh mục sản phẩm', descript
           page: currentPage,
           limit: itemsPerPage,
         });
-        const categoriesWithColors = response.data.map((category, index) => ({
+        const categoriesWithImages = response.data.map((category) => ({
           ...category,
-          color: GRADIENT_COLORS[index % GRADIENT_COLORS.length],
-          image: PLACEHOLDER_IMAGES[index % PLACEHOLDER_IMAGES.length],
+          image: category.image,
         }));
-        setCategories(categoriesWithColors);
+        setCategories(categoriesWithImages);
         
         // Lấy thông tin phân trang từ backend
         if (response.pagination) {

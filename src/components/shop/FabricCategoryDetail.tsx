@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { IsLoading } from '@/components/common';
+import AddToCart from '@/components/shop/AddToCart';
 
 interface FabricCategoryDetailProps {
   categoryId: string;
@@ -277,8 +278,8 @@ export default function FabricCategoryDetail({ categoryId }: FabricCategoryDetai
                       </p>
                     </div>
 
-                    {/* Action Button */}
-                    <Button className="w-full">Thêm vào giỏ hàng</Button>
+                    {/* Add to Cart */}
+                    <AddToCart fabric={fabric} />
                   </div>
                 </CardContent>
               </Card>

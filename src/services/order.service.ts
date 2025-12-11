@@ -22,6 +22,33 @@ export type CreateOfflineOrderPayload = {
   notes?: string;
 };
 
+export type CreateOrderPayload = {
+  storeId: number | string;
+  orderItems: Array<{
+    fabricId: number;
+    quantity: number;
+    saleUnit: SaleUnit;
+  }>;
+  paymentType: PaymentType;
+  notes?: string;
+};
+
+export type CreateOrderResponse = {
+  message: string;
+  data: {
+    order: OrderDetail;
+    paymentAmount: number;
+    deadline: string;
+    paymentInstructions: {
+      invoiceId: number;
+      amount: number;
+      method: string;
+      url: string;
+      deadline: string;
+    };
+  };
+};
+
 export const orderService = {
   /**
    * Lấy tất cả đơn hàng (Admin)
@@ -37,6 +64,14 @@ export const orderService = {
   getDetail: async (id: number | string): Promise<OrderDetail> => {
     const response = await api.get<OrderDetailResponse>(`${BASE_PATH}/${id}`);
     return response.data.data;
+  },
+
+  /**
+   * Tạo đơn hàng mới
+   */
+  create: async (payload: CreateOrderPayload): Promise<CreateOrderResponse> => {
+    const response = await api.post<CreateOrderResponse>(BASE_PATH, payload);
+    return response.data;
   },
 
   /**

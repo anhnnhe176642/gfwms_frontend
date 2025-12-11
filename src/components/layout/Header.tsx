@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
-import { LogOut, User, Settings, LayoutDashboard, CreditCard } from 'lucide-react';
+import { LogOut, User, Settings, LayoutDashboard, CreditCard, ShoppingCart } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { useCartStore } from '@/store/useCartStore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,7 @@ import { ROUTES } from '@/config/routes';
 
 export const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const totalItems = useCartStore((state) => state.getTotalItems());
 
   const handleLogout = () => {
     logout();
@@ -37,6 +39,18 @@ export const Header: React.FC = () => {
           
           {isAuthenticated && user ? (
             <>
+              {/* Cart Button */}
+              <Button asChild variant="outline" size="sm" className="relative">
+                <Link href="/shop/cart">
+                  <ShoppingCart className="h-4 w-4" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {totalItems}
+                    </span>
+                  )}
+                </Link>
+              </Button>
+
               {user?.permissionKeys?.includes('system:admin') && (
                 <Button asChild variant="default" size="sm">
                   <Link href={ROUTES.ADMIN.DASHBOARD.path} className="flex items-center gap-2">
