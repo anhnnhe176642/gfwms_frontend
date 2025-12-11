@@ -164,6 +164,12 @@ export function ExportRequestTable({
         });
       } else {
         newMap.delete(fabric.id);
+        // Xoá lỗi validate khi bỏ select
+        setQuantityErrors((prevErrors) => {
+          const newErrors = new Map(prevErrors);
+          newErrors.delete(fabric.id);
+          return newErrors;
+        });
       }
       return newMap;
     });
@@ -282,17 +288,34 @@ export function ExportRequestTable({
       return;
     }
 
-    // Validate quantities - check for errors
-    const hasErrors = Array.from(quantityErrors.values()).length > 0;
+    // Duyệt lại validate tất cả selected items
+    const newErrors = new Map<number, QuantityError>();
+    let hasErrors = false;
+
+    items.forEach((item) => {
+      const maxStock = item.fabric.quantityInStock;
+      const qty = item.quantity;
+
+      if (!qty || qty <= 0) {
+        newErrors.set(item.fabricId, {
+          message: 'Số lượng phải lớn hơn 0',
+          type: 'invalid',
+        });
+        hasErrors = true;
+      } else if (qty > maxStock) {
+        newErrors.set(item.fabricId, {
+          message: `Vượt quá tồn kho (${maxStock})`,
+          type: 'exceeds_stock',
+        });
+        hasErrors = true;
+      }
+    });
+
+    // Cập nhật errors
+    setQuantityErrors(newErrors);
+
     if (hasErrors) {
       toast.error('Vui lòng sửa lỗi nhập liệu');
-      return;
-    }
-
-    // Validate quantities - all selected items must have valid quantity
-    const invalidItems = items.filter((item) => !item.quantity || item.quantity <= 0);
-    if (invalidItems.length > 0) {
-      toast.error('Vui lòng nhập số lượng hợp lệ cho tất cả mặt hàng đã chọn');
       return;
     }
 
