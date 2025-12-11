@@ -79,7 +79,7 @@ export function InfiniteScrollFilter<TData, TParams extends Record<string, any>>
   const [tempFilterValue, setTempFilterValue] = useState<string[]>([]);
   const componentId = useId();
 
-  const { data, loading, hasMore, loadMore, handleSearch } = useInfiniteScroll(hookOptions);
+  const { data, loading, hasMore, error, loadMore, handleSearch } = useInfiniteScroll(hookOptions);
 
   // Sync temp value when popover opens
   const prevOpenRef = useRef(open);
@@ -170,7 +170,18 @@ export function InfiniteScrollFilter<TData, TParams extends Record<string, any>>
             {/* Items list with infinite scroll */}
             <div className="flex-1 overflow-y-auto px-4 pt-2 min-h-40">
               <div className="flex flex-col gap-2 h-full">
-                {data.length === 0 && !loading ? (
+                {/* Error state */}
+                {error && (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-red-600 mb-2">Lỗi tải dữ liệu</p>
+                      <p className="text-xs text-red-500">{error}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* No data state */}
+                {data.length === 0 && !loading && !error ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-sm text-gray-500">Không có dữ liệu</div>
                   </div>
@@ -204,14 +215,14 @@ export function InfiniteScrollFilter<TData, TParams extends Record<string, any>>
                   </>
                 )}
 
-                {/* Infinite Scroll Trigger */}
+                {/* Infinite Scroll Trigger - stop if error */}
                 <InfiniteScroll
-                  hasMore={hasMore}
+                  hasMore={hasMore && !error}
                   isLoading={loading}
                   next={loadMore}
                   threshold={0.5}
                 >
-                  {hasMore && (
+                  {hasMore && !error && (
                     <div className="flex items-center justify-center h-12">
                       <div className="flex items-center gap-1">
                         {/* Modern gradient spinner - fixed height to avoid jumps */}

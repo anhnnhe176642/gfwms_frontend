@@ -13,13 +13,33 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { warehouseService } from '@/services/warehouse.service';
 import { fabricService } from '@/services/fabric.service';
-import { getServerErrorMessage } from '@/lib/errorHandler';
+import { getServerErrorMessage, extractFieldErrors } from '@/lib/errorHandler';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, RefreshCw, Package, User, Calendar, DollarSign, FileText, Layers } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Package, User, Calendar, DollarSign, FileText, Layers, Settings } from 'lucide-react';
 import { useNavigation } from '@/hooks/useNavigation';
-import type { FabricShelfDetailData, FabricShelfImportItem } from '@/types/warehouse';
+import { useAuth } from '@/hooks/useAuth';
+import { PERMISSIONS } from '@/constants/permissions';
+import type { FabricShelfDetailData, FabricShelfImportItem, AdjustmentType } from '@/types/warehouse';
 import type { FabricListItem } from '@/types/fabric';
 
 export interface FabricShelfDetailViewProps {
@@ -31,10 +51,20 @@ export interface FabricShelfDetailViewProps {
 export function FabricShelfDetailView({ shelfId, fabricId, warehouseId }: FabricShelfDetailViewProps) {
   const router = useRouter();
   const { handleGoBack } = useNavigation();
+  const { hasPermission } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<FabricShelfDetailData | null>(null);
   const [fabric, setFabric] = useState<FabricListItem | null>(null);
   const [error, setError] = useState('');
+  const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [adjustmentForm, setAdjustmentForm] = useState({
+    importId: '',
+    quantity: '',
+    type: 'IMPORT' as AdjustmentType,
+    reason: '',
+  });
 
   // Fetch fabric shelf detail
   useEffect(() => {
@@ -113,6 +143,68 @@ export function FabricShelfDetailView({ shelfId, fabricId, warehouseId }: Fabric
   const handleViewImportDetail = (importId: number) => {
     router.push(`/admin/warehouses/${warehouseId}/import-fabrics/${importId}`);
   };
+
+  // Handle adjustment submission
+  const handleAdjustmentSubmit = async () => {
+    // Clear previous errors
+    setFieldErrors({});
+    
+    // Validate form
+    if (!adjustmentForm.importId || !adjustmentForm.quantity || !adjustmentForm.reason) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await warehouseService.adjustFabricQuantity(shelfId, {
+        fabricId,
+        importId: parseInt(adjustmentForm.importId),
+        quantity: parseInt(adjustmentForm.quantity),
+        type: adjustmentForm.type,
+        reason: adjustmentForm.reason,
+      });
+
+      toast.success('Điều chỉnh số lượng vải thành công');
+      setIsAdjustDialogOpen(false);
+      setAdjustmentForm({
+        importId: '',
+        quantity: '',
+        type: 'IMPORT',
+        reason: '',
+      });
+      
+      // Refresh data
+      const result = await warehouseService.getFabricShelfDetail(shelfId, fabricId);
+      setData(result);
+    } catch (err) {
+      const errors = extractFieldErrors(err);
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+      }
+      const message = getServerErrorMessage(err) || 'Không thể điều chỉnh số lượng vải';
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle adjustment form change
+  const handleAdjustmentFormChange = (field: string, value: any) => {
+    setAdjustmentForm(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+    // Clear error for this field when user starts typing
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [field]: '',
+      }));
+    }
+  };
+
+  const canAdjustFabric = hasPermission(PERMISSIONS.SHELVES.ADJUST_FABRIC.key);
 
   if (isLoading) {
     return (
@@ -269,9 +361,9 @@ export function FabricShelfDetailView({ shelfId, fabricId, warehouseId }: Fabric
       {/* Imports Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Lịch sử nhập hàng</CardTitle>
+          <CardTitle className="text-xl">Lô hàng</CardTitle>
           <CardDescription>
-            Danh sách các lần nhập vải này vào kệ
+            Danh sách các lô hàng đã nhập vải vào kệ {data.shelf.code}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -328,13 +420,32 @@ export function FabricShelfDetailView({ shelfId, fabricId, warehouseId }: Fabric
                         {getStatusBadge(importItem.importStatus)}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewImportDetail(importItem.importId)}
-                        >
-                          Xem phiếu
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewImportDetail(importItem.importId)}
+                          >
+                            Xem phiếu
+                          </Button>
+                          {canAdjustFabric && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setAdjustmentForm({
+                                  importId: importItem.importId.toString(),
+                                  quantity: '',
+                                  type: 'IMPORT',
+                                  reason: '',
+                                });
+                                setIsAdjustDialogOpen(true);
+                              }}
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -352,6 +463,93 @@ export function FabricShelfDetailView({ shelfId, fabricId, warehouseId }: Fabric
           Quay lại
         </Button>
       </div>
+
+      {/* Adjustment Dialog */}
+      <Dialog open={isAdjustDialogOpen} onOpenChange={setIsAdjustDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Điều chỉnh số lượng vải</DialogTitle>
+            <DialogDescription>
+              Điều chỉnh số lượng vải trên kệ {data?.shelf.code} - Lô nhập #{adjustmentForm.importId || '...'} (Vải #{fabricId})
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Type selection */}
+            <div className="space-y-2">
+              <Label htmlFor="type">Loại điều chỉnh *</Label>
+              <Select
+                value={adjustmentForm.type}
+                onValueChange={(value) => handleAdjustmentFormChange('type', value as AdjustmentType)}
+              >
+                <SelectTrigger id="type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IMPORT">Tăng (Nhập)</SelectItem>
+                  <SelectItem value="DESTROY">Giảm (Hủy)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Quantity input */}
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Số lượng *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                placeholder="Nhập số lượng"
+                value={adjustmentForm.quantity}
+                onChange={(e) => handleAdjustmentFormChange('quantity', e.target.value)}
+                min="1"
+                className={fieldErrors.quantity ? 'border-red-500 focus:ring-red-500' : ''}
+              />
+              {fieldErrors.quantity && (
+                <p className="text-xs text-red-500">{fieldErrors.quantity}</p>
+              )}
+            </div>
+
+            {/* Reason textarea */}
+            <div className="space-y-2">
+              <Label htmlFor="reason">Lý do điều chỉnh *</Label>
+              <Textarea
+                id="reason"
+                placeholder="Nhập lý do điều chỉnh..."
+                value={adjustmentForm.reason}
+                onChange={(e) => handleAdjustmentFormChange('reason', e.target.value)}
+                rows={3}
+                className={fieldErrors.reason ? 'border-red-500 focus:ring-red-500' : ''}
+              />
+              {fieldErrors.reason && (
+                <p className="text-xs text-red-500">{fieldErrors.reason}</p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsAdjustDialogOpen(false)}
+              disabled={isSubmitting}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleAdjustmentSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                'Xác nhận'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

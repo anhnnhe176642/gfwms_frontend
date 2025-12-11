@@ -13,3 +13,5 @@ export { ShelfCard } from './ShelfCard';
 export { ShelfCardGrid } from './ShelfCardGrid';
 export { WarehouseImportFabricsList } from './WarehouseImportFabricsList';
 export { createImportFabricColumns } from './importFabricColumns';
+export { AdjustFabricHistoryTable } from './AdjustFabricHistoryTable';
+export { createAdjustFabricHistoryColumns } from './adjustFabricHistoryColumns';

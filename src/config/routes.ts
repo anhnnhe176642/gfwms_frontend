@@ -314,6 +314,12 @@ export const ROUTES = {
         name: 'Xử lý phiếu xuất',
         requiredPermission: PERMISSIONS.EXPORT_FABRICS.CHANGE_STATUS.key,
       },
+      ADJUST_FABRIC_HISTORY: {
+        path: '/admin/warehouses/adjust-fabric-history',
+        name: 'Lịch sử điều chỉnh vải',
+        description: 'Lịch sử điều chỉnh số lượng vải trên kệ',
+        requiredPermission: PERMISSIONS.SHELVES.ADJUST_FABRIC.key,
+      },
     },
 
     // Shelf Management

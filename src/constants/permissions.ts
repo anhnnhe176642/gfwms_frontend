@@ -423,6 +423,12 @@ export const PERMISSIONS = {
       parentPermissionKey: 'shelf:view_list',
       level: 2,
     },
+    ADJUST_FABRIC: {
+      key: 'shelf:adjust_fabric',
+      description: 'Điều chỉnh số lượng vải trên kệ',
+      parentPermissionKey: 'shelf:view_detail',
+      level: 3,
+    },
   },
 
   // Credit Registration

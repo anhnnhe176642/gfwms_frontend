@@ -168,6 +168,14 @@ export const Sidebar: React.FC = () => {
           requiredPermission: PERMISSIONS.SHELVES.VIEW_LIST.key,
         },
       ],
+      submenu: [
+        {
+          label: 'Lịch sử điều chỉnh vải',
+          href: ROUTES.ADMIN.WAREHOUSES.ADJUST_FABRIC_HISTORY.path,
+          icon: FileText,
+          requiredPermission: PERMISSIONS.SHELVES.ADJUST_FABRIC.key,
+        },
+      ],
     },
     {
       label: 'Quản lý cửa hàng',

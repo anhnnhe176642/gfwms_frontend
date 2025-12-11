@@ -23,6 +23,11 @@ import type {
   FabricPickupResponse,
   FabricPickupData,
   FabricPickupParams,
+  AdjustFabricPayload,
+  AdjustFabricResponse,
+  AdjustFabricResponseData,
+  AdjustFabricHistoryParams,
+  AdjustFabricHistoryResponse,
 } from '@/types/warehouse';
 import type { CreateWarehouseFormData, UpdateWarehouseFormData } from '@/schemas/warehouse.schema';
 
@@ -188,6 +193,31 @@ export const warehouseService = {
       { params }
     );
     return response.data.data;
+  },
+
+  /**
+   * Điều chỉnh số lượng vải trên kệ (tăng hoặc giảm)
+   */
+  adjustFabricQuantity: async (
+    shelfId: string | number,
+    payload: AdjustFabricPayload
+  ): Promise<AdjustFabricResponseData> => {
+    const response = await api.post<AdjustFabricResponse>(
+      `/v1/warehouses/shelves/${shelfId}/adjust-fabric`,
+      payload
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Lấy lịch sử điều chỉnh số lượng vải trên kệ
+   */
+  getAdjustFabricHistory: async (params?: AdjustFabricHistoryParams): Promise<AdjustFabricHistoryResponse> => {
+    const response = await api.get<AdjustFabricHistoryResponse>(
+      '/v1/warehouses/shelves/adjust-fabric-history',
+      { params }
+    );
+    return response.data;
   },
 };
 

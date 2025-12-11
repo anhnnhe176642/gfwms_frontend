@@ -347,3 +347,157 @@ export type AssignUserWarehousesResponse = {
   message: string;
   data: AssignUserWarehousesResult;
 };
+
+// Fabric Adjustment Types
+export type AdjustmentType = 'IMPORT' | 'DESTROY';
+
+export type AdjustFabricPayload = {
+  fabricId: number | string;
+  importId: number;
+  quantity: number;
+  type: AdjustmentType;
+  reason: string;
+};
+
+export type AdjustmentUser = {
+  id: string;
+  username: string;
+  fullname: string;
+  email: string;
+};
+
+export type AdjustmentData = {
+  id: number;
+  fabricId: number;
+  shelfId: number;
+  quantity: number;
+  type: AdjustmentType;
+  price: number;
+  reason: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  user: AdjustmentUser;
+};
+
+export type FabricShelfAfterAdjustment = {
+  shelfId: number;
+  fabricId: number;
+  importId: number;
+  oldQuantity: number;
+  newQuantity: number;
+  change: number;
+  type: AdjustmentType;
+  fabric: {
+    id: number;
+  };
+  shelf: {
+    id: number;
+    code: string;
+  };
+  updatedAt: string;
+};
+
+export type AdjustFabricResponseData = {
+  adjustment: AdjustmentData;
+  fabricShelf: FabricShelfAfterAdjustment;
+};
+
+export type AdjustFabricResponse = {
+  message: string;
+  data: AdjustFabricResponseData;
+};
+
+// Fabric Adjustment History Types
+export type AdjustFabricHistoryItem = {
+  id: number;
+  fabricId: number;
+  shelfId: number;
+  quantity: number;
+  type: AdjustmentType;
+  price: number;
+  reason: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    username: string;
+    fullname: string;
+    email: string;
+  };
+  fabric: {
+    id: number;
+    thickness: number;
+    length: number;
+    width: number;
+    weight: number;
+    sellingPrice: number;
+    quantityInStock: number;
+    categoryId: number;
+    colorId: string;
+    supplierId: number;
+    glossId: number;
+    createdAt: string;
+    updatedAt: string;
+    category: {
+      id: number;
+      name: string;
+      description: string;
+      sellingPricePerMeter: number;
+      sellingPricePerRoll: number;
+      image: string;
+    };
+    color: {
+      id: string;
+      name: string;
+      hexCode: string;
+    };
+    supplier: {
+      id: number;
+      name: string;
+      address: string;
+      phone: string;
+      isActive: boolean;
+    };
+    gloss: {
+      id: number;
+      description: string;
+    };
+  };
+  shelf: {
+    id: number;
+    code: string;
+    warehouseId: number;
+    currentQuantity: number;
+    maxQuantity: number;
+    warehouse: {
+      id: number;
+      name: string;
+      address: string;
+      latitude: number;
+      longitude: number;
+      status: WarehouseStatus;
+    };
+  };
+};
+
+export type AdjustFabricHistoryParams = {
+  page?: number;
+  limit?: number;
+  fabricId?: string;
+  shelfId?: string;
+  type?: string;
+  sortBy?: string;
+  order?: 'asc' | 'desc';
+  createdFrom?: string;
+  createdTo?: string;
+  search?: string;
+};
+
+export type AdjustFabricHistoryResponse = {
+  message: string;
+  data: AdjustFabricHistoryItem[];
+  pagination: PaginationState;
+};
+

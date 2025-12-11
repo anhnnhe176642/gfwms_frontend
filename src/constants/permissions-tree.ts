@@ -551,6 +551,12 @@ export const PERMISSIONS_TREE = {
                 level: 2,
                 children: [],
               },
+              {
+                key: PERMISSIONS.SHELVES.ADJUST_FABRIC.key,
+                description: PERMISSIONS.SHELVES.ADJUST_FABRIC.description,
+                level: 3,
+                children: [],
+              },
             ],
           },
           
