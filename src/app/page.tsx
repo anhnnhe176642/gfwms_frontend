@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LogIn, UserPlus } from 'lucide-react';
@@ -15,10 +15,33 @@ import {
   Categories,
   WhyUs,
   Newsletter,
+  StoreMap,
 } from '@/components/home';
+import { storeService } from '@/services/store.service';
+import type { StoreListItem } from '@/types/store';
 
 export default function Home() {
   const { user, isAuthenticated, isReady } = useAuth();
+  const [stores, setStores] = useState<StoreListItem[]>([]);
+  const [isLoadingStores, setIsLoadingStores] = useState(true);
+
+  // Fetch stores data
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        setIsLoadingStores(true);
+        const response = await storeService.getStores({ limit: 100 });
+        setStores(response.data || []);
+      } catch (err) {
+        console.error('Failed to fetch stores:', err);
+        setStores([]);
+      } finally {
+        setIsLoadingStores(false);
+      }
+    };
+
+    fetchStores();
+  }, []);
 
   if (!isReady) {
     return (
@@ -50,6 +73,18 @@ export default function Home() {
           <div className="px-4">
             <FeaturedProducts />
           </div>
+
+          {/* Store Map Section */}
+          {!isLoadingStores && stores.length > 0 && (
+            <div className="px-4">
+              <StoreMap
+                stores={stores}
+                title="Vị trí các cửa hàng của chúng tôi"
+                description="Tìm cửa hàng gần nhất của chúng tôi"
+                height="h-96"
+              />
+            </div>
+          )}
 
           {/* Why Us */}
           <div className="px-4">

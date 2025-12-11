@@ -4,6 +4,8 @@ export type StoreListItem = {
   id: number;
   name: string;
   address: string;
+  latitude: number;
+  longitude: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

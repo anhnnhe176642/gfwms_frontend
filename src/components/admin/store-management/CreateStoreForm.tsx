@@ -13,6 +13,7 @@ import { createStoreSchema, type CreateStoreFormData } from '@/schemas/store.sch
 import { storeService } from '@/services/store.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, Loader } from 'lucide-react';
+import LocationPicker from '@/components/map/LocationPicker';
 
 export function CreateStoreForm() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export function CreateStoreForm() {
   const [serverError, setServerError] = useState('');
 
   // Form validation and state management
-  const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors } =
+  const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldErrors, setFieldValue } =
     useFormValidation<CreateStoreFormData>(createStoreSchema, async (data: CreateStoreFormData) => {
       setIsLoading(true);
       setServerError('');
@@ -121,6 +122,24 @@ export function CreateStoreForm() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Location Picker */}
+        <LocationPicker
+          latitude={values.latitude}
+          longitude={values.longitude}
+          onLocationChange={(lat, lng) => {
+            setFieldValue('latitude', lat);
+            setFieldValue('longitude', lng);
+          }}
+        />
+
+        {/* Location validation errors */}
+        {(errors.latitude || errors.longitude) && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md text-sm space-y-1">
+            {errors.latitude && <p>{errors.latitude}</p>}
+            {errors.longitude && <p>{errors.longitude}</p>}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4 justify-end">

@@ -21,6 +21,7 @@ import { storeService } from '@/services/store.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, Loader, RefreshCw } from 'lucide-react';
 import type { StoreListItem } from '@/types/store';
+import LocationPicker from '@/components/map/LocationPicker';
 
 const STORE_ACTIVE_STATUS = [
   { value: 'true', label: 'Hoạt động' },
@@ -86,6 +87,8 @@ export function EditStoreForm({ storeId }: EditStoreFormProps) {
     if (store) {
       setFieldValue('name', store.name);
       setFieldValue('address', store.address);
+      setFieldValue('latitude', store.latitude);
+      setFieldValue('longitude', store.longitude);
       setFieldValue('isActive', store.isActive);
     }
   }, [store, setFieldValue]);
@@ -178,38 +181,54 @@ export function EditStoreForm({ storeId }: EditStoreFormProps) {
               )}
             </div>
 
-            {/* Status */}
-            <div className="space-y-2">
-              <Label htmlFor="isActive">
-                Trạng thái <span className="text-destructive">*</span>
-              </Label>
-              <Select 
-                value={values.isActive !== undefined ? String(values.isActive) : 'true'} 
-                onValueChange={(value) => {
-                  handleChange({
-                    target: { name: 'isActive', value: value === 'true' },
-                  } as any);
-                }}
-              >
-                <SelectTrigger id="isActive" disabled={isLoading}>
-                  <SelectValue placeholder="Chọn trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STORE_ACTIVE_STATUS.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.isActive && touched.isActive && (
-                <p className="text-sm text-destructive">{errors.isActive}</p>
-              )}
-            </div>
+        {/* Status */}
+        <div className="space-y-2">
+          <Label htmlFor="isActive">
+            Trạng thái <span className="text-destructive">*</span>
+          </Label>
+          <Select 
+            value={values.isActive !== undefined ? String(values.isActive) : 'true'} 
+            onValueChange={(value) => {
+              handleChange({
+                target: { name: 'isActive', value: value === 'true' },
+              } as any);
+            }}
+          >
+            <SelectTrigger id="isActive" disabled={isLoading}>
+              <SelectValue placeholder="Chọn trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              {STORE_ACTIVE_STATUS.map((status) => (
+                <SelectItem key={status.value} value={status.value}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.isActive && touched.isActive && (
+            <p className="text-sm text-destructive">{errors.isActive}</p>
+          )}
+        </div>
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
+        {/* Location Picker */}
+        <LocationPicker
+          latitude={values.latitude}
+          longitude={values.longitude}
+          onLocationChange={(lat, lng) => {
+            setFieldValue('latitude', lat);
+            setFieldValue('longitude', lng);
+          }}
+        />
+
+        {/* Location validation errors */}
+        {(errors.latitude || errors.longitude) && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md text-sm space-y-1">
+            {errors.latitude && <p>{errors.latitude}</p>}
+            {errors.longitude && <p>{errors.longitude}</p>}
+          </div>
+        )}        {/* Action Buttons */}
         <div className="flex gap-4 justify-end">
           <Button
             type="button"
