@@ -158,14 +158,24 @@ export type SuggestFabricItem = {
   quantity: number;
 };
 
+export type LocationCoordinates = {
+  latitude: number;
+  longitude: number;
+};
+
+export type AllocationStrategy = 'MIN_WAREHOUSES' | 'MIN_DISTANCE';
+
 export type SuggestAllocationRequest = {
   fabricItems: SuggestFabricItem[];
+  priority?: AllocationStrategy; // Default: 'MIN_WAREHOUSES'
+  destinationLocation?: LocationCoordinates; // Required for MIN_DISTANCE strategy
 };
 
 export type WarehouseStock = {
   warehouseId: number;
   warehouseName: string;
   currentStock: number;
+  distance?: number; // Distance in km from destination (for MIN_DISTANCE strategy)
   selected: boolean;
   takeQuantity: number;
 };
@@ -206,9 +216,24 @@ export type SuggestFabricAllocation = {
   isSufficient: boolean;
 };
 
+export type WarehouseDetail = {
+  warehouseId: number;
+  warehouseName: string;
+  distance?: number; // Distance in km from destination (for MIN_DISTANCE strategy)
+  cumulativeDistance?: number; // Cumulative distance when selecting multiple warehouses
+};
+
+export type AllocationSummary = {
+  destinationLocation?: LocationCoordinates;
+  totalWarehouses: number;
+  totalDistance?: number; // Total distance sum (for MIN_DISTANCE strategy)
+  warehouseDetails: WarehouseDetail[];
+};
+
 export type SuggestAllocationResponse = {
   message: string;
   warehouseAllocations: {
     fabrics: SuggestFabricAllocation[];
+    allocationSummary: AllocationSummary;
   };
 };

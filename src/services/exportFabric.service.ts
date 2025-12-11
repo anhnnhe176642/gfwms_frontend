@@ -145,11 +145,14 @@ export const exportFabricService = {
   },
 
   /**
-   * Gợi ý phân bổ tối ưu cho các fabric (Greedy Algorithm)
+   * Gợi ý phân bổ tối ưu cho các fabric
+   * Hỗ trợ 2 chiến lược:
+   * - MIN_WAREHOUSES (mặc định): Greedy Set Cover - ưu tiên ít kho nhất
+   * - MIN_DISTANCE: Ưu tiên kho gần nhất đến địa điểm đích (cần destinationLocation)
    */
-  suggestAllocation: async (data: SuggestAllocationRequest): Promise<SuggestFabricAllocation[]> => {
+  suggestAllocation: async (data: SuggestAllocationRequest): Promise<SuggestAllocationResponse['warehouseAllocations']> => {
     const response = await api.post<SuggestAllocationResponse>(`${BASE_PATH}/suggest`, data);
-    return response.data.warehouseAllocations.fabrics;
+    return response.data.warehouseAllocations;
   },
 
   /**

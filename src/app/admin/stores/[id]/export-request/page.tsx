@@ -82,6 +82,8 @@ export default function ExportRequestPage() {
         <ExportRequestFlow
           storeId={store.id}
           storeName={store.name}
+          storeLatitude={store.latitude}
+          storeLongitude={store.longitude}
           onSuccess={handleSuccess}
         />
       </div>

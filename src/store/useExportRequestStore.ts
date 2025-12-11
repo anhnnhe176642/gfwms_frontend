@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import type { FabricListItem } from '@/types/fabric';
-import type { SuggestFabricAllocation, WarehouseStock } from '@/types/exportFabric';
+import type { SuggestFabricAllocation, WarehouseStock, AllocationSummary } from '@/types/exportFabric';
 import type { ExportFabricDetail } from '@/services/exportFabric.service';
 
 export type BatchExportResult = {
@@ -39,6 +39,8 @@ type ExportRequestState = {
   // Step 1 state
   storeId: number | null;
   storeName: string;
+  storeLatitude?: number;
+  storeLongitude?: number;
   selectedItems: Map<number, ExportRequestItem>;
   quantityInputs: Map<number, string>;
   note: string;
@@ -46,13 +48,14 @@ type ExportRequestState = {
   // Step 2 state
   currentStep: 1 | 2;
   allocations: Map<number, FabricAllocationState>;
+  allocationSummary: AllocationSummary | null;
   isLoadingSuggestions: boolean;
   
   // Batch result (after successful creation)
   batchResult: BatchExportResult | null;
   
   // Actions
-  setStoreInfo: (storeId: number, storeName: string) => void;
+  setStoreInfo: (storeId: number, storeName: string, latitude?: number, longitude?: number) => void;
   setSelectedItems: (items: Map<number, ExportRequestItem>) => void;
   setQuantityInputs: (inputs: Map<number, string>) => void;
   setNote: (note: string) => void;
@@ -62,7 +65,7 @@ type ExportRequestState = {
   goToStep1: () => void;
   
   // Allocation actions
-  setAllocations: (allocations: SuggestFabricAllocation[]) => void;
+  setAllocations: (allocations: SuggestFabricAllocation[], summary?: AllocationSummary) => void;
   setIsLoadingSuggestions: (loading: boolean) => void;
   updateFabricAllocation: (
     fabricId: number,
@@ -124,11 +127,14 @@ type ExportRequestState = {
 const initialState = {
   storeId: null as number | null,
   storeName: '',
+  storeLatitude: undefined as number | undefined,
+  storeLongitude: undefined as number | undefined,
   selectedItems: new Map<number, ExportRequestItem>(),
   quantityInputs: new Map<number, string>(),
   note: '',
   currentStep: 1 as const,
   allocations: new Map<number, FabricAllocationState>(),
+  allocationSummary: null as AllocationSummary | null,
   isLoadingSuggestions: false,
   batchResult: null as BatchExportResult | null,
 };
@@ -136,7 +142,7 @@ const initialState = {
 export const useExportRequestStore = create<ExportRequestState>((set, get) => ({
   ...initialState,
 
-  setStoreInfo: (storeId, storeName) => set({ storeId, storeName }),
+  setStoreInfo: (storeId, storeName, latitude, longitude) => set({ storeId, storeName, storeLatitude: latitude, storeLongitude: longitude }),
 
   setSelectedItems: (items) => set({ selectedItems: new Map(items) }),
 
@@ -148,7 +154,7 @@ export const useExportRequestStore = create<ExportRequestState>((set, get) => ({
 
   goToStep1: () => set({ currentStep: 1 }),
 
-  setAllocations: (suggestAllocations) => {
+  setAllocations: (suggestAllocations, summary) => {
     const allocationsMap = new Map<number, FabricAllocationState>();
     
     suggestAllocations.forEach((suggestion) => {
@@ -173,7 +179,10 @@ export const useExportRequestStore = create<ExportRequestState>((set, get) => ({
       });
     });
 
-    set({ allocations: allocationsMap });
+    set({ 
+      allocations: allocationsMap,
+      allocationSummary: summary || null,
+    });
   },
 
   setIsLoadingSuggestions: (loading) => set({ isLoadingSuggestions: loading }),

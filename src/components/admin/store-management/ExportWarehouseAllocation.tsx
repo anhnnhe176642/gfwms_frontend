@@ -36,13 +36,20 @@ import {
 export function ExportWarehouseAllocation() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [strategy, setStrategy] = useState<'MIN_WAREHOUSES' | 'MIN_DISTANCE'>('MIN_WAREHOUSES');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [showLocationInput, setShowLocationInput] = useState(false);
 
   const {
     storeId,
     storeName,
+    storeLatitude,
+    storeLongitude,
     selectedItems,
     note,
     allocations,
+    allocationSummary,
     isLoadingSuggestions,
     goToStep1,
     setAllocations,
@@ -56,6 +63,14 @@ export function ExportWarehouseAllocation() {
     getWarehouseSummary,
     setBatchResult,
   } = useExportRequestStore();
+
+  // Initialize location fields with store location if available
+  useEffect(() => {
+    if (storeLatitude && storeLongitude) {
+      setLatitude(storeLatitude.toString());
+      setLongitude(storeLongitude.toString());
+    }
+  }, [storeLatitude, storeLongitude]);
 
   // Fetch suggestions on mount - always call API when entering step 2
   useEffect(() => {
@@ -72,8 +87,21 @@ export function ExportWarehouseAllocation() {
           quantity: item.quantity,
         }));
 
-        const suggestions = await exportFabricService.suggestAllocation({ fabricItems });
-        setAllocations(suggestions);
+        const requestData: any = {
+          fabricItems,
+          priority: strategy,
+        };
+
+        // Add destination location for MIN_DISTANCE strategy
+        if (strategy === 'MIN_DISTANCE' && latitude && longitude) {
+          requestData.destinationLocation = {
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+          };
+        }
+
+        const response = await exportFabricService.suggestAllocation(requestData);
+        setAllocations(response.fabrics, response.allocationSummary);
       } catch (err) {
         const message = getServerErrorMessage(err) || 'Không thể tải gợi ý phân bổ';
         toast.error(message);
@@ -85,7 +113,7 @@ export function ExportWarehouseAllocation() {
 
     fetchSuggestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [strategy, latitude, longitude]);
 
   // Handle quantity change
   const handleQuantityChange = (
@@ -245,43 +273,83 @@ export function ExportWarehouseAllocation() {
         </Card>
       )}
 
-      {/* Warehouse Summary */}
+      {/* Warehouse Summary with Strategy Selection */}
       <Card className="bg-muted/30">
         <CardHeader className="py-4">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Warehouse className="h-5 w-5" />
-            Tổng hợp đơn xuất kho
-          </CardTitle>
+          <div className="flex items-center justify-between w-full">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Warehouse className="h-5 w-5" />
+              Tổng hợp đơn xuất kho
+            </CardTitle>
+            <Select value={strategy} onValueChange={(value: any) => setStrategy(value)}>
+              <SelectTrigger className="min-w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MIN_WAREHOUSES">
+                  <div className="flex flex-col">
+                    <span>Ít kho nhất (Greedy Set Cover)</span>
+                    <span className="text-xs text-muted-foreground">Ưu tiên chọn ít kho nhất, kho có tồn kho nhiều</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="MIN_DISTANCE">
+                  <div className="flex flex-col">
+                    <span>Gần nhất (By Distance)</span>
+                    <span className="text-xs text-muted-foreground">Ưu tiên kho gần điểm đến nhất (cần tọa độ)</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <CardDescription>
             Sẽ tạo {warehouseSummary.length} phiếu xuất kho từ các kho sau
+          {allocationSummary && strategy === 'MIN_DISTANCE' && allocationSummary.totalDistance !== undefined && allocationSummary.totalDistance !== null && (
+            <> 
+             <p className="text-xs text-muted-foreground mb-2">Với Tổng khoảng cách là <span className=' text-blue-600'
+                 >{allocationSummary.totalDistance.toFixed(2)} km</span></p>
+            </>
+          )}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          {/* Strategy Selection */}
+
+          {/* Warehouse Summary Grid */}
           {warehouseSummary.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               Chưa có phân bổ nào
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {warehouseSummary.map((warehouse) => (
-                <div
-                  key={warehouse.warehouseId}
-                  className="flex items-center justify-between p-3 bg-background rounded-lg border"
-                >
-                  <div>
-                    <p className="font-medium">{warehouse.warehouseName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {warehouse.fabricCount} loại vải
-                    </p>
+              {warehouseSummary.map((warehouse) => {
+                const warehouseDetail = allocationSummary?.warehouseDetails?.find(
+                  (d) => d.warehouseId === warehouse.warehouseId
+                );
+                return (
+                  <div
+                    key={warehouse.warehouseId}
+                    className="flex items-center justify-between p-3 bg-background rounded-lg border"
+                  >
+                    <div>
+                      <p className="font-medium">{warehouse.warehouseName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {warehouse.fabricCount} loại vải
+                      </p>
+                      {strategy === 'MIN_DISTANCE' && warehouseDetail?.distance !== undefined && warehouseDetail?.distance !== null && (
+                        <p className="text-xs text-blue-600 mt-1">
+                           {warehouseDetail.distance.toFixed(2)} km
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-semibold text-primary">
+                        {warehouse.totalQuantity}
+                      </p>
+                      <p className="text-xs text-muted-foreground">cuộn</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-primary">
-                      {warehouse.totalQuantity}
-                    </p>
-                    <p className="text-xs text-muted-foreground">cuộn</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -360,16 +428,16 @@ export function ExportWarehouseAllocation() {
                     {/* Fabric details */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Màu sắc:</span>
-                        <div className="flex items-center gap-2 ml-2">
+                        <span className="text-muted-foreground ">Màu sắc:</span>
+                        <span className="inline-flex items-center gap-2 ml-2">
                           {fabricAllocation.fabric.color.hexCode && (
-                            <div
-                              className="w-4 h-4 rounded border border-input"
+                            <span
+                              className="w-4 h-4 rounded border border-input inline-block"
                               style={{ backgroundColor: fabricAllocation.fabric.color.hexCode }}
                             />
                           )}
                           <span className="font-medium">{fabricAllocation.fabric.color.name}</span>
-                        </div>
+                        </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Độ bóng:</span>
@@ -391,7 +459,7 @@ export function ExportWarehouseAllocation() {
                         <span className="text-muted-foreground">Tồn kho tổng:</span>
                         <span className="ml-2 font-medium">{fabricAllocation.totalAvailable}</span>
                         {!fabricAllocation.isSufficient && (
-                          <span className="ml-2 text-red-500 text-xs flex items-center gap-1 inline-flex">
+                          <span className="ml-2 text-red-500 text-xs inline-flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3" />
                             Không đủ
                           </span>
@@ -408,48 +476,60 @@ export function ExportWarehouseAllocation() {
                     </Label>
                     
                     <div className="space-y-3">
-                      {fabricAllocation.allocations.map((allocation, index) => (
-                        <div
-                          key={`${allocation.warehouseId}-${index}`}
-                          className="flex items-center gap-3 p-3 bg-background rounded-lg border"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{allocation.warehouseName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Tồn kho: {allocation.maxStock} cuộn
-                            </p>
+                      {fabricAllocation.allocations.map((allocation, index) => {
+                        const warehouseStock = fabricAllocation.availableStocks.find(
+                          (s) => s.warehouseId === allocation.warehouseId
+                        );
+                        return (
+                          <div
+                            key={`${allocation.warehouseId}-${index}`}
+                            className="flex items-center gap-3 p-3 bg-background rounded-lg border"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium truncate">{allocation.warehouseName}</p>
+                                {strategy === 'MIN_DISTANCE' && warehouseStock?.distance !== undefined && warehouseStock?.distance !== null && (
+                                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded whitespace-nowrap">
+                                     {warehouseStock.distance.toFixed(2)} km
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Tồn kho: {allocation.maxStock} cuộn
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min={0}
+                                max={allocation.maxStock}
+                                value={allocation.quantity}
+                                onChange={(e) =>
+                                  handleQuantityChange(
+                                    fabricAllocation.fabricId,
+                                    index,
+                                    e.target.value
+                                  )
+                                }
+                                className={cn(
+                                  'w-20 text-center',
+                                  allocation.quantity > allocation.maxStock && 'border-red-500'
+                                )}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  handleRemoveWarehouse(fabricAllocation.fabricId, index)
+                                }
+                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-100 shrink-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={allocation.maxStock}
-                              value={allocation.quantity}
-                              onChange={(e) =>
-                                handleQuantityChange(
-                                  fabricAllocation.fabricId,
-                                  index,
-                                  e.target.value
-                                )
-                              }
-                              className={cn(
-                                'w-20 text-center',
-                                allocation.quantity > allocation.maxStock && 'border-red-500'
-                              )}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                handleRemoveWarehouse(fabricAllocation.fabricId, index)
-                              }
-                              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-100 shrink-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {/* Add warehouse */}
                       {availableWarehouses.length > 0 && (
@@ -472,7 +552,12 @@ export function ExportWarehouseAllocation() {
                                 key={warehouse.warehouseId}
                                 value={String(warehouse.warehouseId)}
                               >
-                                {warehouse.warehouseName} (Tồn: {warehouse.currentStock})
+                                <div className="flex items-center gap-3">
+                                  <span>{warehouse.warehouseName} (Tồn: {warehouse.currentStock})</span>
+                                  {strategy === 'MIN_DISTANCE' && warehouse.distance !== undefined && warehouse.distance !== null && (
+                                    <span className="text-xs text-blue-600"> {warehouse.distance.toFixed(2)} km</span>
+                                  )}
+                                </div>
                               </SelectItem>
                             ))}
                           </SelectContent>

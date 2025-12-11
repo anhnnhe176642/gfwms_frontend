@@ -31,6 +31,8 @@ type QuantityError = {
 export type ExportRequestTableProps = {
   storeId: number;
   storeName: string;
+  storeLatitude?: number;
+  storeLongitude?: number;
   initialParams?: FabricListParams;
   onSuccess?: () => void;
 };
@@ -38,6 +40,8 @@ export type ExportRequestTableProps = {
 export function ExportRequestTable({
   storeId,
   storeName,
+  storeLatitude,
+  storeLongitude,
   initialParams,
   onSuccess,
 }: ExportRequestTableProps) {
@@ -69,8 +73,8 @@ export function ExportRequestTable({
 
   // Set store info on mount
   useEffect(() => {
-    setStoreInfo(storeId, storeName);
-  }, [storeId, storeName, setStoreInfo]);
+    setStoreInfo(storeId, storeName, storeLatitude, storeLongitude);
+  }, [storeId, storeName, storeLatitude, storeLongitude, setStoreInfo]);
 
   // Restore state from store when returning from step 2
   useEffect(() => {
