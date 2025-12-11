@@ -21,6 +21,7 @@ import type { ExportFabricDetail } from '@/types/exportFabric';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { exportInvoiceToPDF } from '@/lib/pdf';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useAuth } from '@/hooks/useAuth';
 import { IsLoading } from '@/components/common/IsLoading';
 import { 
   ArrowLeft, 
@@ -37,12 +38,12 @@ import {
 interface ExportFabricDetailViewProps {
   warehouseId: string | number;
   exportFabricId: string | number;
-  hideActionButtons?: boolean;
 }
 
-export function ExportFabricDetailView({ warehouseId, exportFabricId, hideActionButtons = false }: ExportFabricDetailViewProps) {
+export function ExportFabricDetailView({ warehouseId, exportFabricId }: ExportFabricDetailViewProps) {
   const router = useRouter();
   const { handleGoBack } = useNavigation();
+  const { hasPermission } = useAuth();
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [exportFabric, setExportFabric] = useState<ExportFabricDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -235,48 +236,45 @@ export function ExportFabricDetailView({ warehouseId, exportFabricId, hideAction
             <Printer className="h-4 w-4" />
             In
           </Button>
-          {!hideActionButtons && (
-            <>
-              {exportFabric.status === 'PENDING' && (
-                <Button
-                  onClick={handleProcessExport}
-                  className="gap-2 bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Xử lý xuất kho
-                </Button>
+          {/* Action buttons based on permissions */}
+          {exportFabric.status === 'PENDING' && hasPermission('exportFabric:change_status') && (
+            <Button
+              onClick={handleProcessExport}
+              className="gap-2 bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Xử lý xuất kho
+            </Button>
+          )}
+          {exportFabric.status === 'APPROVED' && hasPermission('exportFabric:receive') && (
+            <Button
+              onClick={handleCompleteExport}
+              disabled={completing}
+              className="gap-2 bg-blue-600 hover:bg-blue-700"
+            >
+              {completing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang xác nhận...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  Xác nhận nhận hàng
+                </>
               )}
-              {exportFabric.status === 'APPROVED' && (
-                <Button
-                  onClick={handleCompleteExport}
-                  disabled={completing}
-                  className="gap-2 bg-blue-600 hover:bg-blue-700"
-                >
-                  {completing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Đang xác nhận...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Xác nhận nhận hàng
-                    </>
-                  )}
-                </Button>
-              )}
-              {exportFabric.status === 'PENDING' && (
-                <Button
-                  onClick={() => setShowRejectDialog(true)}
-                  disabled={rejecting}
-                  variant="destructive"
-                  className="gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  Từ chối
-                </Button>
-              )}
-            </>
+            </Button>
+          )}
+          {exportFabric.status === 'PENDING' && hasPermission('exportFabric:change_status') && (
+            <Button
+              onClick={() => setShowRejectDialog(true)}
+              disabled={rejecting}
+              variant="destructive"
+              className="gap-2"
+            >
+              <X className="h-4 w-4" />
+              Từ chối
+            </Button>
           )}
         </div>
       </div>
