@@ -251,6 +251,7 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
             currentQuantity={shelf.currentQuantity}
             maxQuantity={shelf.maxQuantity}
             shelfCode={shelf.code}
+            shelfId={shelf.id}
           />
         </>
       )}
