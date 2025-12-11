@@ -33,7 +33,7 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, { label: string; className
 
 export const PAYMENT_TYPE_OPTIONS: { value: PaymentType; label: string }[] = [
   { value: 'CASH', label: 'Tiền mặt' },
-  { value: 'CREDIT', label: 'Tín dụng' },
+  { value: 'CREDIT', label: 'Công nợ' },
 ];
 
 export const PAYMENT_TYPE_CONFIG: Record<PaymentType, { label: string; className: string }> = {
@@ -42,7 +42,7 @@ export const PAYMENT_TYPE_CONFIG: Record<PaymentType, { label: string; className
     className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
   },
   CREDIT: {
-    label: 'Tín dụng',
+    label: 'Công nợ',
     className: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
   },
 };

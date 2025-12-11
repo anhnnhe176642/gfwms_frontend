@@ -31,7 +31,7 @@ export function CreditRegistrationDetailView({ registrationId }: CreditRegistrat
         const data = await creditRegistrationService.getById(registrationId);
         setRegistration(data);
       } catch (err) {
-        const message = getServerErrorMessage(err) || 'Không thể tải dữ liệu đăng ký tín dụng';
+        const message = getServerErrorMessage(err) || 'Không thể tải dữ liệu đăng ký Công nợ';
         setError(message);
         toast.error(message);
       } finally {
@@ -57,7 +57,7 @@ export function CreditRegistrationDetailView({ registrationId }: CreditRegistrat
     return (
       <div className="flex justify-center items-center h-96">
         <div className="text-center">
-          <p className="text-red-500 mb-2">{error || 'Không tìm thấy đăng ký tín dụng'}</p>
+          <p className="text-red-500 mb-2">{error || 'Không tìm thấy đăng ký Công nợ'}</p>
           <Button onClick={handleGoBack} variant="outline">
             Quay lại
           </Button>
@@ -80,9 +80,9 @@ export function CreditRegistrationDetailView({ registrationId }: CreditRegistrat
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Chi tiết đăng ký tín dụng</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Chi tiết đăng ký Công nợ</h1>
             <p className="text-muted-foreground mt-1">
-              Thông tin chi tiết về đơn đăng ký hạn mức tín dụng
+              Thông tin chi tiết về đơn đăng ký hạn mức Công nợ
             </p>
           </div>
         </div>
@@ -92,7 +92,7 @@ export function CreditRegistrationDetailView({ registrationId }: CreditRegistrat
       <Card>
         <CardHeader>
           <CardTitle>Thông tin chung</CardTitle>
-          <CardDescription>Thông tin khách hàng, tín dụng và trạng thái</CardDescription>
+          <CardDescription>Thông tin khách hàng, Công nợ và trạng thái</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* User Information Section */}
@@ -118,7 +118,7 @@ export function CreditRegistrationDetailView({ registrationId }: CreditRegistrat
 
           {/* Credit Information Section */}
           <div>
-            <h3 className="font-semibold text-sm mb-4">Thông tin tín dụng</h3>
+            <h3 className="font-semibold text-sm mb-4">Thông tin Công nợ</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-2">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Hạn mức</p>

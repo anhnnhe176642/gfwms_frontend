@@ -30,7 +30,7 @@ interface InvoiceDetailViewProps {
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   CASH: 'Tiền mặt',
-  CREDIT_CARD: 'Thẻ tín dụng',
+  CREDIT_CARD: 'Thẻ Công nợ',
   BANK_TRANSFER: 'Chuyển khoản',
   MOMO: 'MoMo',
   VNPAY: 'VNPay',

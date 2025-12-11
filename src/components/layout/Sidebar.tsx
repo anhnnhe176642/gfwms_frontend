@@ -196,12 +196,12 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      label: "Quản lí tín dụng",
+      label: "Quản lí Công nợ",
       icon: CreditCard,
       requiredPermission: null,
       submenu: [
         {
-          label: "Đăng ký tín dụng",
+          label: "Đăng ký Công nợ",
           href: ROUTES.ADMIN.CREDITS.LIST.path,
           icon: CreditCard,
           requiredPermission: PERMISSIONS.CREADIT_REGISTRATION.VIEW_LIST.key,

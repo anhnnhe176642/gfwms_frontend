@@ -4,7 +4,7 @@ export const INVOICE_STATUS_OPTIONS: { value: InvoiceStatus; label: string }[] =
   { value: 'PAID', label: 'Đã thanh toán' },
   { value: 'UNPAID', label: 'Chưa thanh toán' },
   { value: 'OVERDUE', label: 'Quá hạn' },
-  { value: 'CREDIT', label: 'Tín dụng' },
+  { value: 'CREDIT', label: 'Công nợ' },
   { value: 'REFUNDED', label: 'Đã hoàn tiền' },
   { value: 'CANCELED', label: 'Đã hủy' },
 ];
@@ -23,7 +23,7 @@ export const INVOICE_STATUS_CONFIG: Record<InvoiceStatus, { label: string; class
     className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
   },
   CREDIT: {
-    label: 'Tín dụng',
+    label: 'Công nợ',
     className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   },
   REFUNDED: {

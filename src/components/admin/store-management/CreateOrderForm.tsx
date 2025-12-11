@@ -177,7 +177,7 @@ export function CreateOrderForm() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="CASH">Tiền mặt</SelectItem>
-                      <SelectItem value="CREDIT">Tín dụng</SelectItem>
+                      <SelectItem value="CREDIT">Công nợ</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -266,7 +266,7 @@ export function CreateOrderForm() {
                 <div className="flex justify-between text-sm pt-2 border-t">
                   <span>Phương thức:</span>
                   <span className="font-medium">
-                    {paymentType === 'CASH' ? 'Tiền mặt' : 'Tín dụng'}
+                    {paymentType === 'CASH' ? 'Tiền mặt' : 'Công nợ'}
                   </span>
                 </div>
               </div>

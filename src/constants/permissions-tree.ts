@@ -595,11 +595,11 @@ export const PERMISSIONS_TREE = {
         ],
       },
 
-      // 6. Quản lí tín dụng
+      // 6. Quản lí Công nợ
       {
         groupKey: 'credit_management',
-        groupTitle: 'Quản lí tín dụng',
-        groupDescription: 'Quản lý hạn mức tín dụng, đơn đăng ký, hóa đơn tín dụng',
+        groupTitle: 'Quản lí Công nợ',
+        groupDescription: 'Quản lý hạn mức Công nợ, đơn đăng ký, hóa đơn Công nợ',
         isGroupNode: true,
         level: 1,
         key: null,

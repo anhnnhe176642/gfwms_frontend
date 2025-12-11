@@ -24,12 +24,12 @@ export default function RequestCreditLimitPage() {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold">Đăng ký hạn mức tín dụng</h1>
+            <h1 className="text-3xl font-bold">Đăng ký hạn mức Công nợ</h1>
           </div>
           
           <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-6">
             <p className="text-sm text-muted-foreground mb-6">
-              Điền thông tin dưới đây để gửi yêu cầu đăng ký hạn mức tín dụng. Admin sẽ xem xét và phê duyệt trong thời gian sớm nhất.
+              Điền thông tin dưới đây để gửi yêu cầu đăng ký hạn mức Công nợ. Admin sẽ xem xét và phê duyệt trong thời gian sớm nhất.
             </p>
             <CreateCreditRequestForm isCustomerForm={true} />
           </div>

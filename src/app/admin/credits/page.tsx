@@ -3,8 +3,8 @@ import { CreditRegistrationTable } from "@/components/admin/credit-registration-
 import { IsLoading } from "@/components/common";
 
 export const metadata = {
-  title: "Quản lý tín dụng - Đã Đăng ký",
-  description: "Danh sách các đơn đăng ký tín dụng đã được phê duyệt",
+  title: "Quản lý Công nợ - Đã Đăng ký",
+  description: "Danh sách các đơn đăng ký Công nợ đã được phê duyệt",
 };
 
 export default function CreditsPage() {
@@ -13,10 +13,10 @@ export default function CreditsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Quản lý tín dụng - Đã Đăng ký
+            Quản lý Công nợ - Đã Đăng ký
           </h1>
           <p className="text-muted-foreground mt-1">
-            Danh sách các đơn đăng ký tín dụng đã được phê duyệt
+            Danh sách các đơn đăng ký Công nợ đã được phê duyệt
           </p>
         </div>
 

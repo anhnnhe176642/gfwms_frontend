@@ -243,7 +243,7 @@ export function UserStatsOverview({ stats, isLoading }: UserStatsOverviewProps) 
                   <span className="font-semibold">{stats.paymentStats.summary.invoicePayments}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tín dụng:</span>
+                  <span className="text-muted-foreground">Công nợ:</span>
                   <span className="font-semibold">{stats.paymentStats.summary.creditPayments}</span>
                 </div>
               </div>
@@ -257,7 +257,7 @@ export function UserStatsOverview({ stats, isLoading }: UserStatsOverviewProps) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5" />
-            Thông tin tín dụng
+            Thông tin Công nợ
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -305,7 +305,7 @@ export function UserStatsOverview({ stats, isLoading }: UserStatsOverviewProps) 
 
             {/* Credit Status */}
             <div className="flex items-center justify-between p-3 border rounded bg-muted/50">
-              <span className="text-sm font-semibold">Trạng thái tín dụng</span>
+              <span className="text-sm font-semibold">Trạng thái Công nợ</span>
               <div className="flex items-center gap-2">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -332,7 +332,7 @@ export function UserStatsOverview({ stats, isLoading }: UserStatsOverviewProps) 
       {stats.creditRequests.total > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Yêu cầu tín dụng</CardTitle>
+            <CardTitle>Yêu cầu Công nợ</CardTitle>
             <CardDescription>Tổng {stats.creditRequests.total} yêu cầu</CardDescription>
           </CardHeader>
           <CardContent>
