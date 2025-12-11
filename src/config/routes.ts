@@ -315,7 +315,7 @@ export const ROUTES = {
         requiredPermission: PERMISSIONS.EXPORT_FABRICS.CHANGE_STATUS.key,
       },
       ADJUST_FABRIC_HISTORY: {
-        path: '/admin/warehouses/adjust-fabric-history',
+        path: '/admin/adjust-fabric-history',
         name: 'Lịch sử điều chỉnh vải',
         description: 'Lịch sử điều chỉnh số lượng vải trên kệ',
         requiredPermission: PERMISSIONS.SHELVES.ADJUST_FABRIC.key,

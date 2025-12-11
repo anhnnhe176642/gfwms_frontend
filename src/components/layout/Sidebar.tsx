@@ -52,24 +52,24 @@ export const Sidebar: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     {
-      label: 'Dashboard',
+      label: "Dashboard",
       href: ROUTES.ADMIN.DASHBOARD.path,
       icon: LayoutDashboard,
       requiredPermission: null,
     },
     {
-      label: 'Quản lý người dùng',
+      label: "Quản lý người dùng",
       icon: Users,
       requiredPermission: null,
       submenu: [
         {
-          label: 'Danh sách người dùng',
+          label: "Danh sách người dùng",
           href: ROUTES.ADMIN.USERS.LIST.path,
           icon: Users,
           requiredPermission: PERMISSIONS.USERS.VIEW_LIST.key,
         },
         {
-          label: 'Quản lý vai trò',
+          label: "Quản lý vai trò",
           href: ROUTES.ADMIN.ROLES.LIST.path,
           icon: ShieldCheck,
           requiredPermission: PERMISSIONS.ROLES.VIEW_LIST.key,
@@ -77,42 +77,42 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      label: 'Quản lý vải',
+      label: "Quản lý vải",
       icon: Package,
       requiredPermission: null,
       submenu: [
         {
-          label: 'Danh sách vải',
+          label: "Danh sách vải",
           href: ROUTES.ADMIN.FABRICS.LIST.path,
           icon: Package,
           requiredPermission: PERMISSIONS.FABRICS.VIEW_LIST.key,
         },
         {
-          label: 'Loại vải',
+          label: "Loại vải",
           href: ROUTES.ADMIN.FABRICS.CATEGORIES.path,
           icon: Package,
           requiredPermission: PERMISSIONS.FABRICS.MANAGE_CATEGORIES.key,
         },
         {
-          label: 'Màu vải',
+          label: "Màu vải",
           href: ROUTES.ADMIN.FABRICS.COLORS.path,
           icon: Package,
           requiredPermission: PERMISSIONS.FABRICS.MANAGE_COLORS.key,
         },
         {
-          label: 'Độ bóng',
+          label: "Độ bóng",
           href: ROUTES.ADMIN.FABRICS.GLOSS.path,
           icon: Package,
           requiredPermission: PERMISSIONS.FABRICS.MANAGE_GLOSS.key,
         },
         {
-          label: 'Nhà cung cấp',
+          label: "Nhà cung cấp",
           href: ROUTES.ADMIN.FABRICS.SUPPLIERS.path,
           icon: Package,
           requiredPermission: PERMISSIONS.FABRICS.MANAGE_SUPPLIER.key,
         },
         {
-          label: 'Đếm vải',
+          label: "Đếm vải",
           href: ROUTES.ADMIN.FABRIC_COUNT.LIST.path,
           icon: Eye,
           requiredPermission: PERMISSIONS.YOLO.DETECT.key,
@@ -120,17 +120,17 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      label: 'Quản lý YOLO',
+      label: "Quản lý YOLO",
       icon: Tag,
       submenu: [
         {
-          label: 'Dataset YOLO',
+          label: "Dataset YOLO",
           href: ROUTES.ADMIN.YOLO_DATASETS.LIST.path,
           icon: Tag,
           requiredPermission: PERMISSIONS.YOLO.VIEW_DATASET.key,
         },
         {
-          label: 'Model YOLO',
+          label: "Model YOLO",
           href: ROUTES.ADMIN.YOLO_MODELS.LIST.path,
           icon: Package,
           requiredPermission: PERMISSIONS.YOLO.VIEW_MODELS.key,
@@ -138,65 +138,57 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      label: 'Quản lý kho',
+      label: "Quản lý kho",
       icon: Warehouse,
       requiredPermission: PERMISSIONS.WAREHOUSES.VIEW_LIST.key,
       href: ROUTES.ADMIN.WAREHOUSES.LIST.path,
       dynamicSubmenu: (id: string) => [
         {
-          label: 'Chi tiết kho',
+          label: "Chi tiết kho",
           href: `/admin/warehouses/${id}`,
           icon: Warehouse,
           requiredPermission: PERMISSIONS.WAREHOUSES.VIEW_DETAIL.key,
         },
         {
-          label: 'Nhập kho',
+          label: "Nhập kho",
           href: `/admin/warehouses/${id}/import-fabrics`,
           icon: Package,
           requiredPermission: PERMISSIONS.IMPORT_FABRICS.VIEW_LIST.key,
         },
         {
-          label: 'Xuất kho',
+          label: "Xuất kho",
           href: `/admin/warehouses/${id}/export-fabrics`,
           icon: TruckIcon,
           requiredPermission: PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key,
         },
         {
-          label: 'Quản lý kệ',
+          label: "Quản lý kệ",
           href: `/admin/warehouses/${id}/shelves`,
           icon: Package,
           requiredPermission: PERMISSIONS.SHELVES.VIEW_LIST.key,
         },
       ],
-      submenu: [
-        {
-          label: 'Lịch sử điều chỉnh vải',
-          href: ROUTES.ADMIN.WAREHOUSES.ADJUST_FABRIC_HISTORY.path,
-          icon: FileText,
-          requiredPermission: PERMISSIONS.SHELVES.ADJUST_FABRIC.key,
-        },
-      ],
     },
     {
-      label: 'Quản lý cửa hàng',
+      label: "Quản lý cửa hàng",
       icon: Package,
       requiredPermission: PERMISSIONS.STORES.VIEW_LIST.key,
       href: ROUTES.ADMIN.STORES.LIST.path,
       dynamicSubmenu: (id: string) => [
         {
-          label: 'Chi tiết cửa hàng',
+          label: "Chi tiết cửa hàng",
           href: `/admin/stores/${id}`,
           icon: Package,
           requiredPermission: PERMISSIONS.STORES.VIEW_DETAIL.key,
         },
         {
-          label: 'Danh sách vải',
+          label: "Danh sách vải",
           href: `/admin/stores/${id}/fabrics`,
           icon: Package,
           requiredPermission: PERMISSIONS.STORES.VIEW_DETAIL.key,
         },
         {
-          label: 'Yêu cầu xuất kho',
+          label: "Yêu cầu xuất kho",
           href: `/admin/stores/${id}/export-requests`,
           icon: TruckIcon,
           requiredPermission: PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key,
@@ -204,18 +196,18 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      label: 'Quản lí tín dụng',
+      label: "Quản lí tín dụng",
       icon: CreditCard,
       requiredPermission: null,
       submenu: [
         {
-          label: 'Đăng ký tín dụng',
+          label: "Đăng ký tín dụng",
           href: ROUTES.ADMIN.CREDITS.LIST.path,
           icon: CreditCard,
           requiredPermission: PERMISSIONS.CREADIT_REGISTRATION.VIEW_LIST.key,
         },
         {
-          label: 'Đơn hạn mức',
+          label: "Đơn hạn mức",
           href: ROUTES.ADMIN.CREDIT_REQUESTS.LIST.path,
           icon: CreditCard,
           requiredPermission: PERMISSIONS.CREADIT_REQUEST.VIEW_LIST.key,
@@ -223,25 +215,31 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      label: 'Hóa đơn',
+      label: "Hóa đơn",
       href: ROUTES.ADMIN.INVOICES.LIST.path,
       icon: FileText,
       requiredPermission: PERMISSIONS.INVOICES.VIEW_LIST.key,
     },
     {
-      label: 'Đơn hàng',
+      label: "Lịch sử điều chỉnh vải",
+      href: ROUTES.ADMIN.WAREHOUSES.ADJUST_FABRIC_HISTORY.path,
+      icon: FileText,
+      requiredPermission: PERMISSIONS.SHELVES.ADJUST_FABRIC.key,
+    },
+    {
+      label: "Đơn hàng",
       href: ROUTES.ADMIN.ORDERS.LIST.path,
       icon: ShoppingCart,
       requiredPermission: PERMISSIONS.ORDERS.VIEW_LIST.key,
     },
     {
-      label: 'Xuất kho',
+      label: "Xuất kho",
       href: ROUTES.ADMIN.EXPORT_FABRICS.LIST.path,
       icon: TruckIcon,
       requiredPermission: PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key,
     },
     {
-      label: 'Cài đặt',
+      label: "Cài đặt",
       href: ROUTES.ADMIN.SYSTEM.CONFIG.path,
       icon: Settings,
       requiredPermission: PERMISSIONS.SYSTEM.SYSTEM_CONFIG.key,
