@@ -10,12 +10,14 @@ import { storeService } from '@/services/store.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useExportRequestStore } from '@/store/useExportRequestStore';
 import type { StoreListItem } from '@/types/store';
 
 export default function ExportRequestPage() {
   const params = useParams();
   const router = useRouter();
   const storeId = params.id as string;
+  const { reset: resetExportRequestStore } = useExportRequestStore();
   
   const [store, setStore] = useState<StoreListItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +41,13 @@ export default function ExportRequestPage() {
 
     fetchStore();
   }, [storeId]);
+
+  // Reset store when component unmounts
+  useEffect(() => {
+    return () => {
+      resetExportRequestStore();
+    };
+  }, [resetExportRequestStore]);
 
   const handleSuccess = () => {
     router.push(`/admin/stores/${storeId}`);

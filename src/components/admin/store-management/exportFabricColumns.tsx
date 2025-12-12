@@ -20,7 +20,7 @@ import { ExportFabricStatusBadge } from "@/components/admin/table/Badges"
 import { EXPORT_FABRIC_STATUS_OPTIONS } from "@/constants/exportFabric"
 
 export type ExportFabricColumnActions = {
-  onView?: (exportFabricId: number) => void
+  onView?: (exportFabric: ExportFabricListItem) => void
   onEdit?: (exportFabricId: number) => void
   onDelete?: (exportFabricId: number) => void
   hideWarehouseColumn?: boolean
@@ -182,7 +182,7 @@ export const createExportFabricColumns = (
               
               {onView && (
                 <DropdownMenuItem
-                  onClick={() => onView?.(exportFabric.id)}
+                  onClick={() => onView?.(exportFabric)}
                 >
                   Xem chi tiết
                 </DropdownMenuItem>

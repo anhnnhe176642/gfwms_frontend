@@ -91,15 +91,22 @@ export function ExportFabricListTable({ initialParams, hideWarehouseColumn, hide
   /**
    * Handle view detail
    */
-  const handleViewClick = (exportFabricId: number) => {
-    // If storeId is provided, navigate to store-specific detail page
+  const handleViewClick = (exportFabric: ExportFabricListItem) => {
+    const exportFabricId = exportFabric.id;
+    const warehouseIdFromRow = exportFabric.warehouse?.id;
+    const storeIdFromRow = exportFabric.store?.id;
+    
+    // If storeId is provided as prop, navigate to store-specific detail page
     if (storeId) {
       router.push(`/admin/stores/${storeId}/export-requests/${exportFabricId}`);
     } else if (warehouseId) {
-      // If warehouseId is provided, navigate to warehouse-specific detail page
+      // If warehouseId is provided as prop, navigate to warehouse-specific detail page
       router.push(`/admin/warehouses/${warehouseId}/export-fabrics/${exportFabricId}`);
+    } else if (warehouseIdFromRow) {
+      // Otherwise navigate to global export fabric detail page with warehouseId from row
+      router.push(`/admin/export-fabrics/${exportFabricId}?warehouseId=${warehouseIdFromRow}`);
     } else {
-      // Otherwise navigate to global export fabric detail page
+      // Fallback: navigate without warehouseId
       router.push(`/admin/export-fabrics/${exportFabricId}`);
     }
   };

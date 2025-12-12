@@ -10,15 +10,21 @@ export const metadata: Metadata = {
 
 export default async function ExportFabricDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ warehouseId?: string }>;
 }) {
   const { id } = await params;
+  const { warehouseId } = await searchParams;
 
   return (
     <ProtectedRoute routeConfig={ROUTES.ADMIN.EXPORT_FABRICS.DETAIL}>
       <div className="p-6">
-        <ExportFabricDetailView exportFabricId={id} />
+        <ExportFabricDetailView 
+          exportFabricId={id} 
+          warehouseId={warehouseId || ''} 
+        />
       </div>
     </ProtectedRoute>
   );

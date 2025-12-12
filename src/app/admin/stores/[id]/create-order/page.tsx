@@ -9,6 +9,7 @@ import { CreateOrderFlow } from '@/components/admin/store-management';
 import { ROUTES } from '@/config/routes';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { storeService } from '@/services/store.service';
+import { useCreateOrderStore } from '@/store/useCreateOrderStore';
 
 export default function CreateOrderPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function CreateOrderPage() {
   const storeId = parseInt(params.id as string);
   const [storeName, setStoreName] = useState('');
   const [loading, setLoading] = useState(true);
+  const { reset: resetCreateOrderStore } = useCreateOrderStore();
 
   useEffect(() => {
     const fetchStore = async () => {
@@ -32,6 +34,13 @@ export default function CreateOrderPage() {
 
     fetchStore();
   }, [storeId, router]);
+
+  // Reset store when component unmounts
+  useEffect(() => {
+    return () => {
+      resetCreateOrderStore();
+    };
+  }, [resetCreateOrderStore]);
 
   const handleGoBack = () => {
     router.push(`/admin/stores/${storeId}/fabrics`);
