@@ -133,10 +133,12 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
               Xem yêu cầu xuất kho
             </Button>
           )}
-          <Button onClick={handleEdit} className="gap-2">
-            <Edit className="h-4 w-4" />
-            Chỉnh sửa
-          </Button>
+          {hasPermission(PERMISSIONS.STORES.UPDATE.key) && (
+            <Button onClick={handleEdit} className="gap-2">
+              <Edit className="h-4 w-4" />
+              Chỉnh sửa
+            </Button>
+          )}
         </div>
       </div>
 
@@ -229,10 +231,12 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
             Xem yêu cầu xuất kho
           </Button>
         )}
-        <Button onClick={handleEdit} className="gap-2">
-          <Edit className="h-4 w-4" />
-          Chỉnh sửa cửa hàng
-        </Button>
+        {hasPermission(PERMISSIONS.STORES.UPDATE.key) && (
+          <Button onClick={handleEdit} className="gap-2">
+            <Edit className="h-4 w-4" />
+            Chỉnh sửa cửa hàng
+          </Button>
+        )}
       </div>
     </div>
   );
