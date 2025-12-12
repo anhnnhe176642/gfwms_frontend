@@ -110,7 +110,7 @@ export function CreateCreditRequestForm({ isCustomerForm = false }: CreateCredit
           {/* Request Limit */}
           <div className="space-y-2">
             <label htmlFor="requestLimit" className="block text-sm font-medium">
-              Hạn mức yêu cầu <span className="text-red-500">*</span>
+              hạn mức mong muốn <span className="text-red-500">*</span>
             </label>
             <Controller
               control={control}

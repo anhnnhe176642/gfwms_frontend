@@ -206,7 +206,7 @@ export function CreditRequestDetailContent({ id }: CreditRequestDetailContentPro
                 </div>
 
                 <div className="border-t pt-6">
-                  <label className="text-sm font-medium text-muted-foreground">Hạn mức yêu cầu</label>
+                  <label className="text-sm font-medium text-muted-foreground">hạn mức mong muốn</label>
                   <p className="text-2xl font-bold text-green-600 mt-2">
                     {request.requestLimit.toLocaleString('vi-VN')} VND
                   </p>
@@ -331,7 +331,7 @@ export function CreditRequestDetailContent({ id }: CreditRequestDetailContentPro
                     min="0"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Để trống để giữ hạn mức yêu cầu: {request.requestLimit.toLocaleString('vi-VN')} VND
+                    Để trống để giữ hạn mức mong muốn: {request.requestLimit.toLocaleString('vi-VN')} VND
                   </p>
                 </div>
               )}
