@@ -33,7 +33,7 @@ export const updateFabricColorSchema = yup.object().shape({
     .max(255, 'Tên màu vải không được vượt quá 255 ký tự'),
   hexCode: yup
     .string()
-    .optional()
+    .required('Mã màu HEX là bắt buộc')
     .matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Mã hex không hợp lệ (vd: #FF5733)'),
 });
 

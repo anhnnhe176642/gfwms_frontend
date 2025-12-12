@@ -176,7 +176,9 @@ export function EditFabricColorForm({ colorId }: EditFabricColorFormProps) {
 
             {/* Color Code */}
             <div className="space-y-2">
-              <Label htmlFor="hexCode">Mã màu HEX (tùy chọn)</Label>
+              <Label htmlFor="hexCode">
+                Mã màu HEX <span className="text-destructive">*</span>
+              </Label>
               <div className="flex gap-2">
                 <div className="flex-1 flex gap-2 items-center">
                   <input
