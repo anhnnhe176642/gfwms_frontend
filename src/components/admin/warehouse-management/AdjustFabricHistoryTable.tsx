@@ -57,6 +57,10 @@ export function AdjustFabricHistoryTable({ initialParams }: AdjustFabricHistoryT
         },
       },
       sortingFieldMap: {
+        categoryId: 'fabric.category.name',
+        colorId: 'fabric.color.name',
+        supplierId: 'fabric.supplier.name',
+        userId: 'user.fullname',
         shelfCode: 'shelf.code',
         warehouseId: 'shelf.warehouse.name',
       },

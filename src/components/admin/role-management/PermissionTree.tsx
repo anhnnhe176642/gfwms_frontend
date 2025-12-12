@@ -90,34 +90,32 @@ function PermissionTreeItem({
         {!hasChildren && <div className="w-9" />}
 
         {/* Checkbox Display - Show for actual permission nodes and group nodes */}
-        {!isReadOnly && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isGroupNode && onToggleGroupNodes && hasChildren) {
-                // Toggle group node
-                onToggleGroupNodes(node.children, selectedArray);
-              } else if (!isGroupNode && !isDisabledBool) {
-                // Toggle regular permission node
-                onTogglePermission(node.key);
-              }
-            }}
-            className="flex items-center shrink-0 -ml-1 cursor-pointer"
-            disabled={isDisabledBool}
-          >
-            <div className="relative h-5 w-5">
-              {permissionState === 'full' ? (
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-              ) : permissionState === 'partial' ? (
-                <MinusCircle className="h-5 w-5 text-amber-500" />
-              ) : (
-                <Circle className="h-5 w-5 text-border" />
-              )}
-            </div>
-          </button>
-        )}
-        {isReadOnly && <div className="w-9" />}
+        <button
+          type="button"
+          onClick={(e) => {
+            if (isReadOnly) return;
+            e.stopPropagation();
+            if (isGroupNode && onToggleGroupNodes && hasChildren) {
+              // Toggle group node
+              onToggleGroupNodes(node.children, selectedArray);
+            } else if (!isGroupNode && !isDisabledBool) {
+              // Toggle regular permission node
+              onTogglePermission(node.key);
+            }
+          }}
+          className={`flex items-center shrink-0 -ml-1 ${!isReadOnly && !isDisabledBool ? 'cursor-pointer' : ''}`}
+          disabled={isDisabledBool || isReadOnly}
+        >
+          <div className="relative h-5 w-5">
+            {permissionState === 'full' ? (
+              <CheckCircle2 className="h-5 w-5 text-primary" />
+            ) : permissionState === 'partial' ? (
+              <MinusCircle className="h-5 w-5 text-amber-500" />
+            ) : (
+              <Circle className="h-5 w-5 text-border" />
+            )}
+          </div>
+        </button>
 
         {/* Label */}
         <div 
@@ -332,29 +330,28 @@ export function PermissionTree({
                     </button>
 
                     {/* Group Checkbox */}
-                    {!isReadOnly && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onToggleGroupPermissions) {
-                            onToggleGroupPermissions(group.children, selectedPermissions as any);
-                          }
-                        }}
-                        className="flex items-center shrink-0 -ml-1"
-                      >
-                        <div className="relative h-5 w-5">
-                          {groupState === 'full' ? (
-                            <CheckCircle2 className="h-5 w-5 text-primary" />
-                          ) : groupState === 'partial' ? (
-                            <MinusCircle className="h-5 w-5 text-amber-500" />
-                          ) : (
-                            <Circle className="h-5 w-5 text-border" />
-                          )}
-                        </div>
-                      </button>
-                    )}
-                    {isReadOnly && <div className="w-9" />}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        if (isReadOnly) return;
+                        e.stopPropagation();
+                        if (onToggleGroupPermissions) {
+                          onToggleGroupPermissions(group.children, selectedPermissions as any);
+                        }
+                      }}
+                      className={`flex items-center shrink-0 -ml-1 ${!isReadOnly ? 'cursor-pointer' : ''}`}
+                      disabled={isReadOnly}
+                    >
+                      <div className="relative h-5 w-5">
+                        {groupState === 'full' ? (
+                          <CheckCircle2 className="h-5 w-5 text-primary" />
+                        ) : groupState === 'partial' ? (
+                          <MinusCircle className="h-5 w-5 text-amber-500" />
+                        ) : (
+                          <Circle className="h-5 w-5 text-border" />
+                        )}
+                      </div>
+                    </button>
 
                     {/* Group Info */}
                     <div 
