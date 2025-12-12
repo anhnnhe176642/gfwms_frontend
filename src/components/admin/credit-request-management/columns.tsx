@@ -85,7 +85,7 @@ export const createCreditRequestColumns = (
     accessorKey: "requestLimit",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
-        <span className="font-medium">hạn mức mong muốn</span>
+        <span className="font-medium">Hạn mức mong muốn</span>
         <SortButton column={column} label="Sắp xếp theo hạn mức" />
       </div>
     ),
@@ -94,7 +94,7 @@ export const createCreditRequestColumns = (
       return <div className="font-medium">{limit.toLocaleString('vi-VN')} VND</div>
     },
     meta: {
-      title: "hạn mức mong muốn"
+      title: "Hạn mức mong muốn"
     }
   },
   {
