@@ -325,7 +325,6 @@ const ImageLabelPage: React.FC = () => {
                   <li>Click vào box để chọn, kéo cạnh/góc để resize, kéo bên trong để di chuyển</li>
                   <li>Nhấn Delete để xóa, Ctrl+Z để undo</li>
                   <li>Ctrl+Scroll để zoom in/out, hoặc dùng nút +/- trên thanh zoom</li>
-                  <li>Khi zoom &gt; 100%, kéo trên canvas để pan (di chuyển ảnh)</li>
                 </ul>
               </div>
             </div>

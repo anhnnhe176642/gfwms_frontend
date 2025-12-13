@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,7 @@ export default function CartItemRow({
   const [quantityError, setQuantityError] = useState<string>('');
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [totalValue, setTotalValue] = useState<number>(0);
+  const [expandAllocations, setExpandAllocations] = useState(false);
 
   const { fabric, quantity, unit, storeId, storeName } = item;
   const {
@@ -296,45 +297,55 @@ export default function CartItemRow({
       {/* Allocation Details */}
       {allocations.length > 0 && (
         <div className="mt-4 pt-4 border-t">
-          <p className="text-xs font-semibold text-muted-foreground mb-2">Chi tiết:</p>
-          <div className="space-y-2">
-            {allocations.map((allocation) => (
-              <div key={allocation.fabricId} className="bg-muted/30 rounded p-2">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium">
-                      {allocation.fabricInfo.category} - {allocation.fabricInfo.color}
-                    </p>
-                    <div className="text-xs text-muted-foreground space-y-1 mt-1">
-                      {allocation.fabricInfo.gloss && (
-                        <p>Độ bóng: {allocation.fabricInfo.gloss}</p>
-                      )}
-                      {allocation.fabricInfo.thickness && (
-                        <p>Độ dày: {allocation.fabricInfo.thickness}</p>
-                      )}
-                      {allocation.fabricInfo.width && (
-                        <p>Chiều rộng: {allocation.fabricInfo.width}</p>
-                      )}
-                      {allocation.fabricInfo.length && (
-                        <p>Chiều dài: {allocation.fabricInfo.length}</p>
-                      )}
+          <button
+            onClick={() => setExpandAllocations(!expandAllocations)}
+            className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${expandAllocations ? '' : '-rotate-90'}`}
+            />
+            Chi tiết:
+          </button>
+          {expandAllocations && (
+            <div className="space-y-2 mt-3">
+              {allocations.map((allocation) => (
+                <div key={allocation.fabricId} className="bg-muted/30 rounded p-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium">
+                        {allocation.fabricInfo.category} - {allocation.fabricInfo.color}
+                      </p>
+                      <div className="text-xs text-muted-foreground space-y-1 mt-1">
+                        {allocation.fabricInfo.gloss && (
+                          <p>Độ bóng: {allocation.fabricInfo.gloss}</p>
+                        )}
+                        {allocation.fabricInfo.thickness && (
+                          <p>Độ dày: {allocation.fabricInfo.thickness}</p>
+                        )}
+                        {allocation.fabricInfo.width && (
+                          <p>Chiều rộng: {allocation.fabricInfo.width}</p>
+                        )}
+                        {allocation.fabricInfo.length && (
+                          <p>Chiều dài: {allocation.fabricInfo.length}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-semibold">
+                        {allocation.quantity} {allocation.unit === 'ROLL' ? 'cuộn' : 'mét'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {allocation.unit === 'ROLL'
+                          ? allocation.pricing.sellingPricePerRoll.toLocaleString('vi-VN')
+                          : allocation.pricing.sellingPricePerMeter.toLocaleString('vi-VN')}{' '}
+                        ₫/{allocation.unit === 'ROLL' ? 'cuộn' : 'mét'}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs font-semibold">
-                      {allocation.quantity} {allocation.unit === 'ROLL' ? 'cuộn' : 'mét'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {allocation.unit === 'ROLL'
-                        ? allocation.pricing.sellingPricePerRoll.toLocaleString('vi-VN')
-                        : allocation.pricing.sellingPricePerMeter.toLocaleString('vi-VN')}{' '}
-                      ₫/{allocation.unit === 'ROLL' ? 'cuộn' : 'mét'}
-                    </p>
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
