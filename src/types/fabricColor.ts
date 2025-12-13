@@ -18,6 +18,9 @@ export type FabricColorListParams = {
   page?: number;
   limit?: number;
   search?: string;
+  colorFamily?: string; // e.g., "Đỏ", "Xanh dương", "Xám", etc.
+  hexSearchColor?: string; // e.g., "#3b82f6" - base color for similarity search
+  hexSearchRange?: number; // 0-100, where 100 = exact match only
   sortBy?: string; // e.g., "name"
   order?: string; // e.g., "asc,desc"
   createdFrom?: string; // ISO date string

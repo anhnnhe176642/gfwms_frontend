@@ -112,8 +112,8 @@ export const createStoreFabricColumns = (
     accessorKey: "inventory.uncutRolls",
     header: ({ column }) => (
       <div className="flex items-center gap-1">
-        <span className="font-medium">Cuộn chưa cắt</span>
-        <SortButton column={column} label="Sắp xếp theo cuộn chưa cắt" />
+        <span className="font-medium">Cuộn(nguyên)</span>
+        <SortButton column={column} label="Sắp xếp theo Cuộn(nguyên)" />
       </div>
     ),
     cell: ({ row }) => {
@@ -122,7 +122,7 @@ export const createStoreFabricColumns = (
     },
     sortingFn: "auto",
     meta: {
-      title: "Cuộn chưa cắt"
+      title: "Cuộn(nguyên)"
     }
   },
   {

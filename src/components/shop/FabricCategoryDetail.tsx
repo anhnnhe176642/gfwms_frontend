@@ -233,7 +233,7 @@ export default function FabricCategoryDetail({ categoryId }: FabricCategoryDetai
                       />
                       <div>
                         <p className="font-semibold">{fabric.color.name}</p>
-                        <p className="text-sm text-muted-foreground">Danh mục: {fabric.category.name}</p>
+                        <p className="text-sm text-muted-foreground">Loại vải: {fabric.category.name}</p>
                       </div>
                     </div>
 

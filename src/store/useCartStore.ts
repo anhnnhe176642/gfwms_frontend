@@ -9,10 +9,29 @@ interface CartStore {
 
   // Actions
   initCart: (userId: string | number) => void;
-  addItem: (fabric: FabricListItem, quantity: number, unit: 'meter' | 'roll') => void;
+  addItem: (
+    fabric: FabricListItem,
+    quantity: number,
+    unit: 'meter' | 'roll',
+    options?: {
+      categoryId?: number;
+      categoryName?: string;
+      glossId?: number;
+      glossDescription?: string;
+      thickness?: number;
+      thicknessLabel?: string;
+      width?: number;
+      widthLabel?: string;
+      length?: number;
+      lengthLabel?: string;
+      storeId?: number;
+      storeName?: string;
+    }
+  ) => void;
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemUnit: (itemId: string, unit: 'meter' | 'roll') => void;
+  updateItemStore: (itemId: string, storeId: number, storeName?: string) => void;
   clearCart: () => void;
   
   // Getters
@@ -44,7 +63,25 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
-      addItem: (fabric: FabricListItem, quantity: number, unit: 'meter' | 'roll') => {
+      addItem: (
+        fabric: FabricListItem,
+        quantity: number,
+        unit: 'meter' | 'roll',
+        options?: {
+          categoryId?: number;
+          categoryName?: string;
+          glossId?: number;
+          glossDescription?: string;
+          thickness?: number;
+          thicknessLabel?: string;
+          width?: number;
+          widthLabel?: string;
+          length?: number;
+          lengthLabel?: string;
+          storeId?: number;
+          storeName?: string;
+        }
+      ) => {
         set((state) => {
           if (!state.cart) return state;
 
@@ -56,6 +93,19 @@ export const useCartStore = create<CartStore>()(
             unit,
             addedAt: new Date().toISOString(),
             fabric,
+            // Add filter values and store info
+            categoryId: options?.categoryId,
+            categoryName: options?.categoryName,
+            glossId: options?.glossId,
+            glossDescription: options?.glossDescription,
+            thickness: options?.thickness,
+            thicknessLabel: options?.thicknessLabel,
+            width: options?.width,
+            widthLabel: options?.widthLabel,
+            length: options?.length,
+            lengthLabel: options?.lengthLabel,
+            storeId: options?.storeId,
+            storeName: options?.storeName,
           };
 
           return {
@@ -107,6 +157,22 @@ export const useCartStore = create<CartStore>()(
               ...state.cart,
               items: state.cart.items.map((item) =>
                 item.id === itemId ? { ...item, unit } : item
+              ),
+              updatedAt: new Date().toISOString(),
+            },
+          };
+        });
+      },
+
+      updateItemStore: (itemId: string, storeId: number, storeName?: string) => {
+        set((state) => {
+          if (!state.cart) return state;
+
+          return {
+            cart: {
+              ...state.cart,
+              items: state.cart.items.map((item) =>
+                item.id === itemId ? { ...item, storeId, storeName } : item
               ),
               updatedAt: new Date().toISOString(),
             },

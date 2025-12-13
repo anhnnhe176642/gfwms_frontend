@@ -1,26 +1,37 @@
 'use client';
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { Suspense, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { IsLoading } from '@/components/common';
-import FabricColorSearch from '@/components/shop/FabricColorSearch';
+import FabricColorDetailPage from '@/components/shop/FabricColorDetailPage';
 
-function ShopContent() {
+interface PageProps {
+  params: Promise<{ colorId: string }>;
+}
+
+function ColorDetailContent({ colorId }: { colorId: string }) {
   const searchParams = useSearchParams();
   const categoryId = searchParams.get('category');
 
-  return <FabricColorSearch categoryId={categoryId || undefined} />;
+  return (
+    <FabricColorDetailPage 
+      colorId={colorId} 
+      categoryId={categoryId || undefined} 
+    />
+  );
 }
 
-export default function ShopPage() {
+export default function ColorDetailPage({ params }: PageProps) {
+  const { colorId } = use(params);
+  
   return (
     <>
       <Header />
       <main className="min-h-screen bg-white dark:bg-slate-900 py-12">
         <div className="max-w-7xl mx-auto px-4">
           <Suspense fallback={<IsLoading />}>
-            <ShopContent />
+            <ColorDetailContent colorId={decodeURIComponent(colorId)} />
           </Suspense>
         </div>
       </main>
