@@ -1017,54 +1017,6 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
     }
   }, [baseScale, setActiveBox]);
 
-  const handleSave = () => {
-    if (!originalImage) return;
-
-    const validBoxes = boxes.filter((box) => isValidBoundingBox(box, 10));
-
-    if (validBoxes.length === 0) {
-      toast.error('Vui lòng vẽ ít nhất một bounding box');
-      return;
-    }
-
-    // Convert boxes from canvas coordinates to PIXEL coordinates
-    // Annotations (pixel format) - Source of truth
-    // Array of: {class_id, class_name, x1, y1, x2, y2, confidence}
-    // x1, y1 = top-left corner; x2, y2 = bottom-right corner (pixel coordinates)
-    // Format must match what saveImageAnnotations expects: classId, className, x, y, width, height in pixels
-    const labels = validBoxes.map((box) => {
-      // Boxes are in canvas display coordinates (scaled by baseScale)
-      // Convert back to original image pixel coordinates
-      const pixelBox = {
-        startX: box.startX / baseScale,
-        startY: box.startY / baseScale,
-        endX: box.endX / baseScale,
-        endY: box.endY / baseScale,
-      };
-
-      // Normalize to get startX, startY (top-left corner in pixels)
-      const normalized = normalizeBoundingBox(pixelBox);
-      const width = Math.abs(normalized.endX - normalized.startX);
-      const height = Math.abs(normalized.endY - normalized.startY);
-
-      const classId = classes.indexOf(box.label || '');
-
-      // Return pixel coordinates (x, y, width, height in original image pixels)
-      // This will be converted to x1, y1, x2, y2 in saveImageAnnotations
-      return {
-        classId,
-        className: box.label || '',
-        x: normalized.startX,  // x1 pixel coordinate (top-left corner)
-        y: normalized.startY,  // y1 pixel coordinate (top-left corner)
-        width: width,           // width in pixels
-        height: height,         // height in pixels
-      };
-    });
-
-    onSave(labels, 'completed');
-    toast.success(`Đã lưu ${labels.length} labels`);
-  };
-
   const handleDeleteBox = useCallback((boxId: string) => {
     removeBox(boxId);
     toast.success('Đã xóa box');
@@ -1410,21 +1362,13 @@ export const YOLOImageLabeling: React.FC<YOLOImageLabelingProps> = ({
             {isSavingDraft ? 'Đang lưu...' : 'Lưu nháp'}
           </Button>
           <Button 
-            onClick={handleSave} 
-            disabled={boxes.length === 0 || disabled}
-            className="gap-2"
-          >
-            <Save className="h-4 w-4" />
-             {disabled ? 'Đang lưu...' : 'Lưu'} ({boxes.length})
-          </Button>
-          <Button 
             variant="default" 
             onClick={handleMarkComplete} 
             disabled={boxes.length === 0 || disabled || isMarking}
             className="gap-2 bg-green-600 hover:bg-green-700"
           >
             <CheckCircle2 className="h-4 w-4" />
-            {isMarking ? 'Đang xử lý...' : 'Hoàn thành'}
+            {isMarking ? 'Đang xử lý...' : 'Hoàn thành'} ({boxes.length})
           </Button>
         </div>
       </CardContent>
