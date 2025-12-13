@@ -13,8 +13,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import fabricCustomerService from '@/services/fabricCustomer.service';
+import fabricStoreService from '@/services/fabric-store.service';
 import type { CartItem } from '@/types/cart';
 import type { StoreFilterOption } from '@/services/fabricCustomer.service';
+import type { Allocation } from '@/services/fabric-store.service';
 
 interface CartItemRowProps {
   item: CartItem;
@@ -34,6 +36,8 @@ export default function CartItemRow({
   const [stores, setStores] = useState<StoreFilterOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [quantityError, setQuantityError] = useState<string>('');
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [totalValue, setTotalValue] = useState<number>(0);
 
   const { fabric, quantity, unit, storeId, storeName } = item;
   const {
@@ -73,6 +77,40 @@ export default function CartItemRow({
 
     fetchStores();
   }, [fabric.color?.id, categoryId, glossId, thickness, width, length]);
+
+  // Fetch allocation data when storeId, quantity, or unit changes
+  useEffect(() => {
+    if (!storeId || quantity <= 0) {
+      setAllocations([]);
+      setTotalValue(0);
+      return;
+    }
+
+    const fetchAllocation = async () => {
+      try {
+        const response = await fabricStoreService.allocate({
+          categoryId,
+          quantity,
+          unit: unit === 'meter' ? 'METER' : 'ROLL',
+          storeId,
+          colorId: fabric.color?.id,
+          glossId,
+          thickness,
+          width,
+          length,
+        });
+
+        setAllocations(response.allocations);
+        setTotalValue(response.totalValue);
+      } catch (error) {
+        console.error('Failed to fetch allocation data:', error);
+        setAllocations([]);
+        setTotalValue(0);
+      }
+    };
+
+    fetchAllocation();
+  }, [storeId, quantity, unit, categoryId, glossId, thickness, width, length, fabric.color?.id]);
 
   // Validate quantity against store availability
   const validateQuantity = useCallback(
@@ -121,8 +159,7 @@ export default function CartItemRow({
     validateQuantity(quantity);
   };
 
-  const pricePerUnit = unit === 'meter' ? fabric.sellingPrice : fabric.sellingPrice * fabric.length;
-  const totalPrice = pricePerUnit * quantity;
+  const totalPrice = totalValue || 0;
 
   // Build attributes summary
   const attributesSummary = [];
@@ -239,9 +276,6 @@ export default function CartItemRow({
         {/* Price & Remove - Right */}
         <div className="space-y-3 flex flex-col justify-between col-span-1 md:col-span-2">
           <div className="text-right">
-            <p className="text-xs text-muted-foreground mb-1">
-              {pricePerUnit.toLocaleString('vi-VN')} ₫ / {unit === 'meter' ? 'mét' : 'cuộn'}
-            </p>
             <p className="font-bold text-lg text-primary">
               {totalPrice.toLocaleString('vi-VN')} ₫
             </p>
@@ -255,6 +289,51 @@ export default function CartItemRow({
           </div>
         </div>
       </div>
+
+      {/* Allocation Details */}
+      {allocations.length > 0 && (
+        <div className="mt-4 pt-4 border-t">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Chi tiết:</p>
+          <div className="space-y-2">
+            {allocations.map((allocation) => (
+              <div key={allocation.fabricId} className="bg-muted/30 rounded p-2">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium">
+                      {allocation.fabricInfo.category} - {allocation.fabricInfo.color}
+                    </p>
+                    <div className="text-xs text-muted-foreground space-y-1 mt-1">
+                      {allocation.fabricInfo.gloss && (
+                        <p>Độ bóng: {allocation.fabricInfo.gloss}</p>
+                      )}
+                      {allocation.fabricInfo.thickness && (
+                        <p>Độ dày: {allocation.fabricInfo.thickness}</p>
+                      )}
+                      {allocation.fabricInfo.width && (
+                        <p>Chiều rộng: {allocation.fabricInfo.width}</p>
+                      )}
+                      {allocation.fabricInfo.length && (
+                        <p>Chiều dài: {allocation.fabricInfo.length}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold">
+                      {allocation.quantity} {allocation.unit === 'ROLL' ? 'cuộn' : 'mét'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {allocation.unit === 'ROLL'
+                        ? allocation.pricing.sellingPricePerRoll.toLocaleString('vi-VN')
+                        : allocation.pricing.sellingPricePerMeter.toLocaleString('vi-VN')}{' '}
+                      ₫/{allocation.unit === 'ROLL' ? 'cuộn' : 'mét'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
