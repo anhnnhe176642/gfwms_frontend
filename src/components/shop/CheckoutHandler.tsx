@@ -18,9 +18,13 @@ import { useCartStore } from '@/store/useCartStore';
 import { useCartCheckoutStore } from '@/store/useCartCheckoutStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { CreateOrderPayload } from '@/types/order';
+import type { CartItem } from '@/types/cart';
+import type { Allocation } from '@/services/fabric-store.service';
 
 interface CheckoutHandlerProps {
   disabled?: boolean;
+  allocationsMap?: Record<string, { allocations: Allocation[]; totalValue: number }>;
+  cartItems?: CartItem[];
   onPaymentStart?: (paymentData: {
     invoiceId: number | string;
     paymentAmount: number;
@@ -31,7 +35,12 @@ interface CheckoutHandlerProps {
   }) => void;
 }
 
-export default function CheckoutHandler({ disabled = false, onPaymentStart }: CheckoutHandlerProps) {
+export default function CheckoutHandler({ 
+  disabled = false, 
+  allocationsMap,
+  cartItems,
+  onPaymentStart 
+}: CheckoutHandlerProps) {
   const router = useRouter();
   const { cart, getCartSummary } = useCartStore();
   const { selectedStoreId } = useCartCheckoutStore();
@@ -51,30 +60,48 @@ export default function CheckoutHandler({ disabled = false, onPaymentStart }: Ch
       return;
     }
 
-    if (!selectedStoreId) {
-      toast.error('Vui lòng chọn cửa hàng để thanh toán');
+    if (!cartItems || cartItems.length === 0) {
+      toast.error('Giỏ hàng trống');
       return;
     }
 
-    if (!cart || cart.items.length === 0) {
-      toast.error('Giỏ hàng trống');
+    if (!allocationsMap || Object.keys(allocationsMap).length === 0) {
+      toast.error('Vui lòng chọn cửa hàng và số lượng cho tất cả sản phẩm');
       return;
     }
 
     try {
       setIsCreatingOrder(true);
 
-      // 1. Convert cart items to order items format
-      const orderItems = cart.items.map((item) => ({
-        fabricId: item.fabricId,
-        quantity: item.quantity,
-        saleUnit: item.unit.toUpperCase() as 'METER' | 'ROLL',
-      }));
+      // 1. Build order items from allocations
+      const orderItems = cartItems
+        .filter((item) => allocationsMap[item.id])
+        .flatMap((item) => {
+          const { allocations } = allocationsMap[item.id];
+          return allocations.map((allocation) => ({
+            fabricId: allocation.fabricId,
+            quantity: allocation.quantity,
+            saleUnit: allocation.unit,
+            storeId: item.storeId,
+          }));
+        });
+
+      if (orderItems.length === 0) {
+        toast.error('Không có chi tiết phân bổ nào có sẵn. Vui lòng chọn lại cửa hàng.');
+        return;
+      }
+
+      // Get storeId from first item (all items should have same store after selection)
+      const storeId = orderItems[0].storeId;
+      if (!storeId) {
+        toast.error('Vui lòng chọn cửa hàng cho tất cả sản phẩm');
+        return;
+      }
 
       // 2. Create order
       const createOrderPayload: CreateOrderPayload = {
-        storeId: selectedStoreId,
-        orderItems,
+        storeId,
+        orderItems: orderItems.map(({ storeId: _, ...item }) => item),
         paymentType: 'CASH', // Default to CASH for PayOS QR
         notes: `Đơn hàng từ khách hàng ${user.fullname || user.username}`,
       };
@@ -143,19 +170,43 @@ export default function CheckoutHandler({ disabled = false, onPaymentStart }: Ch
                   <p className="font-semibold mb-2">Kiểm tra thông tin đơn hàng:</p>
                   <ul className="text-sm space-y-1 list-disc list-inside">
                     <li>
-                      Số sản phẩm: <span className="font-semibold">{cart?.items.length}</span>
+                      Số sản phẩm: <span className="font-semibold">{cartItems?.length || 0}</span>
                     </li>
                     <li>
                       Tổng tiền:{' '}
-                      <span className="font-semibold">
-                        {summary.totalPrice.toLocaleString('vi-VN')} ₫
+                      <span className="font-semibold text-base text-primary">
+                        {Object.values(allocationsMap || {}).reduce((sum, item) => sum + item.totalValue, 0).toLocaleString('vi-VN')} ₫
                       </span>
                     </li>
                     <li>
-                      Cửa hàng: <span className="font-semibold">{selectedStoreId}</span>
+                      Cửa hàng:{' '}
+                      <span className="font-semibold">
+                        {cartItems && cartItems.length > 0 ? cartItems[0].storeName || `ID: ${cartItems[0].storeId}` : 'N/A'}
+                      </span>
                     </li>
                   </ul>
                 </div>
+                {allocationsMap && Object.keys(allocationsMap).length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 space-y-2 max-h-48 overflow-y-auto">
+                    <p className="font-semibold text-sm">Chi tiết đơn hàng:</p>
+                    <div className="space-y-1">
+                      {Object.entries(allocationsMap).map(([itemId, data]) => (
+                        <div key={itemId} className="text-xs space-y-1">
+                          {data.allocations.map((alloc, idx) => (
+                            <div key={idx} className="flex justify-between gap-2">
+                              <span className="flex-1">
+                                {alloc.fabricInfo.category} - {alloc.fabricInfo.color} ({alloc.quantity} {alloc.unit === 'ROLL' ? 'cuộn' : 'mét'})
+                              </span>
+                              <span className="font-semibold shrink-0">
+                                {alloc.pricing.estimatedValue.toLocaleString('vi-VN')} ₫
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded p-2 flex gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                   <span>

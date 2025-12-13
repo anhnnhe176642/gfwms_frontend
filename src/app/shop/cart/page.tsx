@@ -15,6 +15,7 @@ import CheckoutHandler from '@/components/shop/CheckoutHandler';
 import PaymentDisplay from '@/components/shop/PaymentDisplay';
 import { useAuth } from '@/hooks/useAuth';
 import type { CartItem } from '@/types/cart';
+import type { Allocation } from '@/services/fabric-store.service';
 import CartItemRow from '@/components/shop/CartItemRow';
 
 export default function CartPage() {
@@ -28,6 +29,7 @@ export default function CartPage() {
     qrCodeBase64: string;
     accountName?: string;
   } | null>(null);
+  const [allocationsMap, setAllocationsMap] = useState<Record<string, { allocations: Allocation[]; totalValue: number }>>({});
 
   const cart = useCartStore((state) => state.cart);
   const isInitialized = useCartStore((state) => state.isInitialized);
@@ -95,6 +97,13 @@ export default function CartPage() {
     }
   };
 
+  const handleAllocationUpdate = (itemId: string, allocations: Allocation[], totalValue: number) => {
+    setAllocationsMap((prev) => ({
+      ...prev,
+      [itemId]: { allocations, totalValue },
+    }));
+  };
+
   return (
     <>
       <Header />
@@ -143,6 +152,9 @@ export default function CartPage() {
                             updateItemStore(item.id, storeId, storeName);
                           }}
                           onRemove={() => removeItem(item.id)}
+                          onAllocationUpdate={(allocations, totalValue) =>
+                            handleAllocationUpdate(item.id, allocations, totalValue)
+                          }
                         />
                       ))}
                     </div>
@@ -169,14 +181,16 @@ export default function CartPage() {
                       <div className="border-t pt-2 mt-2 flex justify-between text-lg font-bold">
                         <span>Thành tiền:</span>
                         <span className="text-primary">
-                          {summary.totalPrice.toLocaleString('vi-VN')} ₫
+                          {Object.values(allocationsMap).reduce((sum, item) => sum + item.totalValue, 0).toLocaleString('vi-VN')} ₫
                         </span>
                       </div>
                     </div>
 
                     <div className="space-y-2 pt-4">
                       <CheckoutHandler 
-                        disabled={cartItems.length === 0}
+                        disabled={cartItems.length === 0 || Object.keys(allocationsMap).length === 0}
+                        allocationsMap={allocationsMap}
+                        cartItems={cartItems}
                         onPaymentStart={(data) => {
                           setPaymentData(data);
                           // Scroll to bottom

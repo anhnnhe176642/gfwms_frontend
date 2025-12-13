@@ -24,6 +24,7 @@ interface CartItemRowProps {
   onUnitChange: (unit: 'meter' | 'roll') => void;
   onStoreChange: (storeId: number, storeName?: string) => void;
   onRemove: () => void;
+  onAllocationUpdate?: (allocations: Allocation[], totalValue: number) => void;
 }
 
 export default function CartItemRow({
@@ -32,6 +33,7 @@ export default function CartItemRow({
   onUnitChange,
   onStoreChange,
   onRemove,
+  onAllocationUpdate,
 }: CartItemRowProps) {
   const [stores, setStores] = useState<StoreFilterOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -102,6 +104,7 @@ export default function CartItemRow({
 
         setAllocations(response.allocations);
         setTotalValue(response.totalValue);
+        onAllocationUpdate?.(response.allocations, response.totalValue);
       } catch (error) {
         console.error('Failed to fetch allocation data:', error);
         setAllocations([]);
