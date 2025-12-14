@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { LogOut, User, Settings, LayoutDashboard, CreditCard, ShoppingCart } from 'lucide-react';
+import { LogOut, User, Settings, LayoutDashboard, CreditCard, ShoppingCart, Briefcase, Package } from 'lucide-react';
 import useAuth from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -75,9 +75,21 @@ export const Header: React.FC = () => {
                   <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
+                    <Link href="/account" className="cursor-pointer">
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      Tài khoản của tôi
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href={ROUTES.PROFILE.VIEW.path} className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       Hồ sơ cá nhân
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/account?tab=orders" className="cursor-pointer">
+                      <Package className="mr-2 h-4 w-4" />
+                      Đơn hàng của tôi
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, ArrowLeft, Package } from 'lucide-react';
@@ -14,12 +14,13 @@ import { invoiceService } from '@/services/invoice.service';
 import type { InvoiceDetail } from '@/types/invoice';
 
 interface OrderSuccessPageProps {
-  params: {
+  params: Promise<{
     orderId: string;
-  };
+  }>;
 }
 
-export default function OrderSuccessPage({ params }: OrderSuccessPageProps) {
+export default function OrderSuccessPage({ params: paramsProm }: OrderSuccessPageProps) {
+  const params = use(paramsProm);
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -157,7 +158,7 @@ export default function OrderSuccessPage({ params }: OrderSuccessPageProps) {
                             {(item.quantity * item.price).toLocaleString('vi-VN')} ₫
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            @ {item.price.toLocaleString('vi-VN')} ₫
+                            x {item.price.toLocaleString('vi-VN')} ₫
                           </p>
                         </div>
                       </div>

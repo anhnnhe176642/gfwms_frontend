@@ -1,4 +1,5 @@
 import type { PaginationState } from './common';
+import type { CreditRegistration } from './creditRegistration';
 
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
@@ -23,7 +24,7 @@ export type UserListItem = {
     name: string;
     description?: string | null;
   };
-  creditRegistration?: any | null;
+  creditRegistration?: CreditRegistration | null;
   permissionKeys?: string[];
   lastLogin?: string;
 };
@@ -91,6 +92,7 @@ export type ProfileUser = {
     description?: string | null;
   };
   permissionKeys?: string[];
+  creditRegistration?: CreditRegistration | null;
 };
 
 export type ProfileResponse = {
@@ -117,7 +119,7 @@ export type UserDetailResponse = {
     createdAt: string;
     updatedAt: string;
     role: string;
-    creditRegistration: any | null;
+    creditRegistration: CreditRegistration | null;
   };
 };
 

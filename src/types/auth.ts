@@ -1,4 +1,5 @@
 import { UserGender, UserStatus } from "./user";
+import type { CreditRegistration } from "./creditRegistration";
 
 export type User = {
   id: string | number;
@@ -17,7 +18,7 @@ export type User = {
   emailVerifiedAt?: string | null;
   role?: string; 
   permissionKeys?: string[];
-  creditRegistration?: string | null;
+  creditRegistration?: CreditRegistration | null;
   createdAt?: string;
   updatedAt?: string;
 };

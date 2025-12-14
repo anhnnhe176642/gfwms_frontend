@@ -1,5 +1,6 @@
 import type { PaginationState } from './common';
 import type { InvoiceStatus } from './invoice';
+import type { StoreListItem } from './store';
 
 export type OrderStatus = 'PENDING' | 'PROCESSING' | 'DELIVERED' | 'CANCELED' | 'FAILED';
 
@@ -85,7 +86,7 @@ export interface OrderListItem {
   customerPhone: string | null;
   notes: string | null;
   storeId: string | null;
-  store: unknown | null;
+  store: StoreListItem | null;
   createdAt: string;
   updatedAt: string;
   orderItems: OrderItem[];

@@ -51,6 +51,14 @@ export type CreateOrderResponse = {
 
 export const orderService = {
   /**
+   * Lấy danh sách đơn hàng của người dùng hiện tại
+   */
+  getMyOrders: async (params?: OrderListParams): Promise<OrderListResponse> => {
+    const response = await api.get<OrderListResponse>(`${BASE_PATH}/my`, { params });
+    return response.data;
+  },
+
+  /**
    * Lấy tất cả đơn hàng (Admin)
    */
   list: async (params?: OrderListParams): Promise<OrderListResponse> => {

@@ -1,4 +1,5 @@
-import type { OrderStatus, PaymentType } from '@/types/order';
+import type { OrderStatus, PaymentType, SaleUnit } from '@/types/order';
+import type { BadgeConfig } from '@/components/ui/badge';
 
 export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'PENDING', label: 'Chờ xử lý' },
@@ -55,6 +56,19 @@ export const IS_OFFLINE_OPTIONS: { value: string; label: string }[] = [
 export const SALE_UNIT_LABELS: Record<string, string> = {
   METER: 'Mét',
   ROLL: 'Cuộn',
+};
+
+export const SALE_UNIT_CONFIG: Record<SaleUnit, BadgeConfig<SaleUnit>> = {
+  METER: {
+    value: 'METER',
+    label: 'Mét',
+    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+  },
+  ROLL: {
+    value: 'ROLL',
+    label: 'Cuộn',
+    className: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
+  },
 };
 
 export const getOrderStatusLabel = (status: OrderStatus): string => {
