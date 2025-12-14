@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Trash2, ShoppingCart, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,10 @@ import CheckoutHandler from '@/components/shop/CheckoutHandler';
 import PaymentDisplay from '@/components/shop/PaymentDisplay';
 import { useAuth } from '@/hooks/useAuth';
 import type { CartItem } from '@/types/cart';
-import type { Allocation } from '@/services/fabric-store.service';
+import type { AllocationItem, AllocationResult } from '@/services/fabric-store.service';
 import CartItemRow from '@/components/shop/CartItemRow';
+import fabricStoreService from '@/services/fabric-store.service';
+import { toast } from 'sonner';
 
 export default function CartPage() {
   const [isClient, setIsClient] = useState(false);
@@ -29,7 +31,13 @@ export default function CartPage() {
     qrCodeBase64: string;
     accountName?: string;
   } | null>(null);
-  const [allocationsMap, setAllocationsMap] = useState<Record<string, { allocations: Allocation[]; totalValue: number }>>({});
+  // Map: itemId -> { allocations, totalValue }
+  const [allocationsMap, setAllocationsMap] = useState<Record<string, { allocations: AllocationItem[]; totalValue: number }>>({});
+  // Map: cartItemId -> error message
+  const [itemErrors, setItemErrors] = useState<Record<string, string>>({});
+  // Refs for debouncing and tracking changes
+  const debounceTimersRef = useRef<Record<number, NodeJS.Timeout | null>>({});
+  const prevCartItemsRef = useRef<CartItem[] | null>(null);
 
   const cart = useCartStore((state) => state.cart);
   const isInitialized = useCartStore((state) => state.isInitialized);
@@ -37,7 +45,6 @@ export default function CartPage() {
   const removeItem = useCartStore((state) => state.removeItem);
   const updateItemQuantity = useCartStore((state) => state.updateItemQuantity);
   const updateItemUnit = useCartStore((state) => state.updateItemUnit);
-  const updateItemStore = useCartStore((state) => state.updateItemStore);
   const clearCart = useCartStore((state) => state.clearCart);
   const getCartSummary = useCartStore((state) => state.getCartSummary);
 
@@ -60,6 +67,171 @@ export default function CartPage() {
       setIsInitializing(false);
     }
   }, [isClient, isAuthReady, user?.id]);
+
+  // Fetch allocations for all items grouped by storeId (with debounce)
+  useEffect(() => {
+    if (!isClient || !cart?.items || cart.items.length === 0) {
+      setAllocationsMap({});
+      setItemErrors({});
+      prevCartItemsRef.current = null;
+      return;
+    }
+
+    // Detect which stores have changed items
+    const getStoresWithChanges = (): Set<number> => {
+      const changedStores = new Set<number>();
+      const prevItems = prevCartItemsRef.current || [];
+
+      // If first time or count differs, all stores changed
+      if (prevItems.length !== cart.items.length) {
+        cart.items.forEach((item) => {
+          if (item.storeId) changedStores.add(item.storeId);
+        });
+        return changedStores;
+      }
+
+      // Check each item for changes
+      cart.items.forEach((currentItem, index) => {
+        const prevItem = prevItems[index];
+
+        // If item is new or properties changed
+        if (
+          !prevItem ||
+          prevItem.id !== currentItem.id ||
+          prevItem.quantity !== currentItem.quantity ||
+          prevItem.unit !== currentItem.unit ||
+          prevItem.categoryId !== currentItem.categoryId ||
+          prevItem.glossId !== currentItem.glossId ||
+          prevItem.thickness !== currentItem.thickness ||
+          prevItem.width !== currentItem.width ||
+          prevItem.length !== currentItem.length ||
+          prevItem.storeId !== currentItem.storeId
+        ) {
+          if (currentItem.storeId) {
+            changedStores.add(currentItem.storeId);
+          }
+        }
+      });
+
+      return changedStores;
+    };
+
+    const changedStoreIds = getStoresWithChanges();
+
+    // Only proceed if there are changed stores
+    if (changedStoreIds.size === 0) {
+      prevCartItemsRef.current = cart.items;
+      return;
+    }
+
+    // Clear previous timeouts for changed stores only
+    changedStoreIds.forEach((storeId) => {
+      if (debounceTimersRef.current[storeId]) {
+        clearTimeout(debounceTimersRef.current[storeId]!);
+      }
+    });
+
+    // Set new debounce timeouts for changed stores (300ms delay)
+    changedStoreIds.forEach((storeId) => {
+      debounceTimersRef.current[storeId] = setTimeout(async () => {
+        try {
+          // Group items by storeId
+          const groupedByStore = cart.items.reduce(
+            (acc, item) => {
+              if (!item.storeId) return acc;
+              if (!acc[item.storeId]) {
+                acc[item.storeId] = [];
+              }
+              acc[item.storeId].push(item);
+              return acc;
+            },
+            {} as Record<number, CartItem[]>
+          );
+
+          // Only process the store that changed
+          const items = groupedByStore[storeId];
+          if (!items || items.length === 0) return;
+
+          const batchRequest = {
+            storeId,
+            allocations: items.map((item) => ({
+              categoryId: item.categoryId!,
+              quantity: item.quantity,
+              unit: item.unit === 'meter' ? 'METER' as const : 'ROLL' as const,
+              colorId: item.fabric.color?.id,
+              glossId: item.glossId,
+              thickness: item.thickness,
+              width: item.width,
+              length: item.length,
+            })),
+          };
+
+          try {
+            const response = await fabricStoreService.batchAllocate(batchRequest);
+
+            // Update allocations for this store only
+            setAllocationsMap((prev) => {
+              const updated = { ...prev };
+              response.allocations.forEach((allocation: AllocationResult, index: number) => {
+                const cartItem = items[index];
+                updated[cartItem.id] = {
+                  allocations: allocation.items,
+                  totalValue: allocation.totalValue,
+                };
+              });
+              return updated;
+            });
+
+            // Clear errors for items in this store if allocation succeeded
+            setItemErrors((prev) => {
+              const updated = { ...prev };
+              items.forEach((item) => {
+                delete updated[item.id];
+              });
+              return updated;
+            });
+          } catch (storeError) {
+            // Handle 400 errors with field-level error messages
+            const errorObj = storeError as { response?: { status?: number; data?: { errors?: Array<{ field: string; message: string }> } } };
+
+            if (errorObj?.response?.status === 400 && errorObj?.response?.data?.errors) {
+              // Map field errors to cart items
+              const newItemErrors: Record<string, string> = {};
+              errorObj.response.data.errors.forEach((err) => {
+                const match = err.field?.match(/allocations\.(\d+)/);
+                if (match) {
+                  const index = parseInt(match[1]);
+                  const cartItem = items[index];
+                  if (cartItem) {
+                    newItemErrors[cartItem.id] = err.message;
+                  }
+                }
+              });
+              setItemErrors((prev) => ({ ...prev, ...newItemErrors }));
+            } else {
+              toast.error('Không thể tải thông tin phân bổ vải');
+              console.error('Failed to fetch allocations for store', storeId, storeError);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch allocations:', error);
+          toast.error('Không thể tải thông tin phân bổ vải');
+        }
+      }, 300);
+    });
+
+    // Update prev items ref
+    prevCartItemsRef.current = cart.items;
+
+    // Cleanup timeouts on unmount
+    return () => {
+      changedStoreIds.forEach((storeId) => {
+        if (debounceTimersRef.current[storeId]) {
+          clearTimeout(debounceTimersRef.current[storeId]!);
+        }
+      });
+    };
+  }, [isClient, cart?.items]);
 
   if (!isClient || isInitializing) {
     return <IsLoading />;
@@ -97,11 +269,8 @@ export default function CartPage() {
     }
   };
 
-  const handleAllocationUpdate = (itemId: string, allocations: Allocation[], totalValue: number) => {
-    setAllocationsMap((prev) => ({
-      ...prev,
-      [itemId]: { allocations, totalValue },
-    }));
+  const handleUnitChange = (itemId: string, unit: 'meter' | 'roll') => {
+    updateItemUnit(itemId, unit);
   };
 
   return (
@@ -141,22 +310,59 @@ export default function CartPage() {
                     <CardDescription>Quản lý các sản phẩm của bạn</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {cartItems.map((item) => (
-                        <CartItemRow
-                          key={item.id}
-                          item={item}
-                          onQuantityChange={(value: string) => handleQuantityChange(item.id, value)}
-                          onUnitChange={(unit: 'meter' | 'roll') => updateItemUnit(item.id, unit)}
-                          onStoreChange={(storeId: number, storeName?: string) => {
-                            updateItemStore(item.id, storeId, storeName);
-                          }}
-                          onRemove={() => removeItem(item.id)}
-                          onAllocationUpdate={(allocations, totalValue) =>
-                            handleAllocationUpdate(item.id, allocations, totalValue)
-                          }
-                        />
-                      ))}
+                    <div className="space-y-6">
+                      {/* Group items by store */}
+                      {Object.entries(
+                        cartItems.reduce(
+                          (acc, item) => {
+                            const storeId = item.storeId || 0;
+                            if (!acc[storeId]) {
+                              acc[storeId] = [];
+                            }
+                            acc[storeId].push(item);
+                            return acc;
+                          },
+                          {} as Record<number, CartItem[]>
+                        )
+                      ).map(([storeIdStr, storeItems]) => {
+                        const storeId = parseInt(storeIdStr);
+                        const storeName = storeItems[0]?.storeName || `Cửa hàng ${storeId}`;
+
+                        return (
+                          <div key={storeId} className="border rounded-lg p-4 bg-muted/30">
+                            {/* Store Header */}
+                            <div className="mb-4 pb-3 border-b">
+                              <h3 className="font-semibold text-base flex items-center gap-2">
+                                <Store className="h-5 w-5" />
+                                {storeName}
+                              </h3>
+                            </div>
+
+                            {/* Store Items */}
+                            <div className="space-y-4">
+                              {storeItems.map((item) => {
+                                const allocations = allocationsMap[item.id]?.allocations || [];
+                                const maxAvailable = allocations.length > 0 ? allocations[0]?.available || 0 : 0;
+                                const error = itemErrors[item.id];
+
+                                return (
+                                  <CartItemRow
+                                    key={item.id}
+                                    item={item}
+                                    onQuantityChange={(value: string) => handleQuantityChange(item.id, value)}
+                                    onUnitChange={(unit: 'meter' | 'roll') => handleUnitChange(item.id, unit)}
+                                    onRemove={() => removeItem(item.id)}
+                                    allocations={allocations}
+                                    totalValue={allocationsMap[item.id]?.totalValue || 0}
+                                    maxAvailable={maxAvailable}
+                                    error={error}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
@@ -197,6 +403,9 @@ export default function CartPage() {
                           setTimeout(() => {
                             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                           }, 100);
+                        }}
+                        onAllocationValidationError={(itemErrors) => {
+                          setItemErrors(itemErrors);
                         }}
                       />
                       <Button

@@ -14,16 +14,17 @@ import {
 import { toast } from 'sonner';
 import { orderService } from '@/services/order.service';
 import { invoiceService } from '@/services/invoice.service';
+import fabricStoreService from '@/services/fabric-store.service';
 import { useCartStore } from '@/store/useCartStore';
 import { useCartCheckoutStore } from '@/store/useCartCheckoutStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { CreateOrderPayload } from '@/types/order';
 import type { CartItem } from '@/types/cart';
-import type { Allocation } from '@/services/fabric-store.service';
+import type { AllocationItem } from '@/services/fabric-store.service';
 
 interface CheckoutHandlerProps {
   disabled?: boolean;
-  allocationsMap?: Record<string, { allocations: Allocation[]; totalValue: number }>;
+  allocationsMap?: Record<string, { allocations: AllocationItem[]; totalValue: number }>;
   cartItems?: CartItem[];
   onPaymentStart?: (paymentData: {
     invoiceId: number | string;
@@ -33,13 +34,15 @@ interface CheckoutHandlerProps {
     qrCodeBase64: string;
     accountName?: string;
   }) => void;
+  onAllocationValidationError?: (itemErrors: Record<string, string>) => void;
 }
 
 export default function CheckoutHandler({ 
   disabled = false, 
   allocationsMap,
   cartItems,
-  onPaymentStart 
+  onPaymentStart,
+  onAllocationValidationError,
 }: CheckoutHandlerProps) {
   const router = useRouter();
   const { cart, getCartSummary } = useCartStore();
@@ -66,65 +69,171 @@ export default function CheckoutHandler({
     }
 
     if (!allocationsMap || Object.keys(allocationsMap).length === 0) {
-      toast.error('Vui lòng chọn cửa hàng và số lượng cho tất cả sản phẩm');
+      toast.error('Vui lòng đảm bảo tất cả sản phẩm đã được phân bổ');
       return;
     }
 
     try {
       setIsCreatingOrder(true);
 
-      // 1. Build order items from allocations
-      const orderItems = cartItems
-        .filter((item) => allocationsMap[item.id])
-        .flatMap((item) => {
-          const { allocations } = allocationsMap[item.id];
-          return allocations.map((allocation) => ({
-            fabricId: allocation.fabricId,
-            quantity: allocation.quantity,
-            saleUnit: allocation.unit,
-            storeId: item.storeId,
-          }));
-        });
+      // Re-validate allocations before checkout
+      // Group items by storeId
+      const groupedByStore = cartItems.reduce(
+        (acc, item) => {
+          if (!item.storeId) return acc;
+          if (!acc[item.storeId]) {
+            acc[item.storeId] = [];
+          }
+          acc[item.storeId].push(item);
+          return acc;
+        },
+        {} as Record<number, CartItem[]>
+      );
 
-      if (orderItems.length === 0) {
+      // Validate allocations for each store
+      for (const [storeIdStr, items] of Object.entries(groupedByStore)) {
+        const storeId = parseInt(storeIdStr);
+
+        const batchRequest = {
+          storeId,
+          allocations: items.map((item) => ({
+            categoryId: item.categoryId!,
+            quantity: item.quantity,
+            unit: item.unit === 'meter' ? 'METER' as const : 'ROLL' as const,
+            colorId: item.fabric.color?.id,
+            glossId: item.glossId,
+            thickness: item.thickness,
+            width: item.width,
+            length: item.length,
+          })),
+        };
+
+        try {
+          await fabricStoreService.batchAllocate(batchRequest);
+        } catch (allocationError) {
+          // Check if it's a 400 validation error
+          const errorObj = allocationError as { response?: { status?: number; data?: { message?: string; errors?: Array<{ field: string; message: string }> } } };
+          
+          if (errorObj?.response?.status === 400) {
+            // Map field errors to cart items (field format: "allocations.0", "allocations.1", etc.)
+            const newItemErrors: Record<string, string> = {};
+            
+            errorObj?.response?.data?.errors?.forEach((err) => {
+              const match = err.field?.match(/allocations\.(\d+)/);
+              if (match) {
+                const index = parseInt(match[1]);
+                const cartItem = items[index];
+                if (cartItem) {
+                  newItemErrors[cartItem.id] = err.message;
+                }
+              }
+            });
+            
+            // Call callback to update itemErrors in parent component
+            if (onAllocationValidationError) {
+              onAllocationValidationError(newItemErrors);
+            }
+            
+            const displayMessage = Object.values(newItemErrors).join('; ') || 
+              errorObj?.response?.data?.message || 'Thông tin phân bổ không còn hợp lệ';
+            
+            toast.error(`Không thể thanh toán: ${displayMessage}`);
+            setIsCreatingOrder(false);
+            return;
+          }
+          
+          // For other errors, throw to be caught by outer catch
+          throw allocationError;
+        }
+      }
+
+      // All allocations are valid, proceed with order creation
+
+
+      // 1. Build order items from allocations, grouped by store
+      const ordersByStore: Record<number, Array<{ fabricId: number; quantity: number; saleUnit: 'ROLL' | 'METER' }>> = {};
+
+      cartItems.forEach((item) => {
+        if (!allocationsMap[item.id]) {
+          console.warn('Item missing allocations:', item.id);
+          return;
+        }
+
+        const storeId = item.storeId;
+        if (!storeId) {
+          throw new Error(`Mục ${item.fabric.category.name} không có cửa hàng được gán. Vui lòng thêm lại sản phẩm.`);
+        }
+
+        if (!ordersByStore[storeId]) {
+          ordersByStore[storeId] = [];
+        }
+
+        const { allocations } = allocationsMap[item.id];
+        allocations.forEach((allocation) => {
+          const storeOrders = ordersByStore[storeId];
+          if (storeOrders) {
+            storeOrders.push({
+              fabricId: allocation.fabricId,
+              quantity: allocation.quantity,
+              saleUnit: allocation.unit,
+            });
+          }
+        });
+      });
+
+      const storeIds = Object.keys(ordersByStore).map(Number);
+      if (storeIds.length === 0) {
         toast.error('Không có chi tiết phân bổ nào có sẵn. Vui lòng chọn lại cửa hàng.');
         return;
       }
 
-      // Get storeId from first item (all items should have same store after selection)
-      const storeId = orderItems[0].storeId;
-      if (!storeId) {
-        toast.error('Vui lòng chọn cửa hàng cho tất cả sản phẩm');
-        return;
+      // Create orders for each store
+      const invoiceIds: string[] = [];
+      let totalPaymentAmount = 0;
+      let latestDeadline = '';
+      let latestQrCode = '';
+      let latestQrCodeBase64 = '';
+      let accountName = '';
+
+      for (const storeId of storeIds) {
+        const orderItems = ordersByStore[storeId];
+
+        // 2. Create order
+        const createOrderPayload: CreateOrderPayload = {
+          storeId,
+          orderItems,
+          paymentType: 'CASH',
+          notes: `Đơn hàng từ khách hàng ${user.fullname || user.username}`,
+        };
+
+        const orderResponse = await orderService.create(createOrderPayload);
+        toast.success(`Tạo đơn hàng thành công cho cửa hàng ${storeId}!`);
+
+        // 3. Create payment QR code
+        const invoiceId = orderResponse.data.order.invoice?.id;
+        if (!invoiceId) {
+          throw new Error('Không thể lấy ID hóa đơn từ đơn hàng');
+        }
+        invoiceIds.push(String(invoiceId));
+        
+        const paymentQRResponse = await invoiceService.createPaymentQR(invoiceId);
+        
+        // Accumulate payment details
+        totalPaymentAmount += paymentQRResponse.amount;
+        latestDeadline = paymentQRResponse.expiresAt || '';
+        latestQrCode = paymentQRResponse.qrCodeUrl;
+        latestQrCodeBase64 = paymentQRResponse.qrCodeBase64;
+        accountName = paymentQRResponse.accountName || '';
       }
-
-      // 2. Create order
-      const createOrderPayload: CreateOrderPayload = {
-        storeId,
-        orderItems: orderItems.map(({ storeId: _, ...item }) => item),
-        paymentType: 'CASH', // Default to CASH for PayOS QR
-        notes: `Đơn hàng từ khách hàng ${user.fullname || user.username}`,
-      };
-
-      const orderResponse = await orderService.create(createOrderPayload);
-
-      toast.success('Tạo đơn hàng thành công!');
-
-      // 3. Create payment QR code
-      const invoiceId = orderResponse.data.order.invoice?.id;
-      if (!invoiceId) {
-        throw new Error('Không thể lấy ID hóa đơn từ đơn hàng');
-      }
-      const paymentQRResponse = await invoiceService.createPaymentQR(invoiceId);
 
       // 4. Return payment data to parent component
       const paymentInfo = {
-        invoiceId: paymentQRResponse.invoiceId,
-        paymentAmount: paymentQRResponse.amount,
-        deadline: paymentQRResponse.expiresAt,
-        qrCodeUrl: paymentQRResponse.qrCodeUrl,
-        qrCodeBase64: paymentQRResponse.qrCodeBase64,
-        accountName: paymentQRResponse.accountName,
+        invoiceId: invoiceIds.join(', '),
+        paymentAmount: totalPaymentAmount,
+        deadline: latestDeadline,
+        qrCodeUrl: latestQrCode,
+        qrCodeBase64: latestQrCodeBase64,
+        accountName: accountName,
       };
       
       if (onPaymentStart) {
@@ -133,6 +242,7 @@ export default function CheckoutHandler({
     } catch (error: any) {
       console.error('Lỗi khi tạo đơn hàng:', error);
       const message =
+        error?.message ||
         error?.response?.data?.message ||
         'Không thể tạo đơn hàng. Vui lòng thử lại.';
       toast.error(message);
@@ -178,12 +288,17 @@ export default function CheckoutHandler({
                         {Object.values(allocationsMap || {}).reduce((sum, item) => sum + item.totalValue, 0).toLocaleString('vi-VN')} ₫
                       </span>
                     </li>
-                    <li>
-                      Cửa hàng:{' '}
-                      <span className="font-semibold">
-                        {cartItems && cartItems.length > 0 ? cartItems[0].storeName || `ID: ${cartItems[0].storeId}` : 'N/A'}
-                      </span>
-                    </li>
+                    {cartItems && cartItems.length > 0 && (
+                      <li>
+                        Cửa hàng:{' '}
+                        <span className="font-semibold">
+                          {[...new Set(cartItems.map(item => item.storeId))].map(storeId => {
+                            const store = cartItems.find(item => item.storeId === storeId);
+                            return store?.storeName || `ID: ${storeId}`;
+                          }).join(', ')}
+                        </span>
+                      </li>
+                    )}
                   </ul>
                 </div>
                 {allocationsMap && Object.keys(allocationsMap).length > 0 && (

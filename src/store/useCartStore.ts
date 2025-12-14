@@ -85,6 +85,40 @@ export const useCartStore = create<CartStore>()(
         set((state) => {
           if (!state.cart) return state;
 
+          // Check if an item with the same attributes already exists
+          const existingItem = state.cart.items.find((item) => {
+            return (
+              item.fabricId === fabric.id &&
+              item.unit === unit &&
+              item.categoryId === options?.categoryId &&
+              item.glossId === options?.glossId &&
+              item.thickness === options?.thickness &&
+              item.width === options?.width &&
+              item.length === options?.length &&
+              item.storeId === options?.storeId
+            );
+          });
+
+          // If item with same attributes exists, increase its quantity
+          if (existingItem) {
+            return {
+              cart: {
+                ...state.cart,
+                items: state.cart.items.map((item) =>
+                  item.id === existingItem.id
+                    ? {
+                        ...item,
+                        quantity: item.quantity + quantity,
+                        addedAt: new Date().toISOString(), // Update timestamp
+                      }
+                    : item
+                ),
+                updatedAt: new Date().toISOString(),
+              },
+            };
+          }
+
+          // Otherwise, create a new item
           const itemId = `${fabric.id}_${Date.now()}`;
           const newItem: CartItem = {
             id: itemId,
