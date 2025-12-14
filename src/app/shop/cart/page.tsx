@@ -6,6 +6,7 @@ import { ArrowLeft, Trash2, ShoppingCart, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { IsLoading } from '@/components/common';
@@ -35,6 +36,8 @@ export default function CartPage() {
   const [allocationsMap, setAllocationsMap] = useState<Record<string, { allocations: AllocationItem[]; totalValue: number }>>({});
   // Map: cartItemId -> error message
   const [itemErrors, setItemErrors] = useState<Record<string, string>>({});
+  // Set of selected item IDs for checkout
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   // Refs for debouncing and tracking changes
   const debounceTimersRef = useRef<Record<number, NodeJS.Timeout | null>>({});
   const prevCartItemsRef = useRef<CartItem[] | null>(null);
@@ -262,6 +265,27 @@ export default function CartPage() {
   const summary = getCartSummary();
   const isEmpty = cartItems.length === 0;
 
+  // Calculate selected items totals
+  const selectedItemsTotals = cartItems.reduce(
+    (acc, item) => {
+      if (!selectedItemIds.has(item.id)) return acc;
+      
+      const allocation = allocationsMap[item.id];
+      if (!allocation) return acc;
+
+      // Count selected items by unit
+      if (item.unit === 'meter') {
+        acc.meter += item.quantity;
+      } else {
+        acc.roll += item.quantity;
+      }
+      
+      acc.totalValue += allocation.totalValue;
+      return acc;
+    },
+    { meter: 0, roll: 0, totalValue: 0 }
+  );
+
   const handleQuantityChange = (itemId: string, value: string) => {
     const num = parseInt(value, 10);
     if (!isNaN(num) && num > 0) {
@@ -332,10 +356,29 @@ export default function CartPage() {
                           <div key={storeId} className="border rounded-lg p-4 bg-muted/30">
                             {/* Store Header */}
                             <div className="mb-4 pb-3 border-b">
-                              <h3 className="font-semibold text-base flex items-center gap-2">
-                                <Store className="h-5 w-5" />
-                                {storeName}
-                              </h3>
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-semibold text-base flex items-center gap-2">
+                                  <Store className="h-5 w-5" />
+                                  {storeName}
+                                </h3>
+                                <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                                  <Checkbox
+                                    checked={storeItems.length > 0 && storeItems.every((item) => selectedItemIds.has(item.id))}
+                                    onCheckedChange={(checked) => {
+                                      setSelectedItemIds((prev) => {
+                                        const newSet = new Set(prev);
+                                        if (checked) {
+                                          storeItems.forEach((item) => newSet.add(item.id));
+                                        } else {
+                                          storeItems.forEach((item) => newSet.delete(item.id));
+                                        }
+                                        return newSet;
+                                      });
+                                    }}
+                                  />
+                                  Chọn tất cả
+                                </label>
+                              </div>
                             </div>
 
                             {/* Store Items */}
@@ -356,6 +399,18 @@ export default function CartPage() {
                                     totalValue={allocationsMap[item.id]?.totalValue || 0}
                                     maxAvailable={maxAvailable}
                                     error={error}
+                                    isSelected={selectedItemIds.has(item.id)}
+                                    onSelectChange={(selected) => {
+                                      setSelectedItemIds((prev) => {
+                                        const newSet = new Set(prev);
+                                        if (selected) {
+                                          newSet.add(item.id);
+                                        } else {
+                                          newSet.delete(item.id);
+                                        }
+                                        return newSet;
+                                      });
+                                    }}
                                   />
                                 );
                               })}
@@ -372,31 +427,35 @@ export default function CartPage() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Tổng cộng</CardTitle>
+                    <CardTitle>Thanh toán ({selectedItemIds.size})</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
+                    <div className="space-y-2 p-3 bg-blue-50 dark:bg-blue-950 rounded">
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
+                        Tổng cộng các sản phẩm được chọn
+                      </p>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tổng số mét:</span>
-                        <span className="font-medium">{summary.totalMeter} m</span>
+                        <span className="font-medium">{selectedItemsTotals.meter} m</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tổng số cuộn:</span>
-                        <span className="font-medium">{summary.totalRoll} cuộn</span>
+                        <span className="font-medium">{selectedItemsTotals.roll} cuộn</span>
                       </div>
                       <div className="border-t pt-2 mt-2 flex justify-between text-lg font-bold">
                         <span>Thành tiền:</span>
                         <span className="text-primary">
-                          {Object.values(allocationsMap).reduce((sum, item) => sum + item.totalValue, 0).toLocaleString('vi-VN')} ₫
+                          {selectedItemsTotals.totalValue.toLocaleString('vi-VN')} ₫
                         </span>
                       </div>
                     </div>
 
                     <div className="space-y-2 pt-4">
                       <CheckoutHandler 
-                        disabled={cartItems.length === 0 || Object.keys(allocationsMap).length === 0}
+                        disabled={selectedItemIds.size === 0 || Object.keys(allocationsMap).length === 0}
                         allocationsMap={allocationsMap}
-                        cartItems={cartItems}
+                        cartItems={Array.from(selectedItemIds).map((id) => cartItems.find((item) => item.id === id)!).filter(Boolean)}
+                        selectedItemIds={selectedItemIds}
                         onPaymentStart={(data) => {
                           setPaymentData(data);
                           // Scroll to bottom

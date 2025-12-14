@@ -5,6 +5,7 @@ import { Trash2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -24,6 +25,8 @@ interface CartItemRowProps {
   totalValue?: number;
   maxAvailable?: number;
   error?: string;
+  isSelected?: boolean;
+  onSelectChange?: (selected: boolean) => void;
 }
 
 export default function CartItemRow({
@@ -35,6 +38,8 @@ export default function CartItemRow({
   totalValue = 0,
   maxAvailable = Infinity,
   error,
+  isSelected = false,
+  onSelectChange,
 }: CartItemRowProps) {
   const [quantityError, setQuantityError] = useState<string>('');
   const [expandAllocations, setExpandAllocations] = useState(false);
@@ -87,8 +92,19 @@ export default function CartItemRow({
   return (
     <div className="border rounded-lg p-4 hover:bg-muted/50 transition">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        {/* Checkbox - Selection */}
+        <div className="col-span-1 md:col-span-1 flex items-start pt-2">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(checked) => {
+              onSelectChange?.(checked as boolean);
+            }}
+            className="mt-2"
+          />
+        </div>
+
         {/* Product Info - Left */}
-        <div className="space-y-2 col-span-1 md:col-span-3">
+        <div className="space-y-2 col-span-1 md:col-span-2">
           <h3 className="font-semibold">{fabric.category.name}</h3>
           <p className="text-sm text-muted-foreground">
             Màu: <span className="text-foreground">{fabric.color.name}</span>
@@ -128,7 +144,7 @@ export default function CartItemRow({
         </div>
 
         {/* Quantity & Unit - Middle */}
-        <div className="col-span-1 md:col-span-7">
+        <div className="col-span-1 md:col-span-6">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Quantity Input */}
             <div className="md:flex-1 min-w-0">

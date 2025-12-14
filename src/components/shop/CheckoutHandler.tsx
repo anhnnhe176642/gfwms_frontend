@@ -26,6 +26,7 @@ interface CheckoutHandlerProps {
   disabled?: boolean;
   allocationsMap?: Record<string, { allocations: AllocationItem[]; totalValue: number }>;
   cartItems?: CartItem[];
+  selectedItemIds?: Set<string>;
   onPaymentStart?: (paymentData: {
     invoiceId: number | string;
     paymentAmount: number;
@@ -41,6 +42,7 @@ export default function CheckoutHandler({
   disabled = false, 
   allocationsMap,
   cartItems,
+  selectedItemIds,
   onPaymentStart,
   onAllocationValidationError,
 }: CheckoutHandlerProps) {
@@ -68,6 +70,16 @@ export default function CheckoutHandler({
       return;
     }
 
+    // Filter to only selected items
+    const itemsToProcess = selectedItemIds && selectedItemIds.size > 0 
+      ? cartItems.filter(item => selectedItemIds.has(item.id))
+      : cartItems;
+
+    if (itemsToProcess.length === 0) {
+      toast.error('Chọn sản phẩm để thanh toán');
+      return;
+    }
+
     if (!allocationsMap || Object.keys(allocationsMap).length === 0) {
       toast.error('Vui lòng đảm bảo tất cả sản phẩm đã được phân bổ');
       return;
@@ -78,7 +90,7 @@ export default function CheckoutHandler({
 
       // Re-validate allocations before checkout
       // Group items by storeId
-      const groupedByStore = cartItems.reduce(
+      const groupedByStore = itemsToProcess.reduce(
         (acc, item) => {
           if (!item.storeId) return acc;
           if (!acc[item.storeId]) {

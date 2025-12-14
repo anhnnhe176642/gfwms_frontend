@@ -143,7 +143,28 @@ export default function PaymentDisplay({
   useEffect(() => {
     if (!isPolling || !invoiceId) return;
 
+    // Check if deadline has expired
+    const deadlineDate = new Date(deadline);
+    const isDeadlinePassed = new Date() > deadlineDate;
+
+    if (isDeadlinePassed) {
+      toast.error('Hết hạn thanh toán. Vui lòng tạo đơn hàng mới.');
+      setIsPolling(false);
+      return;
+    }
+
     const pollPaymentStatus = async () => {
+      // Re-check deadline before each poll
+      const currentDeadlineDate = new Date(deadline);
+      if (new Date() > currentDeadlineDate) {
+        toast.error('Hết hạn thanh toán. Vui lòng tạo đơn hàng mới.');
+        setIsPolling(false);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+        return;
+      }
+
       try {
         const status = await invoiceService.getPaymentStatus(invoiceId);
 
@@ -196,7 +217,7 @@ export default function PaymentDisplay({
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [isPolling, invoiceId, onPaymentSuccess, router, clearCart, clearSelectedStore]);
+  }, [isPolling, invoiceId, deadline, onPaymentSuccess, router, clearCart, clearSelectedStore]);
 
   const getStatusIcon = () => {
     if (!paymentStatus) {
