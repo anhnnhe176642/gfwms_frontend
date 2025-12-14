@@ -297,7 +297,7 @@ export default function CheckoutHandler({
                     <li>
                       Tổng tiền:{' '}
                       <span className="font-semibold text-base text-primary">
-                        {Object.values(allocationsMap || {}).reduce((sum, item) => sum + item.totalValue, 0).toLocaleString('vi-VN')} ₫
+                        {cartItems?.reduce((sum, item) => sum + (allocationsMap?.[item.id]?.totalValue || 0), 0).toLocaleString('vi-VN')} ₫
                       </span>
                     </li>
                     {cartItems && cartItems.length > 0 && (
@@ -313,24 +313,28 @@ export default function CheckoutHandler({
                     )}
                   </ul>
                 </div>
-                {allocationsMap && Object.keys(allocationsMap).length > 0 && (
+                {cartItems && cartItems.length > 0 && allocationsMap && (
                   <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 space-y-2 max-h-48 overflow-y-auto">
                     <p className="font-semibold text-sm">Chi tiết đơn hàng:</p>
                     <div className="space-y-1">
-                      {Object.entries(allocationsMap).map(([itemId, data]) => (
-                        <div key={itemId} className="text-xs space-y-1">
-                          {data.allocations.map((alloc, idx) => (
-                            <div key={idx} className="flex justify-between gap-2">
-                              <span className="flex-1">
-                                {alloc.fabricInfo.category} - {alloc.fabricInfo.color} ({alloc.quantity} {alloc.unit === 'ROLL' ? 'cuộn' : 'mét'})
-                              </span>
-                              <span className="font-semibold shrink-0">
-                                {alloc.pricing.estimatedValue.toLocaleString('vi-VN')} ₫
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
+                      {cartItems.map((item) => {
+                        const data = allocationsMap[item.id];
+                        if (!data) return null;
+                        return (
+                          <div key={item.id} className="text-xs space-y-1">
+                            {data.allocations.map((alloc, idx) => (
+                              <div key={idx} className="flex justify-between gap-2">
+                                <span className="flex-1">
+                                  {alloc.fabricInfo.category} - {alloc.fabricInfo.color} ({alloc.quantity} {alloc.unit === 'ROLL' ? 'cuộn' : 'mét'})
+                                </span>
+                                <span className="font-semibold shrink-0">
+                                  {alloc.pricing.estimatedValue.toLocaleString('vi-VN')} ₫
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
