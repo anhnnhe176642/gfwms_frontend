@@ -261,14 +261,34 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         ctx.textAlign = 'center';
         ctx.font = '15px Arial';
         ctx.lineWidth = 1;
-        labelQueue.forEach(({ label, coordLabel, centerX, labelY, coordY, color }) => {
-          // Viền đen
-          ctx.strokeStyle = '#000000';
+        ctx.globalAlpha = 1.0; // Đảm bảo label không bị transparent
+        
+        // Đầu tiên vẽ background cho labels
+        labelQueue.forEach(({centerX, labelY }) => {
+          const textWidth = 120;
+          const textHeight = 35;
+          const padding = 5;
           
+          // Vẽ background semi-transparent màu đen
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          ctx.fillRect(
+            centerX - textWidth / 2 - padding,
+            labelY - 12 - padding,
+            textWidth + padding * 2,
+            textHeight + padding
+          );
+        });
+        
+        // Vẽ text
+        labelQueue.forEach(({ label, coordLabel, centerX, labelY, coordY }) => {
+          // Viền đen cho text
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 1;
           ctx.strokeText(label, centerX, labelY);
           ctx.strokeText(coordLabel, centerX, coordY);
-          // Màu chính
-            ctx.fillStyle = color;
+          
+          // Text màu trắng
+          ctx.fillStyle = '#FFFFFF';
           ctx.fillText(label, centerX, labelY);
           ctx.fillText(coordLabel, centerX, coordY);
         });
