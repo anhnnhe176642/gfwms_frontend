@@ -13,7 +13,6 @@ import { useNavigation } from '@/hooks/useNavigation';
 import type { ShelfDetail, WarehouseListItem } from '@/types/warehouse';
 import { FabricShelfTable } from '@/components/admin/warehouse-management/FabricShelfTable';
 import { EditShelfForm } from '@/components/admin/warehouse-management/EditShelfForm';
-import { FabricCountModal } from '@/components/admin/warehouse-management/FabricCountModal';
 
 export interface ShelfDetailViewProps {
   shelfId: string | number;
@@ -29,7 +28,6 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
   const [warehouse, setWarehouse] = useState<WarehouseListItem | null>(null);
   const [error, setError] = useState('');
   const [editShelfOpen, setEditShelfOpen] = useState(false);
-  const [fabricCountOpen, setFabricCountOpen] = useState(false);
 
   // Fetch shelf data
   useEffect(() => {
@@ -70,7 +68,10 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
   };
 
   const handleCheckQuantity = () => {
-    setFabricCountOpen(true);
+    if (!shelf) return;
+    router.push(
+      `/admin/fabric-count?shelfId=${shelf.id}&shelfCode=${encodeURIComponent(shelf.code)}&currentQuantity=${shelf.currentQuantity}&maxQuantity=${shelf.maxQuantity}`
+    );
   };
 
   if (isLoading) {
@@ -242,16 +243,6 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
               };
               fetchShelf();
             }}
-          />
-
-          {/* Fabric Count Modal */}
-          <FabricCountModal
-            isOpen={fabricCountOpen}
-            onClose={() => setFabricCountOpen(false)}
-            currentQuantity={shelf.currentQuantity}
-            maxQuantity={shelf.maxQuantity}
-            shelfCode={shelf.code}
-            shelfId={shelf.id}
           />
         </>
       )}

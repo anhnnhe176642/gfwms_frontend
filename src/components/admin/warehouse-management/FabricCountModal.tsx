@@ -8,7 +8,14 @@ import { YoloDetectionResponse, Detection } from '@/types/yolo';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Upload, Camera, Loader2, X, AlertCircle, Settings } from 'lucide-react';
+import { Upload, Camera, Loader2, X, AlertCircle, Settings, Palette } from 'lucide-react';
+import {
+  extractCircleColorsFromImage,
+  matchMultipleColors,
+  countByColor,
+  type ColorBox,
+  type PaletteColor,
+} from '@/lib/colorExtractor';
 import {
   Card,
   CardContent,
@@ -77,6 +84,12 @@ export function FabricCountModal({
   const [confidenceThreshold, setConfidenceThreshold] = useState<number>(0.5);
   const [showCameraCapture, setShowCameraCapture] = useState(false);
   const [showSubmitDatasetModal, setShowSubmitDatasetModal] = useState(false);
+
+  // Color detection states
+  const [shelfColors, setShelfColors] = useState<PaletteColor[]>([]);
+  const [colorMatches, setColorMatches] = useState<any[]>([]);
+  const [colorCounts, setColorCounts] = useState<Record<string, any>>({});
+  const [isAnalyzingColors, setIsAnalyzingColors] = useState(false);
 
   // Adjustment dialog states
   const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
@@ -147,18 +160,35 @@ export function FabricCountModal({
 
       // Tạo preview từ cropped file
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setPreview(event.target?.result as string);
+      reader.onload = async (event) => {
+        const previewUrl = event.target?.result as string;
+        setPreview(previewUrl);
+        // Tự động phát hiện sau khi preview được set
+        const response = await yoloService.detect({
+          image: croppedFile,
+          confidence: confidenceThreshold,
+        });
+        if (response.success) {
+          setDetectionResult(response);
+          setEditedDetections(null);
+          toast.success('Phát hiện vật thể thành công');
+          // Phân tích màu sau khi có cả preview và detection result
+          if (shelfColors.length > 0) {
+            analyzeDetectionColors(response, previewUrl);
+          }
+        } else {
+          toast.error(response.message || 'Lỗi phát hiện vật thể');
+        }
+        setIsDetecting(false);
       };
       reader.readAsDataURL(croppedFile);
 
       // Update form data
       setFormData({ ...formData, image: croppedFile });
-
-      // Tự động phát hiện
-      detectObjects(croppedFile, confidenceThreshold);
+      setIsDetecting(true);
     } catch (error) {
       toast.error('Lỗi khi xử lý ảnh');
+      setIsDetecting(false);
     }
   };
 
@@ -190,22 +220,39 @@ export function FabricCountModal({
 
       // Tạo preview từ original file
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setPreview(event.target?.result as string);
+      reader.onload = async (event) => {
+        const previewUrl = event.target?.result as string;
+        setPreview(previewUrl);
+        // Tự động phát hiện sau khi preview được set
+        const response = await yoloService.detect({
+          image: originalFile,
+          confidence: confidenceThreshold,
+        });
+        if (response.success) {
+          setDetectionResult(response);
+          setEditedDetections(null);
+          toast.success('Phát hiện vật thể thành công');
+          // Phân tích màu sau khi có cả preview và detection result
+          if (shelfColors.length > 0) {
+            analyzeDetectionColors(response, previewUrl);
+          }
+        } else {
+          toast.error(response.message || 'Lỗi phát hiện vật thể');
+        }
+        setIsDetecting(false);
       };
       reader.readAsDataURL(originalFile);
 
       // Update form data
       setFormData({ ...formData, image: originalFile });
-
-      // Tự động phát hiện
-      detectObjects(originalFile, confidenceThreshold);
+      setIsDetecting(true);
     } catch (error) {
       toast.error('Lỗi khi xử lý ảnh');
+      setIsDetecting(false);
     }
   };
 
-  const detectObjects = async (file: File, confidence: number = 0.1) => {
+  const detectObjects = async (file: File, confidence: number = 0.1, imageUrl?: string) => {
     try {
       setIsDetecting(true);
       const response = await yoloService.detect({
@@ -217,6 +264,11 @@ export function FabricCountModal({
         setDetectionResult(response);
         setEditedDetections(null);
         toast.success('Phát hiện vật thể thành công');
+        
+        // After detection, analyze colors if we have shelf colors and image URL
+        if (shelfColors.length > 0 && imageUrl) {
+          analyzeDetectionColors(response, imageUrl);
+        }
       } else {
         toast.error(response.message || 'Lỗi phát hiện vật thể');
       }
@@ -231,12 +283,126 @@ export function FabricCountModal({
     }
   };
 
+  const analyzeDetectionColors = async (detection: YoloDetectionResponse, imageUrl: string) => {
+    try {
+      setIsAnalyzingColors(true);
+
+      // Filter and map only valid detections with bbox or center+dimensions
+      const boxes: ColorBox[] = (editedDetections || detection.data.detections)
+        .filter((d) => {
+          if (!d) return false;
+          // Check if has valid bbox
+          if (d.bbox && d.bbox.x1 !== undefined && d.bbox.y1 !== undefined && d.bbox.x2 !== undefined && d.bbox.y2 !== undefined) {
+            return true;
+          }
+          // Check if has valid center and dimensions (for manual additions)
+          if (d.center && d.dimensions && d.center.x !== undefined && d.center.y !== undefined && d.dimensions.width !== undefined && d.dimensions.height !== undefined) {
+            return true;
+          }
+          return false;
+        })
+        .map((d) => {
+          // Use bbox if available, otherwise calculate from center and dimensions
+          if (d.bbox && d.bbox.x1 !== undefined) {
+            return {
+              x: d.bbox.x1,
+              y: d.bbox.y1,
+              width: d.bbox.x2 - d.bbox.x1,
+              height: d.bbox.y2 - d.bbox.y1,
+            };
+          } else if (d.center && d.dimensions) {
+            // Calculate bbox from center and dimensions
+            const halfWidth = d.dimensions.width / 2;
+            const halfHeight = d.dimensions.height / 2;
+            return {
+              x: d.center.x - halfWidth,
+              y: d.center.y - halfHeight,
+              width: d.dimensions.width,
+              height: d.dimensions.height,
+            };
+          }
+          // Fallback (shouldn't reach here)
+          return {
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+          };
+        });
+
+      // Skip color analysis if no valid boxes
+      if (boxes.length === 0) {
+        setColorMatches([]);
+        setColorCounts({});
+        setIsAnalyzingColors(false);
+        return;
+      }
+
+      // Extract colors from detection boxes
+      const extractedColors = await extractCircleColorsFromImage(imageUrl, boxes, {
+        resize: 80,
+        minLabelSatDiff: 0.15,
+        minLightness: 0.6,
+      });
+
+      // Match extracted colors with palette
+      const matches = matchMultipleColors(extractedColors, shelfColors);
+      setColorMatches(matches);
+
+      // Count by color (include all palette colors, even with 0 count)
+      const counts = countByColor(matches, shelfColors, 0);
+      setColorCounts(counts);
+    } catch (error: any) {
+      console.error('Error analyzing colors:', error);
+      toast.error('Lỗi khi phân tích màu sắc');
+    } finally {
+      setIsAnalyzingColors(false);
+    }
+  };
+
+  // Load shelf colors when modal opens
+  useEffect(() => {
+    if (isOpen && shelfId) {
+      const loadColors = async () => {
+        try {
+          const response = await warehouseService.getShelfColors(shelfId);
+          const palette: PaletteColor[] = response.data.colors.map((c) => ({
+            id: c.id,
+            name: c.name,
+            color: c.hexCode,
+            hexCode: c.hexCode,
+          }));
+          setShelfColors(palette);
+        } catch (error) {
+          console.error('Error loading shelf colors:', error);
+          // Don't show error toast, color detection is optional
+        }
+      };
+      loadColors();
+    }
+  }, [isOpen, shelfId]);
+
+  // Re-analyze colors when edited detections change
+  useEffect(() => {
+    if (
+      detectionResult &&
+      detectionResult.success &&
+      preview &&
+      shelfColors.length > 0 &&
+      editedDetections !== null
+    ) {
+      analyzeDetectionColors(detectionResult, preview);
+    }
+  }, [editedDetections]);
+
   const handleReset = () => {
     setFormData({ image: undefined, confidence: 0.5 });
     setPreview('');
     setDetectionResult(null);
     setEditedDetections(null);
     setConfidenceThreshold(0.5);
+    setColorMatches([]);
+    setColorCounts({});
   };
 
   // Load fabrics when adjustment dialog opens
@@ -555,7 +721,75 @@ export function FabricCountModal({
                 }
               />
 
-              {/* Submit to Dataset Button */}
+              {/* Color Analysis Card */}
+              {shelfColors.length > 0 && (
+                <div className="space-y-4">
+                  <Card className="bg-purple-50 border-purple-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Palette className="w-5 h-5" />
+                        Phân tích theo màu sắc
+                      </CardTitle>
+                      <CardDescription>
+                        {isAnalyzingColors
+                          ? 'Đang phân tích màu sắc...'
+                          : `Đã phát hiện ${Object.values(colorCounts).reduce((sum, c) => sum + c.count, 0)} vật thể từ ${shelfColors.length} loại màu`}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {isAnalyzingColors ? (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                          <span className="text-sm text-muted-foreground">
+                            Phân tích màu sắc từ các detection...
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-3">
+                          {Object.entries(colorCounts)
+                            .sort((a, b) => b[1].count - a[1].count) // Sort by count descending
+                            .map(([colorId, data]) => {
+                            return (
+                              <div
+                                key={colorId}
+                                className={`flex items-center justify-between p-3 rounded-lg border ${
+                                  data.count > 0
+                                    ? 'bg-white border-purple-200'
+                                    : 'bg-gray-50 border-gray-200 opacity-50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <div
+                                    className="w-8 h-8 rounded-full border-2 border-gray-300 shrink-0"
+                                    style={{
+                                      backgroundColor: data.hexCode || '#cccccc',
+                                    }}
+                                    title={data.name}
+                                  />
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">{data.name}</p>
+                                    {data.count > 0 && (
+                                      <p className="text-xs text-muted-foreground">
+                                        Độ tin cậy: {(data.confidence * 100).toFixed(0)}%
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <p className={`text-2xl font-bold ${
+                                  data.count > 0 ? 'text-purple-600' : 'text-gray-400'
+                                }`}>
+                                  {data.count}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
               <Button
                 onClick={() => setShowSubmitDatasetModal(true)}
                 className="w-full"

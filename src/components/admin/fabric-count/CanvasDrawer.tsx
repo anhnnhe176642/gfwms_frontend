@@ -13,6 +13,14 @@ import { SizeControlPanel } from './SizeControlPanel';
 import { setupCanvasDPR, mapClientToLogicalPoint } from '@/lib/canvasUtils';
 import { usePolygonDrawing, type PolygonPoint } from '@/hooks/usePolygonDrawing';
 
+// Helper function to convert RGB to hex color
+const rgbToHex = (r: number, g: number, b: number): string => {
+  return '#' + [r, g, b].map(x => {
+    const hex = x.toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  }).join('').toUpperCase();
+};
+
 interface CanvasDrawerProps {
   imageUrl: string;
   detections: Detection[];
@@ -25,6 +33,9 @@ interface CanvasDrawerProps {
   enableEdit?: boolean;
   showRowlines?: boolean;
   onShowRowlinesChange?: (show: boolean) => void;
+  showRowColor?: boolean;
+  onShowRowColorChange?: (show: boolean) => void;
+  extractedColors?: any[];
   confidenceFilter?: React.ReactNode;
   onReload?: () => void | Promise<void>;
   isReloading?: boolean;
@@ -41,8 +52,11 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   containerWidth = 800,
   onDetectionsChange,
   enableEdit = false,
-  showRowlines = true,
+  showRowlines = false,
   onShowRowlinesChange,
+  showRowColor = true,
+  onShowRowColorChange,
+  extractedColors = [],
   confidenceFilter,
   onReload,
   isReloading,
@@ -66,6 +80,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
   const [circleScale, setCircleScale] = useState(1);
   const [manualCircleColor, setManualCircleColor] = useState('#FF6B6B');
   const [localShowRowlines, setLocalShowRowlines] = useState(showRowlines);
+  const [localShowRowColor, setLocalShowRowColor] = useState(showRowColor);
   const [polygonFilteredCount, setPolygonFilteredCount] = useState<number>(0);
   const [filteredDetectionsByClass, setFilteredDetectionsByClass] = useState<Record<string, number>>({});
   const [filteredTotalDetections, setFilteredTotalDetections] = useState<number>(0);
@@ -215,20 +230,25 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         }
 
         const colorIndex = row !== undefined ? (row - 1) % rowColors.length : displayIndex % rowColors.length;
-        const circleColor = class_name === 'custom' ? manualCircleColor : rowColors[colorIndex];
+        const rowBasedColor = rowColors[colorIndex];
+        const circleColor = class_name === 'custom' ? manualCircleColor : (localShowRowColor ? rowBasedColor : '#999999');
         const centerX = center.x * calculatedScale;
         const centerY = center.y * calculatedScale;
         const radius = (Math.min(dimensions.width, dimensions.height) * calculatedScale) / 2 * circleScale;
 
-        // Vẽ vòng tròn với tô màu và độ trong suốt
-        ctx.fillStyle = circleColor + '40';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.fill();
+        // Vẽ vòng tròn với tô màu và độ trong suốt (chỉ khi hiện màu hàng)
+        if (localShowRowColor) {
+          ctx.fillStyle = circleColor + '40';
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+          ctx.fill();
+        }
 
         // Vẽ border vòng tròn
         ctx.strokeStyle = circleColor;
         ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
         ctx.stroke();
 
         // Vẽ số thứ tự ở tâm hình tròn
@@ -250,7 +270,15 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
           const coordLabel = `(${Math.round(center.x)}, ${Math.round(center.y)})`;
           const labelY = centerY + radius + 15;
           const coordY = labelY + 14;
-          labelQueue.push({ label, coordLabel, centerX, labelY, coordY, color: circleColor });
+          
+          // Use extracted color if available, otherwise use circleColor
+          let labelColor = circleColor;
+          if (extractedColors[index] && extractedColors[index].color) {
+            const rgb = extractedColors[index].color;
+            labelColor = rgbToHex(rgb.r, rgb.g, rgb.b);
+          }
+          
+          labelQueue.push({ label, coordLabel, centerX, labelY, coordY, color: labelColor });
         }
 
         displayIndex++;
@@ -264,7 +292,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
         ctx.globalAlpha = 1.0; // Đảm bảo label không bị transparent
         
         // Đầu tiên vẽ background cho labels
-        labelQueue.forEach(({centerX, labelY }) => {
+        labelQueue.forEach(({centerX, labelY, color }) => {
           const textWidth = 120;
           const textHeight = 35;
           const padding = 5;
@@ -277,6 +305,17 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
             textWidth + padding * 2,
             textHeight + padding
           );
+          
+          // Vẽ color swatch nhỏ bên trái label
+          const swatchSize = 10;
+          const swatchX = centerX - textWidth / 2;
+          const swatchY = labelY - 8;
+          ctx.fillStyle = color;
+          ctx.fillRect(swatchX, swatchY, swatchSize, swatchSize);
+          // Viền trắng cho color swatch
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(swatchX, swatchY, swatchSize, swatchSize);
         });
         
         // Vẽ text
@@ -386,7 +425,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
     };
 
     img.src = imageUrl;
-  }, [currentDetections, calculateScale, imageUrl, isEditMode, isDrawingMode, objectSize, isDraggingSlider, showLabels, fontSize, circleScale, manualCircleColor, localShowRowlines, polygon.polygonPoints, polygon.tempLine, polygon.isDrawing]);
+  }, [currentDetections, calculateScale, imageUrl, isEditMode, isDrawingMode, objectSize, isDraggingSlider, showLabels, fontSize, circleScale, manualCircleColor, localShowRowlines, localShowRowColor, polygon.polygonPoints, polygon.tempLine, polygon.isDrawing, extractedColors]);
 
   React.useEffect(() => {
     if (imageUrl) {
@@ -632,6 +671,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
           canUndo={history.length > 1}
           showLabels={showLabels}
           showRowlines={localShowRowlines}
+          showRowColor={localShowRowColor}
           onEditModeToggle={() => setIsEditMode(!isEditMode)}
           onDrawingModeToggle={() => setIsDrawingMode(!isDrawingMode)}
           onUndo={handleUndo}
@@ -641,6 +681,13 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
             setLocalShowRowlines(newShowRowlines);
             if (onShowRowlinesChange) {
               onShowRowlinesChange(newShowRowlines);
+            }
+          }}
+          onRowColorToggle={() => {
+            const newShowRowColor = !localShowRowColor;
+            setLocalShowRowColor(newShowRowColor);
+            if (onShowRowColorChange) {
+              onShowRowColorChange(newShowRowColor);
             }
           }}
           sizeControlPanel={

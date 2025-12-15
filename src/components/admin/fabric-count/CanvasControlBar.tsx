@@ -10,11 +10,13 @@ interface CanvasControlBarProps {
   canUndo: boolean;
   showLabels: boolean;
   showRowlines: boolean;
+  showRowColor?: boolean;
   onEditModeToggle: () => void;
   onDrawingModeToggle?: () => void;
   onUndo: () => void;
   onLabelsToggle: () => void;
   onRowlinesToggle: () => void;
+  onRowColorToggle?: () => void;
   sizeControlPanel: React.ReactNode;
   confidenceFilter?: React.ReactNode;
   onReload?: () => void | Promise<void>;
@@ -27,11 +29,13 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
   canUndo,
   showLabels,
   showRowlines,
+  showRowColor = true,
   onEditModeToggle,
   onDrawingModeToggle,
   onUndo,
   onLabelsToggle,
   onRowlinesToggle,
+  onRowColorToggle,
   sizeControlPanel,
   confidenceFilter,
   onReload,
@@ -122,6 +126,25 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
           <>
             <GitBranch className="w-4 h-4" />
             Hiện Rowline
+          </>
+        )}
+      </Button>
+
+      {/* Row Color Toggle */}
+      <Button
+        variant={showRowColor ? 'default' : 'outline'}
+        onClick={onRowColorToggle}
+        className="gap-2"
+      >
+        {showRowColor ? (
+          <>
+            <Eye className="w-4 h-4" />
+            Ẩn Màu Hàng
+          </>
+        ) : (
+          <>
+            <EyeOff className="w-4 h-4" />
+            Hiện Màu Hàng
           </>
         )}
       </Button>

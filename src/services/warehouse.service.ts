@@ -219,6 +219,22 @@ export const warehouseService = {
     );
     return response.data;
   },
+
+  /**
+   * Lấy danh sách các màu vải trên một kệ
+   */
+  getShelfColors: async (
+    shelfId: string | number
+  ): Promise<{
+    message: string;
+    data: {
+      shelf: { id: number; code: string };
+      colors: Array<{ id: string; name: string; hexCode: string; totalQuantity: string | number }>;
+    };
+  }> => {
+    const response = await api.get(`/v1/fabric-shelf/shelf/${shelfId}/colors`);
+    return response.data;
+  },
 };
 
 export default warehouseService;
