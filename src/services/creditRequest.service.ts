@@ -70,4 +70,15 @@ export const creditRequestService = {
     );
     return response.data;
   },
+
+  /**
+   * Tạo đơn tăng hạn mức nợ
+   */
+  increaseCredit: async (payload: CreateCreditRequestPayload): Promise<CreditRequest> => {
+    const response = await api.post<{ message: string; request: CreditRequest }>(
+      `${BASE_PATH}/increase`,
+      payload
+    );
+    return response.data.request;
+  },
 };
