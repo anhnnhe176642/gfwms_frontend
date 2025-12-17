@@ -96,6 +96,7 @@ export async function extractCircleColorsFromImage(
 /**
  * Extract color from a single box using Canvas
  * Uses Hue histogram + median saturation/lightness for better dominant color detection
+ * Crops image in circular shape based on center and diameter = min(height, width)
  */
 function extractColorFromBox(
   img: HTMLImageElement,
@@ -104,6 +105,12 @@ function extractColorFromBox(
   minLabelSatDiff: number,
   minLightness: number
 ): ExtractionResult {
+  // Calculate center and radius from box
+  const centerX = box.x + box.width / 2;
+  const centerY = box.y + box.height / 2;
+  const diameter = Math.min(box.width, box.height);
+  const radius = diameter / 2;
+
   // Create temporary canvas for extraction
   const canvas = document.createElement('canvas');
   canvas.width = resize;
@@ -114,13 +121,22 @@ function extractColorFromBox(
     return { box, hasLabel: false, color: null };
   }
 
-  // Draw cropped and resized image
+  // Create circular clipping mask at canvas center
+  ctx.beginPath();
+  ctx.arc(resize / 2, resize / 2, resize / 2, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Calculate source region for circular crop from original image
+  const sourceLeft = centerX - radius;
+  const sourceTop = centerY - radius;
+
+  // Draw cropped and resized image with circular mask
   ctx.drawImage(
     img,
-    box.x,
-    box.y,
-    box.width,
-    box.height,
+    sourceLeft,
+    sourceTop,
+    diameter,
+    diameter,
     0,
     0,
     resize,

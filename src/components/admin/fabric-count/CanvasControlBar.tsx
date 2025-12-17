@@ -139,12 +139,12 @@ export const CanvasControlBar: React.FC<CanvasControlBarProps> = ({
         {showRowColor ? (
           <>
             <Eye className="w-4 h-4" />
-            Ẩn Màu Hàng
+            Hiện màu viền
           </>
         ) : (
           <>
             <EyeOff className="w-4 h-4" />
-            Hiện Màu Hàng
+            Hiện màu hình tròn
           </>
         )}
       </Button>

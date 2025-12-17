@@ -231,7 +231,7 @@ export const CanvasDrawer: React.FC<CanvasDrawerProps> = ({
 
         const colorIndex = row !== undefined ? (row - 1) % rowColors.length : displayIndex % rowColors.length;
         const rowBasedColor = rowColors[colorIndex];
-        const circleColor = class_name === 'custom' ? manualCircleColor : (localShowRowColor ? rowBasedColor : '#999999');
+        const circleColor = class_name === 'custom' ? manualCircleColor : rowBasedColor;
         const centerX = center.x * calculatedScale;
         const centerY = center.y * calculatedScale;
         const radius = (Math.min(dimensions.width, dimensions.height) * calculatedScale) / 2 * circleScale;
