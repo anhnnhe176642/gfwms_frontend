@@ -11,6 +11,7 @@ import { exportInvoiceToPDF } from '@/lib/pdf';
 import { useNavigation } from '@/hooks/useNavigation';
 import { InvoiceStatusBadge } from '@/components/admin/table/Badges';
 import { IsLoading } from '@/components/common/IsLoading';
+import { ConfirmOfflinePaymentDialog } from './ConfirmOfflinePaymentDialog';
 import {
   ArrowLeft,
   Loader2,
@@ -22,6 +23,7 @@ import {
   Calendar,
   User,
   ShoppingCart,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface InvoiceDetailViewProps {
@@ -43,6 +45,7 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [confirmPaymentOpen, setConfirmPaymentOpen] = useState(false);
 
   const fetchDetail = async () => {
     try {
@@ -154,6 +157,16 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
+          {/* Confirm Offline Payment Button */}
+          {invoice.paymentType === 'CASH' && invoice.invoiceStatus !== 'PAID' && (
+            <Button
+              onClick={() => setConfirmPaymentOpen(true)}
+              className="gap-2 bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Xác nhận thanh toán tiền mặt
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={handleExportPDF}
@@ -396,6 +409,16 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Confirm Offline Payment Dialog */}
+      {invoice && (
+        <ConfirmOfflinePaymentDialog
+          open={confirmPaymentOpen}
+          onOpenChange={setConfirmPaymentOpen}
+          invoice={invoice}
+          onSuccess={fetchDetail}
+        />
+      )}
 
       {/* Print Styles */}
       <style>{`

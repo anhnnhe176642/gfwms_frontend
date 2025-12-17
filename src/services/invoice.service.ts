@@ -47,6 +47,23 @@ export const invoiceService = {
     // API returns data directly, not wrapped in { message, data }
     return response.data as PaymentStatusResponse;
   },
+
+  /**
+   * Xác nhận thanh toán offline bằng tiền mặt
+   */
+  confirmOfflinePayment: async (
+    invoiceId: number | string,
+    amountPaid: number
+  ): Promise<InvoiceDetail> => {
+    const response = await api.post<{ message: string; data: any }>(
+      `${BASE_PATH}/${invoiceId}/confirm-offline-payment`,
+      {
+        confirmed: true,
+        amountPaid,
+      }
+    );
+    return response.data.data;
+  },
 };
 
 export default invoiceService;
