@@ -230,7 +230,7 @@ export function CreateRoleForm() {
               <Input
                 id="fullName"
                 name="fullName"
-                placeholder="vd: Quản lý, Biên tập viên, Xem xét"
+                placeholder="vd: Quản lý, Nhân viên, Xem xét"
                 value={values.fullName ?? ''}
                 onChange={handleChange}
                 onBlur={handleBlur}

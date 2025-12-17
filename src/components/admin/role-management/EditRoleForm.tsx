@@ -159,11 +159,11 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
         {/* Basic Information Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Thông tin vai trò</CardTitle>
-            <CardDescription>Cập nhật mô tả cho vai trò</CardDescription>
+            <CardTitle>Thông tin cơ bản</CardTitle>
+            <CardDescription>Chỉnh sửa tên đầy đủ, mô tả và quyền cho vai trò</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Role Name - Display only */}
+            {/* Role Name - Read only */}
             <div className="space-y-2">
               <Label className="text-base font-medium">
                 Tên vai trò
@@ -171,6 +171,7 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
               <div className="p-3 bg-muted rounded-md border border-border">
                 <p className="text-sm font-medium">{roleDetail?.name}</p>
               </div>
+              <p className="text-xs text-muted-foreground">Tên vai trò không thể chỉnh sửa</p>
             </div>
 
             {/* Full Name */}
