@@ -23,6 +23,7 @@ export type CreateOrderFabricColumnActions = {
   getQuantity: (fabricId: number) => string;
   getUnit: (fabricId: number) => SaleUnit;
   getQuantityError: (fabricId: number) => string | undefined;
+  getPrice: (fabricId: number) => number;
   onToggleSelect: (fabric: StoreFabricListItem, checked: boolean) => void;
   onQuantityChange: (fabricId: number, value: string) => void;
   onUnitChange: (fabricId: number, unit: SaleUnit) => void;
@@ -228,17 +229,22 @@ export const createCreateOrderFabricColumns = (
     },
   },
   {
-    id: 'sellingPrice',
-    accessorKey: 'fabricInfo.sellingPrice',
-    header: ({ column }) => (
-      <div className="flex items-center gap-1">
-        <span className="font-medium">Giá bán</span>
-        <SortButton column={column} label="Sắp xếp theo giá bán" />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.fabricInfo.sellingPrice.toLocaleString()} ₫</div>
-    ),
+    id: 'price',
+    header: () => <span className="font-medium">Giá bán</span>,
+    cell: ({ row }) => {
+      const fabric = row.original;
+      const unit = actions.getUnit(fabric.fabricId);
+      const price = actions.getPrice(fabric.fabricId);
+
+      return (
+        <div className="font-medium text-right">
+          {price.toLocaleString()} ₫
+          <div className="text-xs text-muted-foreground mt-0.5">
+            {unit === 'METER' ? '/mét' : '/cuộn'}
+          </div>
+        </div>
+      );
+    },
     sortingFn: 'auto',
     meta: {
       title: 'Giá bán',

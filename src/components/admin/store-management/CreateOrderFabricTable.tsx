@@ -6,13 +6,14 @@ import { VisibilityState } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createCreateOrderFabricColumns } from './createOrderFabricColumns';
 import { createStoreFabricService } from '@/services/storeFabric.service';
 import { useServerTable } from '@/hooks/useServerTable';
 import { useCreateOrderStore } from '@/store/useCreateOrderStore';
 import type { StoreFabricListItem, StoreFabricListParams } from '@/types/storeFabric';
 import type { SaleUnit } from '@/types/order';
-import { Search, RefreshCw, ArrowRight, ShoppingCart } from 'lucide-react';
+import { Search, RefreshCw, ArrowRight, ShoppingCart, Trash2 } from 'lucide-react';
 
 export type CreateOrderItem = {
   fabricId: number;
@@ -130,6 +131,14 @@ export function CreateOrderFabricTable({
   fabricsRef.current = fabrics;
 
   /**
+   * Get list of selected items in order they were selected
+   * Map in JS preserves insertion order
+   */
+  const selectedItemsList = useMemo(() => {
+    return Array.from(selectedItems.values());
+  }, [selectedItems]);
+
+  /**
    * Get quantity error for a fabric - uses ref to avoid re-render
    */
   const getQuantityError = useCallback((fabricId: number): string | undefined => {
@@ -158,6 +167,23 @@ export function CreateOrderFabricTable({
   }, []);
 
   /**
+   * Get price based on unit - uses ref
+   */
+  const getPrice = useCallback((fabricId: number): number => {
+    const fabric = fabricsRef.current.find((f) => f.fabricId === fabricId);
+    if (!fabric) return 0;
+
+    const unit = unitInputsRef.current.get(fabricId) || 'METER';
+
+    if (unit === 'METER') {
+      return fabric.fabricInfo.sellingPricePerMeter;
+    } else {
+      // For ROLL: use sellingPrice if available, otherwise sellingPricePerRoll
+      return fabric.fabricInfo.sellingPrice || fabric.fabricInfo.sellingPricePerRoll;
+    }
+  }, []);
+
+  /**
    * Handle checkbox toggle for a fabric item - stable callback
    */
   const handleToggleSelect = useCallback((fabric: StoreFabricListItem, checked: boolean) => {
@@ -183,6 +209,15 @@ export function CreateOrderFabricTable({
       }
       return newMap;
     });
+
+    // Set default quantity to 1 if not already set when checking
+    if (checked && !quantityInputsRef.current.has(fabric.fabricId)) {
+      setQuantityInputs((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(fabric.fabricId, '1');
+        return newMap;
+      });
+    }
   }, []);
 
   /**
@@ -363,12 +398,13 @@ export function CreateOrderFabricTable({
         isSelected,
         getQuantity,
         getUnit,
+        getPrice,
         getQuantityError,
         onToggleSelect: handleToggleSelect,
         onQuantityChange: handleQuantityChange,
         onUnitChange: handleUnitChange,
       }),
-    [isSelected, getQuantity, getUnit, getQuantityError, handleToggleSelect, handleQuantityChange, handleUnitChange]
+    [isSelected, getQuantity, getUnit, getPrice, getQuantityError, handleToggleSelect, handleQuantityChange, handleUnitChange]
   );
 
   if (loading && fabrics.length === 0) {
@@ -463,12 +499,95 @@ export function CreateOrderFabricTable({
         columnVisibility={columnVisibility}
         onColumnVisibilityChange={setColumnVisibility}
         manualPagination
+        pageCount={pagination.totalPages}
         pageIndex={pagination.page - 1}
         pageSize={pagination.limit}
         onPaginationChange={handlePaginationChange}
         manualSorting
         manualFiltering
       />
+
+      {/* Selected Items List */}
+      {selectedItems.size > 0 && (
+        <Card className="bg-card border-primary/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Vải được chọn ({selectedItemsList.length})</CardTitle>
+                <CardDescription>Danh sách vải sẽ được thêm vào đơn hàng</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 max-h-96 overflow-y-auto">
+              {selectedItemsList.map((item, idx) => (
+                <div
+                  key={item.fabricId}
+                  className="flex items-start justify-between p-3 bg-accent rounded-lg border border-border/50 hover:border-primary/50 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex-shrink-0">
+                        {idx + 1}
+                      </span>
+                      <p className="font-semibold text-sm truncate">{item.fabric.fabricInfo.category}</p>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1 ml-8">
+                      <p>Màu: {item.fabric.fabricInfo.color}</p>
+                      <p>NCC: {item.fabric.fabricInfo.supplier}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 ml-4 flex-shrink-0 text-right">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Số lượng</p>
+                      <p className="font-semibold text-sm">
+                        {item.quantity} {item.saleUnit === 'METER' ? 'mét' : 'cuộn'}
+                      </p>
+                    </div>
+                    <div className="border-l pl-3">
+                      <p className="text-xs text-muted-foreground mb-1">Giá/đơn vị</p>
+                      <p className="font-semibold text-sm">
+                        {(item.saleUnit === 'METER'
+                          ? item.fabric.fabricInfo.sellingPricePerMeter
+                          : item.fabric.fabricInfo.sellingPrice || item.fabric.fabricInfo.sellingPricePerRoll
+                        ).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">₫</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newItems = new Map(selectedItems);
+                        newItems.delete(item.fabricId);
+                        setSelectedItems(newItems);
+                        setQuantityInputs((prev) => {
+                          const newMap = new Map(prev);
+                          newMap.delete(item.fabricId);
+                          return newMap;
+                        });
+                        setUnitInputs((prev) => {
+                          const newMap = new Map(prev);
+                          newMap.delete(item.fabricId);
+                          return newMap;
+                        });
+                        setQuantityErrors((prev) => {
+                          const newMap = new Map(prev);
+                          newMap.delete(item.fabricId);
+                          return newMap;
+                        });
+                      }}
+                      className="ml-2 p-1.5 hover:bg-destructive/10 rounded-md transition-colors text-destructive flex-shrink-0"
+                      title="Xoá"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
