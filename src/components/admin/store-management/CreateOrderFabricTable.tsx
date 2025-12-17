@@ -186,6 +186,39 @@ export function CreateOrderFabricTable({
   }, []);
 
   /**
+   * Validate quantity based on unit and available inventory
+   */
+  const validateQuantity = useCallback((fabricId: number, value: string, unit: SaleUnit): string | undefined => {
+    if (!value.trim()) {
+      return 'Vui lòng nhập số lượng';
+    }
+
+    const qty = parseInt(value);
+    if (isNaN(qty) || qty <= 0) {
+      return 'Số lượng phải là số nguyên dương';
+    }
+
+    // Find the fabric to get available inventory
+    const fabric = fabricsRef.current.find((f) => f.fabricId === fabricId);
+    if (!fabric) {
+      return 'Không tìm thấy vải';
+    }
+
+    // Validate based on unit
+    if (unit === 'METER') {
+      if (qty > fabric.inventory.totalMeters) {
+        return `Không đủ mét (Có ${fabric.inventory.totalMeters}m)`;
+      }
+    } else if (unit === 'ROLL') {
+      if (qty > fabric.inventory.uncutRolls) {
+        return `Không đủ cuộn (Có ${fabric.inventory.uncutRolls} cuộn)`;
+      }
+    }
+
+    return undefined;
+  }, []);
+
+  /**
    * Handle quantity change for a fabric item with validation
    */
   const handleQuantityChange = useCallback((fabricId: number, value: string) => {
@@ -199,19 +232,16 @@ export function CreateOrderFabricTable({
     setQuantityErrors((prevErrors) => {
       const newErrors = new Map(prevErrors);
 
-      if (!value.trim()) {
-        if (selectedItemsRef.current.has(fabricId)) {
-          newErrors.set(fabricId, 'Vui lòng nhập số lượng');
+      if (selectedItemsRef.current.has(fabricId)) {
+        const unit = unitInputsRef.current.get(fabricId) || 'METER';
+        const error = validateQuantity(fabricId, value, unit);
+        if (error) {
+          newErrors.set(fabricId, error);
         } else {
           newErrors.delete(fabricId);
         }
       } else {
-        const qty = parseInt(value);
-        if (isNaN(qty) || qty <= 0) {
-          newErrors.set(fabricId, 'Số lượng phải là số dương');
-        } else {
-          newErrors.delete(fabricId);
-        }
+        newErrors.delete(fabricId);
       }
 
       return newErrors;
@@ -231,7 +261,7 @@ export function CreateOrderFabricTable({
       }
       return prev;
     });
-  }, []);
+  }, [validateQuantity]);
 
   /**
    * Handle unit change for a fabric item
@@ -256,7 +286,20 @@ export function CreateOrderFabricTable({
       }
       return prev;
     });
-  }, []);
+
+    // Re-validate quantity with new unit
+    setQuantityErrors((prevErrors) => {
+      const newErrors = new Map(prevErrors);
+      const quantityValue = quantityInputsRef.current.get(fabricId) || '';
+      const error = validateQuantity(fabricId, quantityValue, unit);
+      if (error) {
+        newErrors.set(fabricId, error);
+      } else {
+        newErrors.delete(fabricId);
+      }
+      return newErrors;
+    });
+  }, [validateQuantity]);
 
   /**
    * Handle search button click
@@ -285,21 +328,18 @@ export function CreateOrderFabricTable({
       return;
     }
 
-    // Validate quantities - all selected items must have quantity > 0
+    // Validate quantities - all selected items must have quantity > 0 and within limits
     const newErrors = new Map<number, string>();
     let hasErrors = false;
 
     items.forEach((item) => {
-      const qty = quantityInputsRef.current.get(item.fabricId)?.trim();
-      if (!qty) {
-        newErrors.set(item.fabricId, 'Vui lòng nhập số lượng');
+      const qty = quantityInputsRef.current.get(item.fabricId)?.trim() || '';
+      const unit = unitInputsRef.current.get(item.fabricId) || 'METER';
+      const error = validateQuantity(item.fabricId, qty, unit);
+      
+      if (error) {
+        newErrors.set(item.fabricId, error);
         hasErrors = true;
-      } else {
-        const qtyNum = parseInt(qty);
-        if (isNaN(qtyNum) || qtyNum <= 0) {
-          newErrors.set(item.fabricId, 'Số lượng phải là số dương');
-          hasErrors = true;
-        }
       }
     });
 
@@ -328,7 +368,7 @@ export function CreateOrderFabricTable({
         onQuantityChange: handleQuantityChange,
         onUnitChange: handleUnitChange,
       }),
-    [] // Empty dependency - callbacks are stable from useCallback
+    [isSelected, getQuantity, getUnit, getQuantityError, handleToggleSelect, handleQuantityChange, handleUnitChange]
   );
 
   if (loading && fabrics.length === 0) {
