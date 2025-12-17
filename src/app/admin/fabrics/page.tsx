@@ -28,12 +28,12 @@ export default function FabricListPage() {
                 Quản lý danh sách sản phẩm vải trong kho
               </CardDescription>
             </div>
-            {canAccess(ROUTES.ADMIN.FABRICS.CREATE) && (
+            {/* {canAccess(ROUTES.ADMIN.FABRICS.CREATE) && (
               <Button onClick={handleCreateFabric} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Tạo vải mới
               </Button>
-            )}
+            )} */}
           </CardHeader>
           <CardContent>
             <FabricManagementTable />
