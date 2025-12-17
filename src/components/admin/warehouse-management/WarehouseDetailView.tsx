@@ -13,6 +13,7 @@ import { ArrowLeft, RefreshCw, Edit, Loader } from 'lucide-react';
 import { useNavigation } from '@/hooks/useNavigation';
 import type { WarehouseListItem } from '@/types/warehouse';
 import { WAREHOUSE_STATUS_CONFIG } from '@/constants/warehouse';
+import { MapDisplay } from '@/components/map/MapDisplay';
 
 export interface WarehouseDetailViewProps {
   warehouseId: string | number;
@@ -118,22 +119,19 @@ export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailView
         </Button>
       </div>
 
-      {/* Main Information Card - Full Width - Compact */}
-      <Card className="py-3">
-        <CardHeader className="pb-3">
-          <div>
-            <CardTitle>Thông tin cơ bản</CardTitle>
-            <CardDescription>Thông tin chính của kho hàng</CardDescription>
-          </div>
+      {/* Main Information Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Thông tin kho hàng</CardTitle>
+          <CardDescription>Thông tin chính của kho hàng</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* ID & Status - First Row */}
+          {/* ID & Status */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">ID Kho</p>
               <p className="text-base font-semibold">{warehouse.id}</p>
             </div>
-
             <div>
               <p className="text-sm font-medium text-muted-foreground">Trạng thái</p>
               <div className="mt-1">
@@ -142,47 +140,43 @@ export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailView
             </div>
           </div>
 
-          {/* Name */}
-          <Separator />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Tên kho</p>
-            <p className="text-base font-semibold">{warehouse.name}</p>
+          {/* Name & Address */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Tên kho</p>
+              <p className="text-base font-semibold">{warehouse.name}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Địa chỉ</p>
+              <p className="text-base break-word">{warehouse.address}</p>
+            </div>
           </div>
 
-          {/* Address */}
-          <Separator />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Địa chỉ</p>
-            <p className="text-base break-word">{warehouse.address}</p>
+          {/* Created At & Updated At */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Ngày tạo</p>
+              <p className="text-base font-semibold">
+                {new Date(warehouse.createdAt).toLocaleString('vi-VN')}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Ngày cập nhật lần cuối</p>
+              <p className="text-base font-semibold">
+                {new Date(warehouse.updatedAt).toLocaleString('vi-VN')}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Timeline Information Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Thông tin thời gian</CardTitle>
-          <CardDescription>Ngày tạo và cập nhật</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Created At */}
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Ngày tạo</p>
-            <p className="text-base font-semibold">
-              {new Date(warehouse.createdAt).toLocaleString('vi-VN')}
-            </p>
-          </div>
-
-          {/* Updated At */}
-          <Separator />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Ngày cập nhật lần cuối</p>
-            <p className="text-base font-semibold">
-              {new Date(warehouse.updatedAt).toLocaleString('vi-VN')}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Map Display Card */}
+      <MapDisplay
+        latitude={warehouse.latitude}
+        longitude={warehouse.longitude}
+        title="Vị trí kho hàng"
+        description="Vị trí địa lý của kho hàng trên bản đồ"
+      />
 
       {/* Action Buttons */}
       <div className="flex gap-4 justify-end pb-8">

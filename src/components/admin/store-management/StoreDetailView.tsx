@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PERMISSIONS } from '@/constants/permissions';
 import type { StoreListItem } from '@/types/store';
 import { STORE_ACTIVE_STATUS_CONFIG } from '@/constants/store';
+import { MapDisplay } from '@/components/map/MapDisplay';
 
 export interface StoreDetailViewProps {
   storeId: string | number;
@@ -142,22 +143,19 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
         </div>
       </div>
 
-      {/* Main Information Card - Full Width - Compact */}
-      <Card className="py-3">
-        <CardHeader className="pb-3">
-          <div>
-            <CardTitle>Thông tin cơ bản</CardTitle>
-            <CardDescription>Thông tin chính của cửa hàng</CardDescription>
-          </div>
+      {/* Main Information Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Thông tin cửa hàng</CardTitle>
+          <CardDescription>Thông tin chính của cửa hàng</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* ID & Status - First Row */}
+          {/* ID & Status */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">ID Cửa hàng</p>
               <p className="text-base font-semibold">{store.id}</p>
             </div>
-
             <div>
               <p className="text-sm font-medium text-muted-foreground">Trạng thái</p>
               <div className="mt-1">
@@ -166,47 +164,43 @@ export function StoreDetailView({ storeId, onEdit }: StoreDetailViewProps) {
             </div>
           </div>
 
-          {/* Name */}
-          <Separator />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Tên cửa hàng</p>
-            <p className="text-base font-semibold">{store.name}</p>
+          {/* Name & Address */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Tên cửa hàng</p>
+              <p className="text-base font-semibold">{store.name}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Địa chỉ</p>
+              <p className="text-base break-word">{store.address}</p>
+            </div>
           </div>
 
-          {/* Address */}
-          <Separator />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Địa chỉ</p>
-            <p className="text-base break-word">{store.address}</p>
+          {/* Created At & Updated At */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Ngày tạo</p>
+              <p className="text-base font-semibold">
+                {new Date(store.createdAt).toLocaleString('vi-VN')}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Ngày cập nhật lần cuối</p>
+              <p className="text-base font-semibold">
+                {new Date(store.updatedAt).toLocaleString('vi-VN')}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Timeline Information Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Thông tin thời gian</CardTitle>
-          <CardDescription>Ngày tạo và cập nhật</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Created At */}
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Ngày tạo</p>
-            <p className="text-base font-semibold">
-              {new Date(store.createdAt).toLocaleString('vi-VN')}
-            </p>
-          </div>
-
-          {/* Updated At */}
-          <Separator />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Ngày cập nhật lần cuối</p>
-            <p className="text-base font-semibold">
-              {new Date(store.updatedAt).toLocaleString('vi-VN')}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Map Display Card */}
+      <MapDisplay
+        latitude={store.latitude}
+        longitude={store.longitude}
+        title="Vị trí cửa hàng"
+        description="Vị trí địa lý của cửa hàng trên bản đồ"
+      />
 
       {/* Action Buttons */}
       <div className="flex gap-4 justify-end pb-8">
