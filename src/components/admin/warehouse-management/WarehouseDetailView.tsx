@@ -11,6 +11,8 @@ import { warehouseService } from '@/services/warehouse.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
 import { ArrowLeft, RefreshCw, Edit, Loader } from 'lucide-react';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useAuth } from '@/hooks/useAuth';
+import { PERMISSIONS } from '@/constants/permissions';
 import type { WarehouseListItem } from '@/types/warehouse';
 import { WAREHOUSE_STATUS_CONFIG } from '@/constants/warehouse';
 import { MapDisplay } from '@/components/map/MapDisplay';
@@ -23,6 +25,7 @@ export interface WarehouseDetailViewProps {
 export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailViewProps) {
   const router = useRouter();
   const { handleGoBack } = useNavigation();
+  const { hasPermission } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [warehouse, setWarehouse] = useState<WarehouseListItem | null>(null);
   const [error, setError] = useState('');
@@ -113,10 +116,12 @@ export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailView
             <p className="text-muted-foreground mt-1">Chi tiết kho hàng</p>
           </div>
         </div>
-        <Button onClick={handleEdit} className="gap-2">
-          <Edit className="h-4 w-4" />
-          Chỉnh sửa
-        </Button>
+        {hasPermission(PERMISSIONS.WAREHOUSES.UPDATE.key) && (
+          <Button onClick={handleEdit} className="gap-2">
+            <Edit className="h-4 w-4" />
+            Chỉnh sửa
+          </Button>
+        )}
       </div>
 
       {/* Main Information Card */}
@@ -183,10 +188,12 @@ export function WarehouseDetailView({ warehouseId, onEdit }: WarehouseDetailView
         <Button variant="outline" onClick={handleGoBack}>
           Quay lại
         </Button>
-        <Button onClick={handleEdit} className="gap-2">
-          <Edit className="h-4 w-4" />
-          Chỉnh sửa kho
-        </Button>
+        {hasPermission(PERMISSIONS.WAREHOUSES.UPDATE.key) && (
+          <Button onClick={handleEdit} className="gap-2">
+            <Edit className="h-4 w-4" />
+            Chỉnh sửa kho
+          </Button>
+        )}
       </div>
     </div>
   );
