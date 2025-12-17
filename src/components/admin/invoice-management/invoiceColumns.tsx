@@ -84,22 +84,6 @@ export const createInvoiceColumns = ({
       },
     },
     {
-      accessorKey: 'dueDate',
-      header: ({ column }) => (
-        <div className="flex items-center gap-1">
-          <span className="font-medium">Hạn thanh toán</span>
-          <SortButton column={column} label="Sắp xếp theo hạn thanh toán" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const date = row.getValue('dueDate') as string;
-        return date ? new Date(date).toLocaleDateString('vi-VN') : '-';
-      },
-      meta: {
-        title: 'Hạn thanh toán',
-      },
-    },
-    {
       accessorKey: 'invoiceStatus',
       header: ({ column }) => (
         <CheckboxFilterHeader
