@@ -115,7 +115,9 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
 
   const totalItems = order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
   const remainingAmount = order.invoice
-    ? order.invoice.totalAmount - order.invoice.paidAmount
+    ? order.invoice.paymentType === 'CREDIT'
+      ? order.invoice.totalAmount - order.invoice.paidAmount
+      : 0
     : order.totalAmount;
 
   return (
@@ -246,12 +248,14 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                       <PaymentTypeBadge type={order.invoice.paymentType} />
                     </div>
                     <div className="text-sm space-y-1">
-                      <p className="text-muted-foreground">
-                        Đã thanh toán:{' '}
-                        <span className="font-semibold text-green-600">
-                          {order.invoice.paidAmount.toLocaleString('vi-VN')} ₫
-                        </span>
-                      </p>
+                      {order.invoice.paymentType === 'CREDIT' && (
+                        <p className="text-muted-foreground">
+                          Đã thanh toán:{' '}
+                          <span className="font-semibold text-green-600">
+                            {order.invoice.paidAmount.toLocaleString('vi-VN')} ₫
+                          </span>
+                        </p>
+                      )}
                       {order.invoice.creditAmount > 0 && (
                         <p className="text-muted-foreground">
                           Công nợ:{' '}
@@ -378,12 +382,14 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                 </div>
                 {order.invoice && (
                   <>
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Đã thanh toán:</span>
-                      <span className="font-medium text-green-600">
-                        {order.invoice.paidAmount.toLocaleString('vi-VN')} ₫
-                      </span>
-                    </div>
+                    {order.invoice.paymentType === 'CREDIT' && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Đã thanh toán:</span>
+                        <span className="font-medium text-green-600">
+                          {order.invoice.paidAmount.toLocaleString('vi-VN')} ₫
+                        </span>
+                      </div>
+                    )}
                     {remainingAmount > 0 && (
                       <div className="flex justify-between text-sm text-muted-foreground">
                         <span>Còn lại:</span>

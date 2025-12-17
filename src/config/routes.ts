@@ -244,6 +244,11 @@ export const ROUTES = {
         name: 'Chi tiết cửa hàng',
         requiredPermission: PERMISSIONS.STORES.VIEW_DETAIL.key,
       },
+      ORDERS: {
+        path: '/admin/stores/:id/orders',
+        name: 'Đơn hàng cửa hàng',
+        requiredPermission: PERMISSIONS.ORDERS.VIEW_LIST.key,
+      },
       CREATE: {
         path: '/admin/stores/create',
         name: 'Tạo cửa hàng mới',

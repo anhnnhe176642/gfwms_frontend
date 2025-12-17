@@ -21,10 +21,11 @@ import { IS_OFFLINE_OPTIONS } from '@/constants/order';
 import { Search, RefreshCw, Calendar } from 'lucide-react';
 
 export type OrderListTableProps = {
+  storeId?: number | string;
   initialParams?: OrderListParams;
 };
 
-export function OrderListTable({ initialParams }: OrderListTableProps) {
+export function OrderListTable({ storeId, initialParams }: OrderListTableProps) {
   const router = useRouter();
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -44,7 +45,9 @@ export function OrderListTable({ initialParams }: OrderListTableProps) {
     refresh,
     reset,
   } = useServerTable<OrderListItem, OrderListParams>({
-    fetchData: orderService.list,
+    fetchData: storeId 
+      ? async (params) => orderService.getByStore(storeId, params)
+      : orderService.list,
     initialParams: initialParams || { page: 1, limit: 10 },
     filterConfig: {
       arrayFilters: {

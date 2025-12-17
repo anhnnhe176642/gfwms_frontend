@@ -335,7 +335,7 @@ export function OrderDetailModal({ orderId, open, onOpenChange }: OrderDetailMod
                         <span className="text-muted-foreground">Tổng tiền</span>
                         <span className="font-semibold">{order.invoice.totalAmount.toLocaleString('vi-VN')} ₫</span>
                       </div>
-                      {order.invoice.paidAmount > 0 && (
+                      {order.invoice.paymentType === 'CREDIT' && order.invoice.paidAmount > 0 && (
                         <div className="flex items-center justify-between text-green-600">
                           <span className="text-muted-foreground">Đã thanh toán</span>
                           <span className="font-semibold">{order.invoice.paidAmount.toLocaleString('vi-VN')} ₫</span>

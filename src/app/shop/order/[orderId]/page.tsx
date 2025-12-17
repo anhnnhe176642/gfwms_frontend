@@ -175,16 +175,16 @@ export default function OrderSuccessPage({ params: paramsProm }: OrderSuccessPag
                     {invoice.totalAmount.toLocaleString('vi-VN')} ₫
                   </span>
                 </div>
-                {invoice.paidAmount !== undefined && (
+                {invoice.paymentType && invoice.paymentType === 'CREDIT' && invoice.paidAmount !== undefined && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Đã thanh toán:</span>
                     <span className="text-green-600">{invoice.paidAmount.toLocaleString('vi-VN')} ₫</span>
                   </div>
                 )}
-                {invoice.creditAmount && invoice.creditAmount > 0 && (
+                {invoice.paymentType && invoice.paymentType === 'CREDIT' && invoice.creditAmount && invoice.creditAmount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Còn lại:</span>
-                    <span>{invoice.creditAmount.toLocaleString('vi-VN')} ₫</span>
+                    <span className="text-muted-foreground">Công nợ còn lại:</span>
+                    <span className="text-orange-600">{invoice.creditAmount.toLocaleString('vi-VN')} ₫</span>
                   </div>
                 )}
               </div>

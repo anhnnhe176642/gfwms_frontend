@@ -137,7 +137,7 @@ export function OrderCard({ order, onViewDetails }: OrderCardProps) {
               <span className="text-muted-foreground">Tổng tiền:</span>
               <span className="font-medium">{order.invoice.totalAmount.toLocaleString('vi-VN')} ₫</span>
             </div>
-            {order.invoice.paidAmount > 0 && (
+            {order.invoice.paymentType === 'CREDIT' && order.invoice.paidAmount > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Đã thanh toán:</span>
                 <span className="font-medium text-green-600">{order.invoice.paidAmount.toLocaleString('vi-VN')} ₫</span>

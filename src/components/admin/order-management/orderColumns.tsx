@@ -106,7 +106,8 @@ export const createOrderColumns = ({
       },
     },
     {
-      accessorKey: 'paymentType',
+      id: 'paymentType',
+      accessorFn: (row) => row.invoice?.paymentType,
       header: ({ column }) => (
         <CheckboxFilterHeader
           column={column}
@@ -114,7 +115,10 @@ export const createOrderColumns = ({
           options={PAYMENT_TYPE_OPTIONS}
         />
       ),
-      cell: ({ row }) => <PaymentTypeBadge type={row.getValue('paymentType')} />,
+      cell: ({ row }) => {
+        const invoice = row.original.invoice;
+        return invoice ? <PaymentTypeBadge type={invoice.paymentType} /> : '-';
+      },
       filterFn: (row, id, value) => {
         if (!value || value.length === 0) return true;
         return value.includes(row.getValue(id));
@@ -166,13 +170,14 @@ export const createOrderColumns = ({
       },
     },
     {
-      accessorKey: 'paidAmount',
+      accessorKey: 'invoice.paidAmount',
       header: 'Đã thanh toán',
       cell: ({ row }) => {
-        const amount = row.getValue('paidAmount') as number;
+        const invoice = row.original.invoice;
+        if (!invoice || invoice.paymentType !== 'CREDIT') return '-';
         return (
           <span className="font-medium text-green-600 dark:text-green-400">
-            {amount?.toLocaleString('vi-VN')} ₫
+            {invoice.paidAmount?.toLocaleString('vi-VN')} ₫
           </span>
         );
       },

@@ -70,8 +70,14 @@ export interface OrderInvoice {
 // Staff who created the order (for offline orders)
 export interface OrderStaff {
   id: string;
-  username: string;
   fullname: string;
+}
+
+// Store info in order
+export interface OrderStore {
+  id: number;
+  name: string;
+  address: string;
 }
 
 // Order list item
@@ -85,13 +91,13 @@ export interface OrderListItem {
   isOffline: boolean;
   customerPhone: string | null;
   notes: string | null;
-  storeId: string | null;
-  store: StoreListItem | null;
+  storeId: number;
+  store: OrderStore;
   createdAt: string;
   updatedAt: string;
   orderItems: OrderItem[];
-  invoice: OrderInvoice | null;
-  createdByStaff: OrderStaff | null;
+  invoice: OrderInvoice;
+  createdByStaff: OrderStaff;
 }
 
 // Order detail (same as list item but used for detail view)

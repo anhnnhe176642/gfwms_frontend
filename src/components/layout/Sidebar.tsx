@@ -188,6 +188,12 @@ export const Sidebar: React.FC = () => {
           requiredPermission: PERMISSIONS.STORES.VIEW_DETAIL.key,
         },
         {
+          label: "Đơn hàng",
+          href: `/admin/stores/${id}/orders`,
+          icon: ShoppingCart,
+          requiredPermission: PERMISSIONS.ORDERS.VIEW_LIST.key,
+        },
+        {
           label: "Yêu cầu xuất kho",
           href: `/admin/stores/${id}/export-requests`,
           icon: TruckIcon,

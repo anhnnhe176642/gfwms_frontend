@@ -67,6 +67,14 @@ export const orderService = {
   },
 
   /**
+   * Lấy danh sách đơn hàng theo cửa hàng (Admin/Manager)
+   */
+  getByStore: async (storeId: number | string, params?: OrderListParams): Promise<OrderListResponse> => {
+    const response = await api.get<OrderListResponse>(`${BASE_PATH}/store/${storeId}`, { params });
+    return response.data;
+  },
+
+  /**
    * Lấy chi tiết đơn hàng
    */
   getDetail: async (id: number | string): Promise<OrderDetail> => {
