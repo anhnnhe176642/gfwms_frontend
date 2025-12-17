@@ -59,7 +59,7 @@ export function ShelfManagementTable({ warehouseId }: ShelfManagementTableProps)
     fetchData: async (params: ShelfListParams) => {
       return await warehouseService.getShelves(params);
     },
-    initialParams: { warehouseId },
+    initialParams: { warehouseId: String(warehouseId) },
     filterConfig: {
       // Define which filters are date ranges
       dateRangeFilters: {

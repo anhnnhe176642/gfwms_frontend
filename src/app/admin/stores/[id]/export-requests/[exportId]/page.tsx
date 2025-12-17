@@ -24,7 +24,6 @@ export default function StoreExportRequestDetailPage() {
         <ExportFabricDetailView
           warehouseId={0}
           exportFabricId={exportId}
-          hideActionButtons={true}
         />
       </div>
     </ProtectedRoute>

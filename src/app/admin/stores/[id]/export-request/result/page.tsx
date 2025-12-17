@@ -367,7 +367,7 @@ function ExportDetailCard({
                     </td>
                     <td className="py-4 px-2">
                       <p className="font-medium text-foreground">
-                        Danh mục #{item.fabric.categoryId}
+                        Loại vải #{item.fabric.categoryId}
                       </p>
                     </td>
                     <td className="py-4 px-2 whitespace-nowrap">{item.fabric.colorId}</td>

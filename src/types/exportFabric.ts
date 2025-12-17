@@ -1,6 +1,6 @@
 import type { PaginationState } from './common';
 
-export type ExportFabricStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type ExportFabricStatus = 'PENDING' | 'APPROVED' | 'COMPLETED' | 'CANCELLED' | 'REJECTED';
 
 export type ExportFabricListItem = {
   id: number;

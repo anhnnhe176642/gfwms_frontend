@@ -38,7 +38,7 @@ export function ShelfSelector({
   } = useInfiniteScroll<ShelfListItem, ShelfListParams>({
     fetchData: warehouseService.getShelves,
     pageSize: 10,
-    initialParams: { warehouseId },
+    initialParams: { warehouseId: String(warehouseId) },
   });
 
   // Load initial data khi mở

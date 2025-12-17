@@ -564,7 +564,7 @@ export default function FabricColorDetailPage({ colorId, categoryId }: FabricCol
                   </div>
                 ) : (
                   <div className="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
-                    <p className="text-muted-foreground">Chưa có ảnh danh mục</p>
+                    <p className="text-muted-foreground">Chưa có ảnh loại vải</p>
                   </div>
                 )}
               </CardContent>
@@ -607,7 +607,7 @@ export default function FabricColorDetailPage({ colorId, categoryId }: FabricCol
               {/* Category Filter (if not pre-selected) */}
               {!categoryId && filterOptions.categories.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-sm">Danh mục</Label>
+                  <Label className="text-sm">Loại vải</Label>
                   <div className="flex flex-wrap gap-2">
                     {filterOptions.categories.map((cat) => {
                       const isDisabled = isOptionDisabled('categories', cat.id);

@@ -91,7 +91,7 @@ export default function FabricCategoryDetail({ categoryId }: FabricCategoryDetai
   if (!category) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">Không tìm thấy danh mục</h2>
+        <h2 className="text-2xl font-bold mb-4">Không tìm thấy loại vải</h2>
         <Button asChild>
           <Link href="/">Quay lại trang chủ</Link>
         </Button>
