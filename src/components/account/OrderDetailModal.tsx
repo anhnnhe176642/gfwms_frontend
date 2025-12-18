@@ -65,7 +65,7 @@ export function OrderDetailModal({ orderId, open, onOpenChange }: OrderDetailMod
       case 'PROCESSING':
         return 'Đang xử lý';
       case 'DELIVERED':
-        return 'Đã giao';
+        return 'Hoàn thành';
       case 'CANCELED':
         return 'Đã hủy';
       case 'FAILED':
@@ -325,7 +325,7 @@ export function OrderDetailModal({ orderId, open, onOpenChange }: OrderDetailMod
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Loại thanh toán</span>
                       <span className="font-medium">
-                        {order.invoice.paymentType === 'CASH' ? 'Tiền mặt' : 'Tín dụng'}
+                        {order.invoice.paymentType === 'CASH' ? 'Tiền mặt' : 'Ghi nợ'}
                       </span>
                     </div>
 

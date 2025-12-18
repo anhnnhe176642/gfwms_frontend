@@ -136,7 +136,7 @@ export function CreateOrderForm() {
                 {/* Customer Phone */}
                 <div className="space-y-2">
                   <Label htmlFor="customerPhone" className="text-sm font-medium">
-                    Số điện thoại khách (tuỳ chọn)
+                    Số điện thoại khách
                   </Label>
                   <Input
                     id="customerPhone"

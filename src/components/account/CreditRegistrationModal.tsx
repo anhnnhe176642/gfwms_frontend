@@ -123,7 +123,7 @@ export function CreditRegistrationModal({ open, onOpenChange, onSuccess }: Credi
           {/* Request Limit */}
           <div className="space-y-2">
             <label htmlFor="requestLimit" className="block text-sm font-medium">
-              Hạn mức tín dụng (₫) <span className="text-red-500">*</span>
+              Hạn mức mong muốn (₫) <span className="text-red-500">*</span>
             </label>
             <Controller
               control={control}
@@ -134,7 +134,7 @@ export function CreditRegistrationModal({ open, onOpenChange, onSuccess }: Credi
                     id="requestLimit"
                     type="text"
                     inputMode="numeric"
-                    placeholder="Nhập hạn mức tín dụng"
+                    placeholder="Nhập Hạn mức mong muốn"
                     disabled={isSubmitting}
                     maxLength={String(Number.MAX_SAFE_INTEGER).length}
                     value={displayValue}

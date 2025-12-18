@@ -17,7 +17,7 @@ interface OrderListFiltersProps {
 const ORDER_STATUSES = [
   { value: 'PENDING', label: 'Đang chờ' },
   { value: 'PROCESSING', label: 'Đang xử lý' },
-  { value: 'DELIVERED', label: 'Đã giao' },
+  { value: 'DELIVERED', label: 'Hoàn thành' },
   { value: 'CANCELED', label: 'Đã hủy' },
   { value: 'FAILED', label: 'Thất bại' },
 ];

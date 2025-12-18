@@ -52,7 +52,7 @@ export function OrderCard({ order, onViewDetails }: OrderCardProps) {
           {order.status === 'DELIVERED' && (
             <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
               <CheckCircle className="w-3 h-3" />
-              Đã giao
+              Hoàn thành
             </div>
           )}
           {order.status === 'CANCELED' && (

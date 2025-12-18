@@ -16,7 +16,7 @@ import Link from 'next/link';
 const STATUS_CONFIG: { value: OrderStatus; label: string }[] = [
   { value: 'PENDING', label: 'Đang chờ' },
   { value: 'PROCESSING', label: 'Đang xử lý' },
-  { value: 'DELIVERED', label: 'Đã giao' },
+  { value: 'DELIVERED', label: 'Hoàn thành' },
   { value: 'FAILED', label: 'Thất bại' },
   { value: 'CANCELED', label: 'Đã hủy' },
 ];

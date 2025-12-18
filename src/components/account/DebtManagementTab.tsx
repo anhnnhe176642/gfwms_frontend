@@ -96,7 +96,7 @@ export function DebtManagementTab() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">Hạn mức tín dụng</p>
+                <p className="text-sm text-muted-foreground">Hạn mức mong muốn</p>
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">
                   {totalLimit.toLocaleString('vi-VN')} ₫
                 </p>
@@ -122,7 +122,7 @@ export function DebtManagementTab() {
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <CardTitle>Chi tiết hạn mức tín dụng</CardTitle>
+                <CardTitle>Chi tiết Hạn mức mong muốn</CardTitle>
                 <CardDescription>Thông tin hạn mức công nợ của bạn</CardDescription>
               </div>
               <Button 
@@ -138,7 +138,7 @@ export function DebtManagementTab() {
             <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                  <p className="font-medium">Hạn mức tín dụng #{creditRegistration.id}</p>
+                  <p className="font-medium">Hạn mức mong muốn #{creditRegistration.id}</p>
                   <p className="text-sm text-muted-foreground">
                     Ngày phê duyệt: {creditRegistration.approvalDate ? new Date(creditRegistration.approvalDate).toLocaleString('vi-VN') : 'N/A'}
                   </p>
@@ -194,7 +194,7 @@ export function DebtManagementTab() {
         <Card>
           <CardHeader>
             <CardTitle>Danh sách hóa đơn công nợ</CardTitle>
-            <CardDescription>Các hóa đơn sử dụng công nợ của bạn</CardDescription>
+            <CardDescription>Các hóa đơn sử dụng công nợ theo tháng của bạn</CardDescription>
           </CardHeader>
           <CardContent>
             {error && (

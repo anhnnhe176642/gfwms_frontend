@@ -4,7 +4,7 @@ import type { BadgeConfig } from '@/components/ui/badge';
 export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'PENDING', label: 'Chờ xử lý' },
   { value: 'PROCESSING', label: 'Đang xử lý' },
-  { value: 'DELIVERED', label: 'Đã giao' },
+  { value: 'DELIVERED', label: 'Hoàn thành' },
   { value: 'CANCELED', label: 'Đã hủy' },
   { value: 'FAILED', label: 'Thất bại' },
 ];
@@ -19,7 +19,7 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, { label: string; className
     className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   },
   DELIVERED: {
-    label: 'Đã giao',
+    label: 'Hoàn thành',
     className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
   },
   CANCELED: {

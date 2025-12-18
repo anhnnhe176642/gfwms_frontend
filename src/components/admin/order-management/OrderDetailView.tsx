@@ -280,7 +280,6 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
                   Nhân viên tạo đơn
                 </h3>
                 <p className="font-medium text-foreground">{order.createdByStaff.fullname}</p>
-                <p className="text-sm text-muted-foreground">@{order.createdByStaff.username}</p>
               </div>
             )}
 
