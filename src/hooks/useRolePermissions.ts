@@ -135,6 +135,7 @@ Vai trò này CÓ các quyền: ${selectedText}
 Vai trò này KHÔNG CÓ các quyền: ${notSelectedText}
 
 Hãy giải thích vai trò này có thể làm được những gì và không thể làm gì, dựa vào các quyền có thể và các quyền không thể đưa ra góc nhìn tổng quan về vai trò này. Tóm tắt dưới 300 kí tự.
+bắt đầu với "Vai trò này cho phép..." và viết dưới dạng đoạn văn ngắn.
 `.trim();
 
       const response = await geminiService.prompt({
