@@ -91,6 +91,30 @@ export const PERMISSIONS = {
       parentPermissionKey: 'customer:view_list',
       level: 2,
     },
+
+    // Customer-facing permissions
+    VIEW_STORES: {
+      key: 'customer:view_stores',
+      description: 'Xem danh sách cửa hàng',
+      level: 0,
+    },
+
+    // Customer-facing fabric browsing permissions
+    VIEW_FABRIC_CATEGORIES: {
+      key: 'customer:view_fabric_categories',
+      description: 'Xem danh mục vải dành cho khách hàng',
+      level: 0,
+    },
+    VIEW_FABRIC_COLORS: {
+      key: 'customer:view_fabric_colors',
+      description: 'Xem màu vải dành cho khách hàng',
+      level: 0,
+    },
+    VIEW_FABRICS_GLOSS: {
+      key: 'customer:view_fabrics_gloss',
+      description: 'Xem độ bóng vải dành cho khách hàng',
+      level: 0,
+    },
   },
 
   // Fabrics Management (admin/fabrics)

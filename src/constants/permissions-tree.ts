@@ -61,6 +61,31 @@ export const PERMISSIONS_TREE = {
         level: 0,
         children: [],
       },
+
+      {
+        key: PERMISSIONS.CUSTOMERS.VIEW_FABRIC_CATEGORIES.key,
+        description: PERMISSIONS.CUSTOMERS.VIEW_FABRIC_CATEGORIES.description,
+        level: 0,
+        children: [],
+      },
+      {
+        key: PERMISSIONS.CUSTOMERS.VIEW_FABRIC_COLORS.key,
+        description: PERMISSIONS.CUSTOMERS.VIEW_FABRIC_COLORS.description,
+        level: 0,
+        children: [],
+      },
+      {
+        key: PERMISSIONS.CUSTOMERS.VIEW_FABRICS_GLOSS.key,
+        description: PERMISSIONS.CUSTOMERS.VIEW_FABRICS_GLOSS.description,
+        level: 0,
+        children: [],
+      },
+      {
+        key: PERMISSIONS.CUSTOMERS.VIEW_STORES.key,
+        description: PERMISSIONS.CUSTOMERS.VIEW_STORES.description,
+        level: 0,
+        children: [],
+      },
     ],
   },
 
