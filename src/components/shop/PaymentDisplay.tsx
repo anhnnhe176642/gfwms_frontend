@@ -262,11 +262,149 @@ export default function PaymentDisplay({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  // Check if this is a CREDIT payment
-  const isCreditPayment = invoiceStatus === 'CREDIT' || (!qrCodeUrl && !qrCodeBase64);
+  // Check if this is a pure CREDIT payment (no QR code needed)
+  const isPureCreditPayment = invoiceStatus === 'CREDIT' && (!qrCodeUrl && !qrCodeBase64);
+  
+  // Check if this is a mixed payment (partial credit + partial payment)
+  const isMixedPayment = invoiceStatus === 'CREDIT' && (qrCodeUrl || qrCodeBase64);
 
-  // Render CREDIT payment info
-  if (isCreditPayment) {
+  // Render mixed payment (credit + QR code) info
+  if (isMixedPayment) {
+    return (
+      <Card className="w-full border-orange-200/50 bg-linear-to-br from-orange-50 to-transparent dark:from-orange-950/30 dark:to-transparent">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-8 h-8 text-orange-500" />
+              <div>
+                <CardTitle>Thanh toán hỗn hợp (Ghi nợ + QR Code)</CardTitle>
+                <CardDescription>Hoá đơn #{invoiceId}</CardDescription>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-orange-600">
+                {paymentAmount ? paymentAmount.toLocaleString('vi-VN') : '0'} ₫
+              </p>
+              <p className="text-xs text-muted-foreground">Cần thanh toán ngay</p>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {/* Credit and Payment Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground mb-2">Ghi nợ</p>
+              <p className="text-2xl font-bold text-green-600">
+                {creditAmount ? creditAmount.toLocaleString('vi-VN') : '0'} ₫
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Thanh toán vào cuối tháng
+              </p>
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground mb-2">Cần thanh toán ngay</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {paymentAmount ? paymentAmount.toLocaleString('vi-VN') : '0'} ₫
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Quét mã QR bên dưới
+              </p>
+            </div>
+          </div>
+
+          {/* QR Code Section */}
+          <div className="border-t pt-6">
+            <h3 className="font-semibold text-lg mb-4">Thanh toán QR Code</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* QR Code */}
+              <div className="lg:col-span-2 flex flex-col items-center justify-start gap-4">
+                <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm w-full max-w-sm">
+                  {qrCodeBase64 ? (
+                    <img
+                      src={qrCodeBase64}
+                      alt="Payment QR Code"
+                      className="w-full h-auto object-contain"
+                    />
+                  ) : (
+                    <div className="w-full aspect-square bg-gray-100 rounded flex items-center justify-center">
+                      <p className="text-muted-foreground">Đang tải mã QR...</p>
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-center text-muted-foreground">
+                  Quét mã bằng ứng dụng ngân hàng của bạn để thanh toán {paymentAmount ? paymentAmount.toLocaleString('vi-VN') : '0'} ₫
+                </p>
+              </div>
+
+              {/* Transfer Info */}
+              <div className="space-y-3">
+                <p className="text-sm font-semibold">Thông tin chuyển khoản:</p>
+                {qrData && (
+                  <>
+                    {qrData.bankBeneficiary && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Tên tài khoản</p>
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                          <p className="text-sm font-medium">{qrData.bankBeneficiary}</p>
+                          <button
+                            onClick={() => copyToClipboard(qrData.bankBeneficiary || '', 'bankBeneficiary')}
+                            className="text-xs hover:text-primary transition-colors"
+                          >
+                            {copiedField === 'bankBeneficiary' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {qrData.bankAccount && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Số tài khoản</p>
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                          <p className="text-sm font-medium font-mono">{qrData.bankAccount}</p>
+                          <button
+                            onClick={() => copyToClipboard(qrData.bankAccount || '', 'bankAccount')}
+                            className="text-xs hover:text-primary transition-colors"
+                          >
+                            {copiedField === 'bankAccount' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {qrData.description && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Nội dung</p>
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                          <p className="text-sm font-medium wrap-break-word">{qrData.description}</p>
+                          <button
+                            onClick={() => copyToClipboard(qrData.description || '', 'description')}
+                            className="text-xs hover:text-primary transition-colors shrink-0"
+                          >
+                            {copiedField === 'description' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+            <p className="text-sm text-orange-800 dark:text-orange-200 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>
+                Hạn mức công nợ của bạn không đủ. Vui lòng thanh toán {paymentAmount ? paymentAmount.toLocaleString('vi-VN') : '0'} ₫ trong {timeRemaining} để hoàn thành đơn hàng. Số tiền còn lại sẽ được ghi nợ.
+              </span>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Render pure CREDIT payment info
+  if (isPureCreditPayment) {
     return (
       <Card className="w-full border-green-200/50 bg-linear-to-br from-green-50 to-transparent dark:from-green-950/30 dark:to-transparent">
         <CardHeader>

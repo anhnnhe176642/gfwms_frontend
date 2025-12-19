@@ -207,6 +207,7 @@ export default function CheckoutHandler({
       // Create orders for each store
       const invoiceIds: string[] = [];
       let totalPaymentAmount = 0;
+      let totalCreditAmount = 0;
       let latestDeadline = '';
       let latestQrCode = '';
       let latestQrCodeBase64 = '';
@@ -236,12 +237,33 @@ export default function CheckoutHandler({
         if (selectedPaymentType === 'CREDIT') {
           // For CREDIT payments, extract info from invoice in order response
           const invoice = orderResponse.data.order.invoice;
-          totalPaymentAmount += invoice.totalAmount;
-          latestDeadline = invoice.paymentDeadline || '';
-          // No QR code for credit payments
-          latestQrCode = '';
-          latestQrCodeBase64 = '';
-          accountName = '';
+          const paymentInstructions = orderResponse.data.paymentInstructions;
+          const creditAmount = invoice.creditAmount || 0; // Amount being credited
+          const paymentAmount = paymentInstructions?.amount || 0; // Amount to pay immediately
+          
+          // Accumulate credit amount
+          totalCreditAmount += creditAmount;
+          
+          // Check if this is a mixed payment (partial credit + partial payment)
+          // invoiceStatus UNPAID means credit was not enough, need to pay the difference
+          if (invoice.invoiceStatus === 'UNPAID' && paymentAmount > 0) {
+            // Mixed payment: partial credit + partial payment required
+            // Create QR code for the remaining amount
+            const paymentQRResponse = await invoiceService.createPaymentQR(invoiceId);
+            
+            totalPaymentAmount += paymentAmount; // Add immediate payment amount
+            latestDeadline = invoice.paymentDeadline || '';
+            latestQrCode = paymentQRResponse.qrCodeUrl;
+            latestQrCodeBase64 = paymentQRResponse.qrCodeBase64;
+            accountName = paymentQRResponse.accountName || '';
+          } else {
+            // Pure credit payment (credit is sufficient)
+            latestDeadline = invoice.paymentDeadline || '';
+            // No QR code for pure credit payments
+            latestQrCode = '';
+            latestQrCodeBase64 = '';
+            accountName = '';
+          }
         } else {
           // For CASH payments, create payment QR code
           const paymentQRResponse = await invoiceService.createPaymentQR(invoiceId);
@@ -258,7 +280,7 @@ export default function CheckoutHandler({
       // 4. Return payment data to parent component
       const paymentInfo = {
         invoiceId: invoiceIds.join(', '),
-        paymentAmount: totalPaymentAmount,
+        paymentAmount: selectedPaymentType === 'CREDIT' ? totalPaymentAmount : totalPaymentAmount,
         deadline: latestDeadline,
         ...(selectedPaymentType === 'CASH' ? {
           qrCodeUrl: latestQrCode,
@@ -266,7 +288,10 @@ export default function CheckoutHandler({
           accountName: accountName,
         } : {
           invoiceStatus: 'CREDIT' as const,
-          creditAmount: totalPaymentAmount,
+          creditAmount: totalCreditAmount,
+          qrCodeUrl: latestQrCode,
+          qrCodeBase64: latestQrCodeBase64,
+          accountName: accountName,
         }),
       };
       
