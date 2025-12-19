@@ -26,29 +26,22 @@ export const createUserSchema = yup.object().shape({
     .matches(/^(\+84|0)[0-9]{9,10}$/, 'Số điện thoại không hợp lệ'),
   fullname: yup
     .string()
-    .nullable()
-    .default('')
     .typeError('Họ tên phải là chuỗi'),
   gender: yup
     .string()
-    .nullable()
-    .default('')
     .oneOf(['', 'MALE', 'FEMALE'], 'Giới tính không hợp lệ'),
   address: yup
     .string()
-    .nullable()
-    .default('')
     .typeError('Địa chỉ phải là chuỗi'),
   dob: yup
     .string()
-    .nullable()
-    .default('')
     .matches(/^$|^\d{4}-\d{2}-\d{2}$/, 'Ngày sinh phải có định dạng YYYY-MM-DD'),
   role: yup
     .string()
     .required('Role là bắt buộc'),
   status: yup
     .string()
+    .required('Trạng thái là bắt buộc')
     .default('ACTIVE')
     .oneOf(['ACTIVE', 'INACTIVE', 'SUSPENDED'], 'Trạng thái không hợp lệ'),
 });

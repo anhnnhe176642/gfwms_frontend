@@ -18,7 +18,19 @@ export const useFormValidation = <T extends Record<string, unknown>>(
   // Initialize values with schema defaults
   const getInitialValues = useCallback(() => {
     try {
-      return schema.cast({}) as T;
+      // Get schema description to extract default values
+      const schemaDescription = (schema as any).describe();
+      const initialValues: Record<string, unknown> = {};
+      
+      if (schemaDescription.fields) {
+        Object.entries(schemaDescription.fields).forEach(([key, fieldDesc]: [string, any]) => {
+          if (fieldDesc.default !== undefined) {
+            initialValues[key] = fieldDesc.default;
+          }
+        });
+      }
+      
+      return initialValues as T;
     } catch {
       return {} as T;
     }
