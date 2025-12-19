@@ -337,7 +337,7 @@ export function CreateOrderForm() {
   const totalAmount = Array.from(selectedItems.values()).reduce((sum, item) => {
     const price = item.saleUnit === 'METER' 
       ? item.fabric.fabricInfo.sellingPricePerMeter 
-      : item.fabric.fabricInfo.sellingPricePerRoll;
+      : item.fabric.fabricInfo.sellingPrice ? item.fabric.fabricInfo.sellingPrice : item.fabric.fabricInfo.sellingPricePerRoll;
     return sum + (price * item.quantity);
   }, 0);
 
@@ -628,9 +628,10 @@ export function CreateOrderForm() {
               {/* Selected Items */}
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {Array.from(selectedItems.values()).map((item) => {
+                  console.log('Selected item:', item);
                   const unitPrice = item.saleUnit === 'METER' 
                     ? item.fabric.fabricInfo.sellingPricePerMeter 
-                    : item.fabric.fabricInfo.sellingPricePerRoll;
+                    : item.fabric.fabricInfo.sellingPrice ? item.fabric.fabricInfo.sellingPrice : item.fabric.fabricInfo.sellingPricePerRoll;
                   const itemTotal = unitPrice * item.quantity;
                   
                   return (

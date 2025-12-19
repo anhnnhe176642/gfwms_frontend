@@ -78,7 +78,6 @@ export default function CreateOrderPage() {
         {/* Content Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Bước 1: Chọn vải</CardTitle>
             <CardDescription>
               Chọn các loại vải và nhập số lượng muốn bán
             </CardDescription>
