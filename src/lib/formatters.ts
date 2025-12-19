@@ -64,6 +64,25 @@ export const formatTime = (date: string | Date | undefined | null): string => {
 };
 
 /**
+ * Formats number to Vietnamese locale with thousand separators
+ * @param value - Number to format
+ * @param decimals - Number of decimal places (default: 0)
+ * @returns Formatted number string
+ */
+export const formatNumber = (value: number | undefined | null, decimals: number = 0): string => {
+  if (value === null || value === undefined) return '-';
+  
+  try {
+    return new Intl.NumberFormat('vi-VN', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value);
+  } catch {
+    return '-';
+  }
+};
+
+/**
  * Formats currency to Vietnamese locale (VND)
  * @param value - Number to format
  * @param currency - Currency code (default: VND)
@@ -179,4 +198,5 @@ export const formatters = {
   formatDateTime,
   formatRelativeTime,
   formatExpirationTime,
+  formatNumber,
 };
