@@ -10,6 +10,8 @@ import type {
 
 const BASE_PATH = '/v1/orders';
 
+export type PaymentMethod = 'DIRECT' | 'QR';
+
 export type CreateOfflineOrderPayload = {
   customerPhone?: string;
   storeId: number;
@@ -19,7 +21,13 @@ export type CreateOfflineOrderPayload = {
     saleUnit: SaleUnit;
   }>;
   paymentType: PaymentType;
+  paymentMethod?: PaymentMethod;
   notes?: string;
+};
+
+export type CreateOfflineOrderResponse = {
+  message: string;
+  data: OrderDetail;
 };
 
 export type CreateOrderPayload = {
@@ -93,9 +101,9 @@ export const orderService = {
   /**
    * Tạo đơn hàng offline tại cửa hàng
    */
-  createOfflineOrder: async (payload: CreateOfflineOrderPayload): Promise<OrderDetail> => {
-    const response = await api.post<OrderDetailResponse>(`${BASE_PATH}/offline`, payload);
-    return response.data.data;
+  createOfflineOrder: async (payload: CreateOfflineOrderPayload): Promise<CreateOfflineOrderResponse> => {
+    const response = await api.post<CreateOfflineOrderResponse>(`${BASE_PATH}/offline`, payload);
+    return response.data;
   },
 };
 

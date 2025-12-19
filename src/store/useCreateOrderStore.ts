@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import type { StoreFabricListItem } from '@/types/storeFabric';
 import type { PaymentType, SaleUnit } from '@/types/order';
+import type { PaymentMethod } from '@/services/order.service';
 
 export type CreateOrderItem = {
   fabricId: number;
@@ -23,6 +24,7 @@ type CreateOrderState = {
   currentStep: 1 | 2;
   customerPhone: string;
   paymentType: PaymentType;
+  paymentMethod: PaymentMethod;
   notes: string;
   
   // Submission state
@@ -35,6 +37,7 @@ type CreateOrderState = {
   setUnitInputs: (inputs: Map<number, SaleUnit>) => void;
   setCustomerPhone: (phone: string) => void;
   setPaymentType: (type: PaymentType) => void;
+  setPaymentMethod: (method: PaymentMethod) => void;
   setNotes: (notes: string) => void;
   
   // Step navigation
@@ -52,6 +55,7 @@ type CreateOrderState = {
     storeId: number;
     customerPhone?: string;
     paymentType: PaymentType;
+    paymentMethod: PaymentMethod;
     notes?: string;
     orderItems: Array<{
       fabricId: number;
@@ -71,6 +75,7 @@ export const useCreateOrderStore = create<CreateOrderState>((set, get) => ({
   currentStep: 1,
   customerPhone: '',
   paymentType: 'CASH',
+  paymentMethod: 'DIRECT',
   notes: '',
   isSubmitting: false,
 
@@ -86,6 +91,8 @@ export const useCreateOrderStore = create<CreateOrderState>((set, get) => ({
   setCustomerPhone: (phone) => set({ customerPhone: phone }),
 
   setPaymentType: (type) => set({ paymentType: type }),
+
+  setPaymentMethod: (method) => set({ paymentMethod: method }),
 
   setNotes: (notes) => set({ notes }),
 
@@ -105,6 +112,7 @@ export const useCreateOrderStore = create<CreateOrderState>((set, get) => ({
       currentStep: 1,
       customerPhone: '',
       paymentType: 'CASH',
+      paymentMethod: 'DIRECT',
       notes: '',
       isSubmitting: false,
     }),
@@ -119,6 +127,7 @@ export const useCreateOrderStore = create<CreateOrderState>((set, get) => ({
       storeId: state.storeId,
       customerPhone: state.customerPhone || undefined,
       paymentType: state.paymentType,
+      paymentMethod: state.paymentMethod,
       notes: state.notes || undefined,
       orderItems: Array.from(state.selectedItems.values()).map((item) => ({
         fabricId: item.fabricId,
