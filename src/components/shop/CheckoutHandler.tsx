@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { orderService } from '@/services/order.service';
 import { invoiceService } from '@/services/invoice.service';
 import fabricStoreService from '@/services/fabric-store.service';
+import { getServerErrorMessage, getErrorStatus } from '@/lib/errorHandler';
 import { useCartStore } from '@/store/useCartStore';
 import { useCartCheckoutStore } from '@/store/useCartCheckoutStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -224,8 +225,22 @@ export default function CheckoutHandler({
           notes: `Đơn hàng từ khách hàng ${user.fullname || user.username}`,
         };
 
-        const orderResponse = await orderService.create(createOrderPayload);
-        toast.success(`Tạo đơn hàng thành công cho cửa hàng ${storeId}!`);
+        let orderResponse;
+        try {
+          orderResponse = await orderService.create(createOrderPayload);
+          toast.success(`Tạo đơn hàng thành công cho cửa hàng ${storeId}!`);
+        } catch (orderError: any) {
+          const statusCode = getErrorStatus(orderError);
+          const errorMessage = getServerErrorMessage(orderError);
+          
+          if (statusCode === 400) {
+            toast.error(`Lỗi: ${errorMessage || 'Yêu cầu không hợp lệ'}`);
+          } else {
+            throw orderError;
+          }
+          setIsCreatingOrder(false);
+          return;
+        }
 
         // 3. Create payment QR code (for CASH) or extract credit info (for CREDIT)
         const invoiceId = orderResponse.data.order.invoice?.id;
