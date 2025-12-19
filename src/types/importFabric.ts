@@ -119,6 +119,7 @@ export type ImportFabricFullDetail = {
   importDate: string;
   totalPrice: number;
   status: ImportFabricStatus;
+  signatureImageUrl?: string;
   warehouse: ImportFabricWarehouse;
   importUser: ImportFabricUser;
   importItems: ImportFabricItem[];

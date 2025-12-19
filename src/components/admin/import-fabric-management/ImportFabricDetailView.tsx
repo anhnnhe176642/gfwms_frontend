@@ -3,6 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import Lightbox from 'yet-another-react-lightbox';
+import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+import 'yet-another-react-lightbox/styles.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { importFabricService } from '@/services/importFabric.service';
@@ -26,6 +29,7 @@ export function ImportFabricDetailView({ warehouseId, importId }: ImportFabricDe
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     const fetchImportFabricDetail = async () => {
@@ -301,8 +305,40 @@ export function ImportFabricDetailView({ warehouseId, importId }: ImportFabricDe
             <p>Ngày tạo: {new Date(importFabric.createdAt).toLocaleString('vi-VN')}</p>
             <p>Lần cập nhật cuối: {new Date(importFabric.updatedAt).toLocaleString('vi-VN')}</p>
           </div>
+
+          {/* Signature Image Section */}
+          {importFabric.signatureImageUrl && (
+            <div className="border-t p-8">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-4">
+                Ảnh chữ ký hoá đơn
+              </h3>
+              <div className="flex justify-center">
+                <img
+                  src={importFabric.signatureImageUrl}
+                  alt="Signature"
+                  className="max-h-64 max-w-md border rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => setLightboxOpen(true)}
+                />
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Lightbox */}
+      {importFabric?.signatureImageUrl && (
+        <Lightbox
+          open={lightboxOpen}
+          close={() => setLightboxOpen(false)}
+          slides={[
+            {
+              src: importFabric.signatureImageUrl,
+              alt: 'Signature',
+            },
+          ]}
+          plugins={[Zoom]}
+        />
+      )}
 
       {/* Print Styles */}
       <style>{`

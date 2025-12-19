@@ -107,6 +107,19 @@ export const createImportFabricSchema = yup.object().shape({
         price: '',
       },
     ]),
+  signatureImage: yup
+    .mixed<File>()
+    .nullable()
+    .optional()
+    .test('fileSize', 'Ảnh chữ ký phải nhỏ hơn 10MB', (file) => {
+      if (!file) return true;
+      return file instanceof File && file.size <= 10 * 1024 * 1024;
+    })
+    .test('fileType', 'Định dạng ảnh không hợp lệ (JPEG, PNG, GIF, WEBP)', (file) => {
+      if (!file) return true;
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      return file instanceof File && validTypes.includes(file.type);
+    }),
 });
 
 export type CreateImportFabricFormData = yup.InferType<typeof createImportFabricSchema>;

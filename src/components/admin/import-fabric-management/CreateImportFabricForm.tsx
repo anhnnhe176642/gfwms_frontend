@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import * as yup from 'yup';
@@ -10,7 +10,7 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { importFabricService } from '@/services/importFabric.service';
 import { extractFieldErrors, getServerErrorMessage } from '@/lib/errorHandler';
 import { createImportFabricSchema, type CreateImportFabricFormData } from '@/schemas/importFabric.schema';
-import { ArrowLeft, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Upload, X } from 'lucide-react';
 import { ImportFabricItemRow } from './ImportFabricItemRow';
 import type { CreateImportFabricRequest } from '@/services/importFabric.service';
 
@@ -53,9 +53,12 @@ const emptyItem = {
 export function CreateImportFabricForm({ warehouseId }: CreateImportFabricFormProps) {
   const router = useRouter();
   const { handleGoBack } = useNavigation();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [items, setItems] = useState<CreateImportFabricFormData['items']>([{ ...emptyItem }]);
+  const [signatureImage, setSignatureImage] = useState<File | null>(null);
+  const [signaturePreview, setSignaturePreview] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, any>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,6 +106,44 @@ export function CreateImportFabricForm({ warehouseId }: CreateImportFabricFormPr
   // Handle item field blur
   const handleItemBlur = (index: number, field: string) => {
     setTouched({ ...touched, [`items[${index}].${field}`]: true });
+  };
+
+  // Handle signature image selection
+  const handleSignatureImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+
+      if (!validTypes.includes(file.type)) {
+        toast.error('Định dạng ảnh không hợp lệ (JPEG, PNG, GIF, WEBP)');
+        return;
+      }
+
+      if (file.size > maxSize) {
+        toast.error('Ảnh chữ ký phải nhỏ hơn 10MB');
+        return;
+      }
+
+      setSignatureImage(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSignaturePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove signature image
+  const handleRemoveSignature = () => {
+    setSignatureImage(null);
+    setSignaturePreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // Validate form
@@ -180,6 +221,7 @@ export function CreateImportFabricForm({ warehouseId }: CreateImportFabricFormPr
           quantity: parseInt(item.quantity),
           price: parseFloat(item.price),
         })),
+        signatureImage: signatureImage || undefined,
       };
 
       await importFabricService.createImportFabric(requestData);
@@ -321,6 +363,73 @@ export function CreateImportFabricForm({ warehouseId }: CreateImportFabricFormPr
               <Plus className="h-4 w-4" />
               Thêm dòng mới
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Signature Image Upload Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ảnh chữ ký hoá đơn</CardTitle>
+            <CardDescription>Tải lên ảnh chữ ký hoá đơn (tùy chọn, max 10MB)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleSignatureImageSelect}
+              className="hidden"
+            />
+
+            {signaturePreview ? (
+              <div className="space-y-4">
+                {/* Image Preview */}
+                <div className="relative border-2 border-dashed rounded-lg p-4 bg-muted/30">
+                  <img
+                    src={signaturePreview}
+                    alt="Signature Preview"
+                    className="max-h-64 mx-auto rounded"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleRemoveSignature}
+                    className="absolute top-2 right-2 h-8 w-8 bg-background/80 hover:bg-background"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {signatureImage?.name} ({(signatureImage!.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSubmitting}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Thay đổi ảnh
+                </Button>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">Nhấp để tải lên ảnh chữ ký</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  hoặc kéo thả ảnh (JPEG, PNG, GIF, WEBP, max 10MB)
+                </p>
+              </div>
+            )}
+
+            {errors.signatureImage && (
+              <p className="text-sm text-destructive">{errors.signatureImage}</p>
+            )}
           </CardContent>
         </Card>
 

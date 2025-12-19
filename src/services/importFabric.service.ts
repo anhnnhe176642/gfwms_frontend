@@ -21,6 +21,7 @@ export type CreateImportFabricRequest = {
     quantity: number;
     price: number;
   }>;
+  signatureImage?: File;
 };
 
 export type CreateImportFabricResponse = {
@@ -83,9 +84,21 @@ export const importFabricService = {
 
   /**
    * Tạo phiếu nhập kho mới
+   * Gửi FormData với warehouseId, items (JSON string), và signature image (optional)
    */
   createImportFabric: async (data: CreateImportFabricRequest): Promise<CreateImportFabricResponse> => {
-    const response = await api.post<CreateImportFabricResponse>(BASE_PATH, data);
+    const formData = new FormData();
+    formData.append('warehouseId', data.warehouseId.toString());
+    formData.append('items', JSON.stringify(data.items));
+    if (data.signatureImage) {
+      formData.append('signatureImage', data.signatureImage);
+    }
+
+    const response = await api.post<CreateImportFabricResponse>(BASE_PATH, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
