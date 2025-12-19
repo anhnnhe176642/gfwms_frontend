@@ -26,6 +26,7 @@ import {
   Clock,
   Phone,
   FileCheck,
+  CheckCircle,
 } from 'lucide-react';
 
 interface OrderDetailViewProps {
@@ -39,6 +40,7 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [markingDelivered, setMarkingDelivered] = useState(false);
 
   const fetchDetail = async () => {
     try {
@@ -80,6 +82,23 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
       toast.error(errorMsg);
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleMarkDelivered = async () => {
+    if (!order) return;
+
+    try {
+      setMarkingDelivered(true);
+      const updatedOrder = await orderService.markDelivered(order.id);
+      setOrder(updatedOrder);
+      toast.success('Cập nhật đơn hàng thành công, đơn hàng hoàn thành!');
+    } catch (err) {
+      const errorMessage = getServerErrorMessage(err) || 'Không thể cập nhật đơn hàng';
+      toast.error(errorMessage);
+      console.error('Failed to mark order as delivered:', err);
+    } finally {
+      setMarkingDelivered(false);
     }
   };
 
@@ -145,6 +164,25 @@ export function OrderDetailView({ orderId }: OrderDetailViewProps) {
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
+          {order.status === 'PROCESSING' && (
+            <Button
+              onClick={handleMarkDelivered}
+              disabled={markingDelivered}
+              className="gap-2 bg-green-600 hover:bg-green-700"
+            >
+              {markingDelivered ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang cập nhật...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  Đánh dấu đã hoàn thành
+                </>
+              )}
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={handleExportPDF}

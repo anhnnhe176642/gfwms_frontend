@@ -1,7 +1,7 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, Eye } from 'lucide-react';
+import { MoreHorizontal, Eye, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,10 +19,14 @@ import { ORDER_STATUS_OPTIONS, PAYMENT_TYPE_OPTIONS } from '@/constants/order';
 
 export type OrderColumnActions = {
   onView?: (orderId: number) => void;
+  onMarkDelivered?: (orderId: number) => Promise<void>;
+  markDeliveredLoading?: number | null;
 };
 
 export const createOrderColumns = ({
   onView,
+  onMarkDelivered,
+  markDeliveredLoading,
 }: OrderColumnActions): ColumnDef<OrderListItem>[] => {
   const columns: ColumnDef<OrderListItem>[] = [
     {
@@ -227,6 +231,25 @@ export const createOrderColumns = ({
                 <DropdownMenuItem onClick={() => onView(order.id)}>
                   <Eye className="h-4 w-4 mr-2" />
                   Xem chi tiết
+                </DropdownMenuItem>
+              )}
+
+              {onMarkDelivered && order.status === 'PROCESSING' && (
+                <DropdownMenuItem
+                  onClick={() => onMarkDelivered(order.id)}
+                  disabled={markDeliveredLoading === order.id}
+                >
+                  {markDeliveredLoading === order.id ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Đang cập nhật...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Đánh dấu đã hoàn thành
+                    </>
+                  )}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

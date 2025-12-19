@@ -105,6 +105,14 @@ export const orderService = {
     const response = await api.post<CreateOfflineOrderResponse>(`${BASE_PATH}/offline`, payload);
     return response.data;
   },
+
+  /**
+   * Đánh dấu đơn hàng đã giao thành công (PROCESSING → DELIVERED)
+   */
+  markDelivered: async (id: number | string): Promise<OrderDetail> => {
+    const response = await api.patch<OrderDetailResponse>(`${BASE_PATH}/${id}/mark-delivered`);
+    return response.data.data;
+  },
 };
 
 export default orderService;

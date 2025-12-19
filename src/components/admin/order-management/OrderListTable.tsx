@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VisibilityState } from '@tanstack/react-table';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
@@ -16,6 +17,7 @@ import {
 import { createOrderColumns } from './orderColumns';
 import { orderService } from '@/services/order.service';
 import { useServerTable } from '@/hooks/useServerTable';
+import { getServerErrorMessage } from '@/lib/errorHandler';
 import type { OrderListItem, OrderListParams } from '@/types/order';
 import { IS_OFFLINE_OPTIONS } from '@/constants/order';
 import { Search, RefreshCw, Calendar } from 'lucide-react';
@@ -29,6 +31,7 @@ export function OrderListTable({ storeId, initialParams }: OrderListTableProps) 
   const router = useRouter();
   const [tempSearchQuery, setTempSearchQuery] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [markDeliveredLoading, setMarkDeliveredLoading] = useState<number | null>(null);
 
   // Use custom hook for table state and data fetching
   const {
@@ -76,6 +79,25 @@ export function OrderListTable({ storeId, initialParams }: OrderListTableProps) 
    */
   const handleViewClick = (orderId: number) => {
     router.push(`/admin/orders/${orderId}`);
+  };
+
+  /**
+   * Handle mark as delivered
+   */
+  const handleMarkDelivered = async (orderId: number) => {
+    try {
+      setMarkDeliveredLoading(orderId);
+      const updatedOrder = await orderService.markDelivered(orderId);
+      toast.success('Cập nhật đơn hàng thành công, đơn hàng hoàn thành!');
+      // Update the order in the local state
+      refresh();
+    } catch (error) {
+      const errorMessage = getServerErrorMessage(error) || 'Không thể cập nhật đơn hàng';
+      toast.error(errorMessage);
+      console.error('Failed to mark order as delivered:', error);
+    } finally {
+      setMarkDeliveredLoading(null);
+    }
   };
 
   /**
@@ -136,6 +158,8 @@ export function OrderListTable({ storeId, initialParams }: OrderListTableProps) 
    */
   const columns = createOrderColumns({
     onView: handleViewClick,
+    onMarkDelivered: handleMarkDelivered,
+    markDeliveredLoading,
   });
 
   // Show loading state
