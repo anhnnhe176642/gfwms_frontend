@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authService } from '@/services/auth.service';
@@ -12,9 +13,12 @@ import { CREDIT_REGISTRATION_STATUS_CONFIG } from '@/constants/creditRegistratio
 import { CREDIT_INVOICE_STATUS_CONFIG } from '@/constants/creditInvoice';
 import type { CreditRegistration } from '@/types/creditRegistration';
 import type { CreditInvoiceListItem, CreditInvoiceListParams } from '@/types/creditInvoice';
-import { AlertCircle, TrendingDown, Calendar, Plus } from 'lucide-react';
+import type { CreditInvoicePaymentQRResponse, QRData, PaymentStatusResponse } from '@/services/creditInvoice.service';
+import { AlertCircle, TrendingDown, Calendar, Plus, Copy, Check, Loader2, CheckCircle, Clock } from 'lucide-react';
 import { CreditRegistrationModal } from './CreditRegistrationModal';
 import { IncreaseCreditsModal } from './IncreaseCreditsModal';
+import { decodeVietQR } from '@/lib/vietqr-parser';
+import { toast } from 'sonner';
 
 export function DebtManagementTab() {
   const { user } = useAuth();
@@ -25,6 +29,17 @@ export function DebtManagementTab() {
   const [error, setError] = useState<string | null>(null);
   const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
   const [increaseModalOpen, setIncreaseModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedCreditInvoice, setSelectedCreditInvoice] = useState<CreditInvoiceListItem | null>(null);
+  const [paymentQRData, setPaymentQRData] = useState<CreditInvoicePaymentQRResponse | null>(null);
+  const [qrData, setQrData] = useState<QRData | null>(null);
+  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isPolling, setIsPolling] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatusResponse | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,6 +69,211 @@ export function DebtManagementTab() {
 
     fetchData();
   }, [setUser]);
+
+  const handlePaymentClick = async (creditInvoice: CreditInvoiceListItem) => {
+    setSelectedCreditInvoice(creditInvoice);
+    setPaymentModalOpen(true);
+    setIsGeneratingQR(true);
+    setPaymentQRData(null);
+    setQrData(null);
+    setPaymentStatus(null);
+    setIsPolling(false);
+
+    try {
+      const qrResponse = await creditInvoiceService.createPaymentQR(creditInvoice.id);
+      setPaymentQRData(qrResponse);
+
+      // Decode QR code URL to extract payment information
+      try {
+        const parsedData = decodeVietQR(qrResponse.qrCodeUrl);
+        console.log('Decoded VietQR data:', parsedData);
+
+        if (parsedData && Object.keys(parsedData).length > 0) {
+          const decodedData: QRData = {};
+
+          if (parsedData.amount) {
+            decodedData.amount = parsedData.amount;
+          } else {
+            decodedData.amount = qrResponse.amount;
+          }
+
+          if (parsedData.description) {
+            decodedData.description = String(parsedData.description);
+          } else {
+            decodedData.description = `Thanh toán công nợ #${creditInvoice.id}`;
+          }
+
+          if (parsedData.bankBeneficiary) {
+            decodedData.bankBeneficiary = String(parsedData.bankBeneficiary);
+          }
+
+          if (parsedData.bankAccount) {
+            decodedData.bankAccount = String(parsedData.bankAccount);
+          }
+
+          if (parsedData.bankCode) {
+            decodedData.bankCode = String(parsedData.bankCode);
+          }
+
+          setQrData(decodedData);
+          console.log('Parsed QR data:', decodedData);
+        } else {
+          setQrData({
+            amount: qrResponse.amount,
+            description: `Thanh toán công nợ #${creditInvoice.id}`,
+          });
+        }
+      } catch (decodeErr) {
+        console.error('Lỗi decode QR code:', decodeErr);
+        setQrData({
+          amount: qrResponse.amount,
+          description: `Thanh toán công nợ #${creditInvoice.id}`,
+        });
+      }
+
+      // Start polling payment status
+      setIsPolling(true);
+      setTimeRemaining(formatTimeRemaining(qrResponse.expiresAt));
+    } catch (err: any) {
+      console.error('Lỗi tạo mã QR:', err);
+      toast.error('Không thể tạo mã QR. Vui lòng thử lại.');
+      setPaymentModalOpen(false);
+    } finally {
+      setIsGeneratingQR(false);
+    }
+  };
+
+  // Format remaining time
+  const formatTimeRemaining = (deadlineStr: string) => {
+    const deadline = new Date(deadlineStr).getTime();
+    const now = new Date().getTime();
+    const remaining = deadline - now;
+
+    if (remaining <= 0) {
+      return 'Hết hạn';
+    }
+
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    return `${minutes}m ${seconds}s`;
+  };
+
+  // Start countdown timer
+  useEffect(() => {
+    if (!paymentQRData) return;
+
+    setTimeRemaining(formatTimeRemaining(paymentQRData.expiresAt));
+
+    countdownRef.current = setInterval(() => {
+      setTimeRemaining(formatTimeRemaining(paymentQRData.expiresAt));
+    }, 1000);
+
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [paymentQRData]);
+
+  // Poll payment status
+  useEffect(() => {
+    if (!isPolling || !selectedCreditInvoice || !paymentQRData) return;
+
+    // Check if deadline has expired
+    const deadlineDate = new Date(paymentQRData.expiresAt);
+    const isDeadlinePassed = new Date() > deadlineDate;
+
+    if (isDeadlinePassed) {
+      toast.error('Hết hạn thanh toán. Vui lòng thực hiện thanh toán mới.');
+      setIsPolling(false);
+      return;
+    }
+
+    const pollPaymentStatus = async () => {
+      // Re-check deadline before each poll
+      const currentDeadlineDate = new Date(paymentQRData.expiresAt);
+      if (new Date() > currentDeadlineDate) {
+        toast.error('Hết hạn thanh toán. Vui lòng thực hiện thanh toán mới.');
+        setIsPolling(false);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+        return;
+      }
+
+      try {
+        const status = await creditInvoiceService.getPaymentStatus(selectedCreditInvoice.id);
+        console.log('Payment status response:', status);
+
+        if (!status) {
+          console.error('Không nhận được trạng thái thanh toán từ API');
+          return;
+        }
+        setPaymentStatus(status);
+
+        if (status.paymentStatus === 'SUCCESS') {
+          toast.success('Thanh toán thành công!');
+          setIsPolling(false);
+
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+          }
+
+          // Refresh user data and credit invoices list after 2 seconds
+          setTimeout(async () => {
+            try {
+              // Fetch latest user info to update credit registration
+              const authResponse = await authService.me();
+              if (authResponse.user) {
+                setUser(authResponse.user);
+              }
+            } catch (err) {
+              console.error('Lỗi tải lại thông tin người dùng:', err);
+            }
+
+            try {
+              // Fetch updated credit invoices
+              const response = await creditInvoiceService.getMyList({
+                page: 1,
+                limit: 20,
+                order: 'desc',
+              } as CreditInvoiceListParams);
+              setCreditInvoices(response.data);
+            } catch (err) {
+              console.error('Lỗi tải lại danh sách:', err);
+            }
+          }, 2000);
+        } else if (status.paymentStatus === 'EXPIRED') {
+          toast.error('Hết hạn thanh toán. Vui lòng thực hiện thanh toán mới.');
+          setIsPolling(false);
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+          }
+        } else if (status.paymentStatus === 'FAILED') {
+          toast.error('Thanh toán thất bại. Vui lòng thử lại.');
+          setIsPolling(false);
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+          }
+        }
+      } catch (error) {
+        console.error('Lỗi kiểm tra trạng thái thanh toán:', error);
+      }
+    };
+
+    pollPaymentStatus();
+    pollingIntervalRef.current = setInterval(pollPaymentStatus, 3000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [isPolling, selectedCreditInvoice, paymentQRData]);
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   if (!user) {
     return (
@@ -281,6 +501,18 @@ export function DebtManagementTab() {
                           </div>
                         </div>
                       )}
+
+                      {/* Payment Button */}
+                      {invoiceRemaining > 0 && (
+                        <div className="pt-3 border-t border-gray-200 dark:border-slate-700">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePaymentClick(creditInvoice)}
+                          >
+                            Thanh toán
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -299,6 +531,249 @@ export function DebtManagementTab() {
         onOpenChange={setIncreaseModalOpen}
         currentLimit={totalLimit}
       />
+
+      {/* Payment QR Modal */}
+      <Dialog 
+        open={paymentModalOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsPolling(false);
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+            }
+            if (countdownRef.current) {
+              clearInterval(countdownRef.current);
+            }
+          }
+          setPaymentModalOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Thanh toán công nợ</DialogTitle>
+            <DialogDescription>
+              Hóa đơn công nợ #{selectedCreditInvoice?.id}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isGeneratingQR ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="ml-2">Đang tạo mã QR...</span>
+            </div>
+          ) : paymentQRData ? (
+            <div className="space-y-4">
+              {/* Header with Amount */}
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Số tiền cần thanh toán</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {(paymentQRData.amount || 0).toLocaleString('vi-VN')} ₫
+                </p>
+              </div>
+
+              {/* QR Code and Transfer Info Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* QR Code Section - Left */}
+                <div className="flex flex-col items-center justify-start gap-3">
+                  <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 w-full">
+                    {paymentQRData.qrCodeBase64 ? (
+                      <img
+                        src={paymentQRData.qrCodeBase64}
+                        alt="Payment QR Code"
+                        className="w-full h-auto object-contain"
+                      />
+                    ) : (
+                      <div className="w-full aspect-square bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+                        <p className="text-muted-foreground text-xs">Không thể hiển thị mã QR</p>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground">
+                    Quét mã bằng ứng dụng ngân hàng
+                  </p>
+                </div>
+
+                {/* Transfer Info - Right */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold">Thông tin chuyển khoản:</p>
+                  {qrData && (
+                    <>
+                      {qrData.bankBeneficiary && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Tên tài khoản</p>
+                          <div className="flex items-center justify-between gap-2 mt-0.5">
+                            <p className="text-xs font-medium truncate">{qrData.bankBeneficiary}</p>
+                            <button
+                              onClick={() => copyToClipboard(qrData.bankBeneficiary || '', 'bankBeneficiary')}
+                              className="text-xs hover:text-primary transition-colors shrink-0"
+                            >
+                              {copiedField === 'bankBeneficiary' ? (
+                                <Check className="w-3 h-3" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {qrData.bankAccount && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Số tài khoản</p>
+                          <div className="flex items-center justify-between gap-2 mt-0.5">
+                            <p className="text-xs font-medium font-mono truncate">{qrData.bankAccount}</p>
+                            <button
+                              onClick={() => copyToClipboard(qrData.bankAccount || '', 'bankAccount')}
+                              className="text-xs hover:text-primary transition-colors shrink-0"
+                            >
+                              {copiedField === 'bankAccount' ? (
+                                <Check className="w-3 h-3" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {qrData.description && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Nội dung</p>
+                          <div className="flex items-start justify-between gap-2 mt-0.5">
+                            <p className="text-xs font-medium line-clamp-2">{qrData.description}</p>
+                            <button
+                              onClick={() => copyToClipboard(qrData.description || '', 'description')}
+                              className="text-xs hover:text-primary transition-colors shrink-0 mt-0.5"
+                            >
+                              {copiedField === 'description' ? (
+                                <Check className="w-3 h-3" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {qrData.bankCode && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Mã ngân hàng</p>
+                          <p className="text-xs font-medium font-mono mt-0.5">{qrData.bankCode}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Details */}
+              <div className="grid grid-cols-2 gap-3 text-xs bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                <div>
+                  <p className="text-muted-foreground mb-0.5">Hạn thanh toán</p>
+                  <p className="font-medium text-sm">
+                    {paymentQRData.expiresAt
+                      ? new Date(paymentQRData.expiresAt).toLocaleString('vi-VN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground mb-0.5">Số hóa đơn</p>
+                  <p className="font-medium text-sm">{paymentQRData.invoiceCount}</p>
+                </div>
+              </div>
+
+              {/* Status Section */}
+              <div className="border-t pt-4 space-y-3">
+                <p className="text-center text-lg font-semibold">
+                  {!paymentStatus ? 'Đang chờ thanh toán...' : 
+                   paymentStatus.paymentStatus === 'SUCCESS' ? 'Thanh toán thành công! 🎉' :
+                   paymentStatus.paymentStatus === 'FAILED' ? 'Thanh toán thất bại' :
+                   paymentStatus.paymentStatus === 'EXPIRED' ? 'Hết hạn thanh toán' :
+                   'Đang chờ thanh toán...'}
+                </p>
+
+                {paymentStatus && (
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border">
+                    {paymentStatus.paymentStatus === 'SUCCESS' && (
+                      <>
+                        <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                        <div>
+                          <p className="font-semibold text-green-700 dark:text-green-400 text-sm">Thanh toán thành công</p>
+                          <p className="text-xs text-muted-foreground">Cảm ơn bạn đã thanh toán</p>
+                        </div>
+                      </>
+                    )}
+                    {paymentStatus.paymentStatus === 'FAILED' && (
+                      <>
+                        <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                        <p className="font-semibold text-red-700 dark:text-red-400 text-sm">Thanh toán thất bại. Vui lòng thử lại.</p>
+                      </>
+                    )}
+                    {paymentStatus.paymentStatus === 'EXPIRED' && (
+                      <>
+                        <AlertCircle className="w-5 h-5 text-orange-500 shrink-0" />
+                        <p className="font-semibold text-orange-700 dark:text-orange-400 text-sm">Hết hạn thanh toán. Vui lòng thực hiện thanh toán mới.</p>
+                      </>
+                    )}
+                    {paymentStatus.paymentStatus === 'PENDING' && (
+                      <>
+                        <Clock className="w-5 h-5 text-blue-500 animate-spin shrink-0" />
+                        <div>
+                          <p className="font-semibold text-blue-700 dark:text-blue-400 text-sm">Đang chờ thanh toán</p>
+                          <p className="text-xs text-muted-foreground">Hết hạn trong: {timeRemaining}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {!paymentStatus && (
+                  <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
+                    <span className="inline-flex items-center gap-2">
+                      <Clock className="w-4 h-4 animate-spin" />
+                      Đang kiểm tra trạng thái thanh toán... (Hết hạn trong: {timeRemaining})
+                    </span>
+                  </div>
+                )}
+
+                {paymentStatus?.paymentStatus === 'SUCCESS' && (
+                  <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 text-xs text-green-700 dark:text-green-300">
+                    Số tiền {(paymentQRData.amount || 0).toLocaleString('vi-VN')} ₫ đã được ghi nhận. Hóa đơn công nợ của bạn đã được cập nhật.
+                  </div>
+                )}
+
+                {paymentStatus?.paymentStatus === 'FAILED' && (
+                  <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">
+                    Thanh toán thất bại. Vui lòng kiểm tra lại thông tin và thử lại.
+                  </div>
+                )}
+
+                {paymentStatus?.paymentStatus === 'EXPIRED' && (
+                  <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-3 text-sm text-orange-700 dark:text-orange-300">
+                    Hết hạn thanh toán. Vui lòng thực hiện thanh toán mới.
+                  </div>
+                )}
+              </div>
+
+              <Button 
+                size="sm" 
+                className="w-full" 
+                onClick={() => setPaymentModalOpen(false)}
+                disabled={!paymentStatus || paymentStatus.paymentStatus === 'PENDING'}
+              >
+                {paymentStatus?.paymentStatus === 'SUCCESS' ? 'Đóng' : paymentStatus?.paymentStatus === 'PENDING' ? 'Đang xử lý...' : 'Đóng'}
+              </Button>
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-red-600">Không thể tạo mã QR. Vui lòng thử lại.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
