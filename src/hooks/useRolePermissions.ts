@@ -80,14 +80,19 @@ export const useRolePermissions = (setFieldValue: SetFieldValue) => {
    * - Nếu đã có một số quyền được chọn: chọn tất cả
    * - Nếu đã chọn hết: bỏ chọn tất cả
    */
-  const toggleGroupPermissions = (groupNodes: any[], currentPermissions: string[]) => {
+  const toggleGroupPermissions = (groupNodes: any[], currentPermissions: string[], groupKey?: string) => {
+    // Include group's own key (if provided) as part of the group toggle
     const permissionKeysInGroup = getAllPermissionKeysFromNodes(groupNodes);
+    if (groupKey) {
+      if (!permissionKeysInGroup.includes(groupKey)) permissionKeysInGroup.unshift(groupKey);
+    }
+
     const selectedKeysInGroup = currentPermissions.filter(key => permissionKeysInGroup.includes(key));
     
     let updated: string[];
     
     if (selectedKeysInGroup.length === permissionKeysInGroup.length) {
-      // Tất cả đã được chọn -> bỏ chọn tất cả
+      // Tất cả đã được chọn -> bỏ chọn tất cả (bao gồm groupKey nếu có)
       updated = currentPermissions.filter(key => !permissionKeysInGroup.includes(key));
     } else {
       // Chưa chọn hết hoặc chưa có gì -> chọn tất cả + thêm parent permissions

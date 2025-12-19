@@ -99,8 +99,8 @@ export function EditRoleForm({ roleId }: EditRoleFormProps) {
     handleTogglePermission(permissionKey, values.permissions || []);
   };
 
-  const toggleGroupPermissions = (groupNodes: any[]) => {
-    handleToggleGroupPermissions(groupNodes, values.permissions || []);
+  const toggleGroupPermissions = (groupNodes: any[], groupKey?: string) => {
+    handleToggleGroupPermissions(groupNodes, values.permissions || [], groupKey);
   };
 
   const handleGenerateSummary = async () => {

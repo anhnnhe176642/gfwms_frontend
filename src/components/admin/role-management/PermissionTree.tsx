@@ -19,7 +19,7 @@ type PermissionTreeProps = {
   errors?: string;
   touched?: boolean;
   onTogglePermission: (permissionKey: string) => void;
-  onToggleGroupPermissions?: (groupNodes: any[], currentPermissions: string[]) => void;
+  onToggleGroupPermissions?: (groupNodes: any[], groupKey?: string) => void;
   isReadOnly?: boolean; // New: true for view-only mode
 };
 
@@ -41,7 +41,7 @@ function PermissionTreeItem({
   expandedNodes: Set<string>;
   onToggleExpand: (key: string) => void;
   onTogglePermission: (key: string) => void;
-  onToggleGroupNodes?: (groupNodes: any[], currentPermissions: string[]) => void;
+  onToggleGroupNodes?: (groupNodes: any[], groupKey?: string) => void;
   isParentDisabled: boolean;
   isReadOnly?: boolean;
 }) {
@@ -96,8 +96,8 @@ function PermissionTreeItem({
             if (isReadOnly) return;
             e.stopPropagation();
             if (isGroupNode && onToggleGroupNodes && hasChildren) {
-              // Toggle group node
-              onToggleGroupNodes(node.children, selectedArray);
+              // Toggle group node (pass possible node.key if it represents a permission)
+              onToggleGroupNodes(node.children, node.key);
             } else if (!isGroupNode && !isDisabledBool) {
               // Toggle regular permission node
               onTogglePermission(node.key);
@@ -303,9 +303,12 @@ export function PermissionTree({
             {/* Render PERMISSIONS_TREE groups */}
             {Object.entries(PERMISSIONS_TREE).map(([groupKey, group]: any) => {
               const isGroupExpanded = expandedGroups.has(group.groupKey);
-              const totalPermissions = countAllPermissions(group.children);
-              const selectedPermissions = countSelectedPermissions(group.children, selectedSet);
-              const groupState = getGroupPermissionState(group.children, selectedSet);
+              // Include group's own permission key (if any) when calculating state and counts
+              const ownKeyCount = group.key ? 1 : 0;
+              const ownSelectedCount = group.key && selectedSet.has(group.key) ? 1 : 0;
+              const totalPermissions = ownKeyCount + countAllPermissions(group.children);
+              const selectedPermissions = ownSelectedCount + countSelectedPermissions(group.children, selectedSet);
+              const groupState = selectedPermissions === 0 ? 'none' : selectedPermissions === totalPermissions ? 'full' : 'partial';
 
               return (
                 <div key={group.groupKey} className="border rounded-lg overflow-hidden">
@@ -330,13 +333,13 @@ export function PermissionTree({
                     </button>
 
                     {/* Group Checkbox */}
-                    <button
+                            <button
                       type="button"
                       onClick={(e) => {
                         if (isReadOnly) return;
                         e.stopPropagation();
                         if (onToggleGroupPermissions) {
-                          onToggleGroupPermissions(group.children, selectedPermissions as any);
+                          onToggleGroupPermissions(group.children, group.key);
                         }
                       }}
                       className={`flex items-center shrink-0 -ml-1 ${!isReadOnly ? 'cursor-pointer' : ''}`}

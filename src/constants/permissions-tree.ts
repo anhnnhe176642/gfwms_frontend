@@ -68,6 +68,7 @@ export const PERMISSIONS_TREE = {
   ADMIN: {
     groupKey: 'admin',
     groupTitle: 'Quản trị',
+    key: PERMISSIONS.SYSTEM.ADMIN.key,
     groupDescription: 'Quyền quản lý toàn bộ hệ thống',
     
     children: [

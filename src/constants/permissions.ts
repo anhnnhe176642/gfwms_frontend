@@ -433,24 +433,24 @@ export const PERMISSIONS = {
 
   // Credit Registration
   CREDITS: {
-    VIEW_LIST: {
-      key: 'credit:view_list',
-      description: 'Xem danh sách đăng ký Công nợ',
-      parentPermissionKey: 'system:admin',
-      level: 1,
-    },
+    // VIEW_LIST: {
+    //   key: 'credit:view_list',
+    //   description: 'Xem danh sách đăng ký Công nợ',
+    //   parentPermissionKey: 'system:admin',
+    //   level: 1,
+    // },
     VIEW_DETAIL: {
       key: 'credit:view_detail',
       description: 'Xem chi tiết đăng ký Công nợ',
       parentPermissionKey: 'credit:view_list',
       level: 2,
     },
-    CREATE: {
-      key: 'credit:create',
-      description: 'Tạo đăng ký Công nợ mới',
-      parentPermissionKey: 'credit:view_list',
-      level: 2,
-    },
+    // CREATE: {
+    //   key: 'credit:create',
+    //   description: 'Tạo đăng ký Công nợ mới',
+    //   parentPermissionKey: 'credit:view_list',
+    //   level: 2,
+    // },
     UPDATE: {
       key: 'credit:update',
       description: 'Cập nhật đăng ký Công nợ',
@@ -629,8 +629,8 @@ export const PERMISSIONS = {
     CREATE_ONLINE: {
       key: 'order:create_online',
       description: 'Tạo đơn hàng online (customer)',
-      parentPermissionKey: 'system:admin',
-      level: 1,
+      parentPermissionKey: null,
+      level: 0,
     },
     CREATE_OFFLINE: {
       key: 'order:create_offline',
@@ -641,8 +641,8 @@ export const PERMISSIONS = {
     VIEW_MY: {
       key: 'order:view_my',
       description: 'Xem danh sách đơn hàng của tôi (customer)',
-      parentPermissionKey: 'system:admin',
-      level: 1,
+      parentPermissionKey: null,
+      level: 0,
     },
     VIEW_LIST: {
       key: 'order:view_list',

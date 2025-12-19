@@ -359,7 +359,7 @@ export const ROUTES = {
         name: 'Đăng ký Công nợ',
         description: 'Danh sách đăng ký Công nợ',
         anyPermissions: [
-          PERMISSIONS.CREDITS.VIEW_LIST.key,
+          // PERMISSIONS.CREDITS.VIEW_LIST.key,
           PERMISSIONS.CREDITS.VIEW_OWN.key
         ],
       },
@@ -368,11 +368,11 @@ export const ROUTES = {
         name: 'Chi tiết Công nợ',
         requiredPermission: PERMISSIONS.CREDITS.VIEW_DETAIL.key,
       },
-      CREATE: {
-        path: '/admin/credits/create',
-        name: 'Tạo đăng ký Công nợ',
-        requiredPermission: PERMISSIONS.CREDITS.CREATE.key,
-      },
+      // CREATE: {
+      //   path: '/admin/credits/create',
+      //   name: 'Tạo đăng ký Công nợ',
+      //   requiredPermission: PERMISSIONS.CREDITS.CREATE.key,
+      // },
       APPROVE: {
         path: '/admin/credits/:id/approve',
         name: 'Phê duyệt Công nợ',
