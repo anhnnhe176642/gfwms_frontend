@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/useAuthStore';
+import { authService } from '@/services/auth.service';
 import { creditInvoiceService } from '@/services/creditInvoice.service';
 import { CREDIT_REGISTRATION_STATUS_CONFIG } from '@/constants/creditRegistration';
 import { CREDIT_INVOICE_STATUS_CONFIG } from '@/constants/creditInvoice';
@@ -16,6 +18,7 @@ import { IncreaseCreditsModal } from './IncreaseCreditsModal';
 
 export function DebtManagementTab() {
   const { user } = useAuth();
+  const setUser = useAuthStore((state) => state.setUser);
   const creditRegistration = user?.creditRegistration as CreditRegistration | undefined;
   const [creditInvoices, setCreditInvoices] = useState<CreditInvoiceListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,9 +27,17 @@ export function DebtManagementTab() {
   const [increaseModalOpen, setIncreaseModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchCreditInvoices = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
+        
+        // Fetch latest user info
+        const authResponse = await authService.me();
+        if (authResponse.user) {
+          setUser(authResponse.user);
+        }
+
+        // Fetch credit invoices
         const response = await creditInvoiceService.getMyList({
           page: 1,
           limit: 20,
@@ -34,15 +45,15 @@ export function DebtManagementTab() {
         } as CreditInvoiceListParams);
         setCreditInvoices(response.data);
       } catch (err: any) {
-        console.error('Lỗi tải danh sách hóa đơn công nợ:', err);
-        setError('Không thể tải danh sách hóa đơn công nợ');
+        console.error('Lỗi tải thông tin:', err);
+        setError('Không thể tải thông tin');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCreditInvoices();
-  }, []);
+    fetchData();
+  }, [setUser]);
 
   if (!user) {
     return (
