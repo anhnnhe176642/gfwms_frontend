@@ -28,9 +28,11 @@ export default function CartPage() {
     invoiceId: number | string;
     paymentAmount: number;
     deadline: string;
-    qrCodeUrl: string;
-    qrCodeBase64: string;
+    qrCodeUrl?: string;
+    qrCodeBase64?: string;
     accountName?: string;
+    invoiceStatus?: string;
+    creditAmount?: number;
   } | null>(null);
   // Map: itemId -> { allocations, totalValue }
   const [allocationsMap, setAllocationsMap] = useState<Record<string, { allocations: AllocationItem[]; totalValue: number }>>({});
@@ -494,6 +496,8 @@ export default function CartPage() {
                 qrCodeUrl={paymentData.qrCodeUrl}
                 qrCodeBase64={paymentData.qrCodeBase64}
                 accountName={paymentData.accountName}
+                invoiceStatus={paymentData.invoiceStatus}
+                creditAmount={paymentData.creditAmount}
                 onPaymentSuccess={() => {
                   setPaymentData(null);
                 }}

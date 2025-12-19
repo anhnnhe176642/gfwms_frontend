@@ -27,13 +27,16 @@ interface CheckoutHandlerProps {
   allocationsMap?: Record<string, { allocations: AllocationItem[]; totalValue: number }>;
   cartItems?: CartItem[];
   selectedItemIds?: Set<string>;
+  paymentType?: 'CASH' | 'CREDIT';
   onPaymentStart?: (paymentData: {
     invoiceId: number | string;
     paymentAmount: number;
     deadline: string;
-    qrCodeUrl: string;
-    qrCodeBase64: string;
+    qrCodeUrl?: string;
+    qrCodeBase64?: string;
     accountName?: string;
+    invoiceStatus?: string;
+    creditAmount?: number;
   }) => void;
   onAllocationValidationError?: (itemErrors: Record<string, string>) => void;
 }
@@ -43,6 +46,7 @@ export default function CheckoutHandler({
   allocationsMap,
   cartItems,
   selectedItemIds,
+  paymentType = 'CASH',
   onPaymentStart,
   onAllocationValidationError,
 }: CheckoutHandlerProps) {
@@ -53,6 +57,7 @@ export default function CheckoutHandler({
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [selectedPaymentType, setSelectedPaymentType] = useState<'CASH' | 'CREDIT'>(paymentType);
 
   const summary = getCartSummary();
 
@@ -214,28 +219,40 @@ export default function CheckoutHandler({
         const createOrderPayload: CreateOrderPayload = {
           storeId,
           orderItems,
-          paymentType: 'CASH',
+          paymentType: selectedPaymentType,
           notes: `Đơn hàng từ khách hàng ${user.fullname || user.username}`,
         };
 
         const orderResponse = await orderService.create(createOrderPayload);
         toast.success(`Tạo đơn hàng thành công cho cửa hàng ${storeId}!`);
 
-        // 3. Create payment QR code
+        // 3. Create payment QR code (for CASH) or extract credit info (for CREDIT)
         const invoiceId = orderResponse.data.order.invoice?.id;
         if (!invoiceId) {
           throw new Error('Không thể lấy ID hóa đơn từ đơn hàng');
         }
         invoiceIds.push(String(invoiceId));
         
-        const paymentQRResponse = await invoiceService.createPaymentQR(invoiceId);
-        
-        // Accumulate payment details
-        totalPaymentAmount += paymentQRResponse.amount;
-        latestDeadline = paymentQRResponse.expiresAt || '';
-        latestQrCode = paymentQRResponse.qrCodeUrl;
-        latestQrCodeBase64 = paymentQRResponse.qrCodeBase64;
-        accountName = paymentQRResponse.accountName || '';
+        if (selectedPaymentType === 'CREDIT') {
+          // For CREDIT payments, extract info from invoice in order response
+          const invoice = orderResponse.data.order.invoice;
+          totalPaymentAmount += invoice.totalAmount;
+          latestDeadline = invoice.paymentDeadline || '';
+          // No QR code for credit payments
+          latestQrCode = '';
+          latestQrCodeBase64 = '';
+          accountName = '';
+        } else {
+          // For CASH payments, create payment QR code
+          const paymentQRResponse = await invoiceService.createPaymentQR(invoiceId);
+          
+          // Accumulate payment details
+          totalPaymentAmount += paymentQRResponse.amount;
+          latestDeadline = paymentQRResponse.expiresAt || '';
+          latestQrCode = paymentQRResponse.qrCodeUrl;
+          latestQrCodeBase64 = paymentQRResponse.qrCodeBase64;
+          accountName = paymentQRResponse.accountName || '';
+        }
       }
 
       // 4. Return payment data to parent component
@@ -243,9 +260,14 @@ export default function CheckoutHandler({
         invoiceId: invoiceIds.join(', '),
         paymentAmount: totalPaymentAmount,
         deadline: latestDeadline,
-        qrCodeUrl: latestQrCode,
-        qrCodeBase64: latestQrCodeBase64,
-        accountName: accountName,
+        ...(selectedPaymentType === 'CASH' ? {
+          qrCodeUrl: latestQrCode,
+          qrCodeBase64: latestQrCodeBase64,
+          accountName: accountName,
+        } : {
+          invoiceStatus: 'CREDIT' as const,
+          creditAmount: totalPaymentAmount,
+        }),
       };
       
       if (onPaymentStart) {
@@ -338,12 +360,52 @@ export default function CheckoutHandler({
                     </div>
                   </div>
                 )}
-                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded p-2 flex gap-2 text-xs">
-                  <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                  <span>
-                    Bạn sẽ được chuyển đến màn hình thanh toán QR Code. Vui lòng quét mã
-                    bằng ứng dụng ngân hàng của bạn.
-                  </span>
+                <div className="border-t pt-4 space-y-3">
+                  <div>
+                    <p className="font-semibold text-sm mb-3">Phương thức thanh toán:</p>
+                    <div className="flex gap-3">
+                      <label className="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" style={{ borderColor: selectedPaymentType === 'CASH' ? 'var(--primary)' : 'var(--border)' }}>
+                        <input
+                          type="radio"
+                          name="paymentType"
+                          value="CASH"
+                          checked={selectedPaymentType === 'CASH'}
+                          onChange={(e) => setSelectedPaymentType(e.target.value as 'CASH' | 'CREDIT')}
+                          disabled={isCreatingOrder}
+                        />
+                        <span className="text-sm font-medium">Thanh toán ngay (QR Code)</span>
+                      </label>
+                      <label className="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" style={{ borderColor: selectedPaymentType === 'CREDIT' ? 'var(--primary)' : 'var(--border)' }}>
+                        <input
+                          type="radio"
+                          name="paymentType"
+                          value="CREDIT"
+                          checked={selectedPaymentType === 'CREDIT'}
+                          onChange={(e) => setSelectedPaymentType(e.target.value as 'CASH' | 'CREDIT')}
+                          disabled={isCreatingOrder}
+                        />
+                        <span className="text-sm font-medium">Ghi nợ</span>
+                      </label>
+                    </div>
+                  </div>
+                  {selectedPaymentType === 'CASH' && (
+                    <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded p-2 flex gap-2 text-xs">
+                      <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                      <span>
+                        Bạn sẽ được chuyển đến màn hình thanh toán QR Code. Vui lòng quét mã
+                        bằng ứng dụng ngân hàng của bạn.
+                      </span>
+                    </div>
+                  )}
+                  {selectedPaymentType === 'CREDIT' && (
+                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded p-2 flex gap-2 text-xs">
+                      <AlertCircle className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+                      <span>
+                        Đơn hàng sẽ được tạo với trạng thái ghi nợ. Bạn sẽ thanh toán vào ngày
+                        cuối cùng của tháng.
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </DialogDescription>

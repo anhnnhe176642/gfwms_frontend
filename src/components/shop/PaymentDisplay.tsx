@@ -16,9 +16,11 @@ interface PaymentDisplayProps {
   invoiceId: number | string;
   paymentAmount: number;
   deadline: string;
-  qrCodeUrl: string;
-  qrCodeBase64: string;
+  qrCodeUrl?: string;
+  qrCodeBase64?: string;
   accountName?: string;
+  invoiceStatus?: string;
+  creditAmount?: number;
   onPaymentSuccess?: () => void;
 }
 
@@ -42,6 +44,8 @@ export default function PaymentDisplay({
   qrCodeUrl,
   qrCodeBase64,
   accountName,
+  invoiceStatus,
+  creditAmount,
   onPaymentSuccess,
 }: PaymentDisplayProps) {
   const router = useRouter();
@@ -258,8 +262,94 @@ export default function PaymentDisplay({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  // Check if this is a CREDIT payment
+  const isCreditPayment = invoiceStatus === 'CREDIT' || (!qrCodeUrl && !qrCodeBase64);
+
+  // Render CREDIT payment info
+  if (isCreditPayment) {
+    return (
+      <Card className="w-full border-green-200/50 bg-linear-to-br from-green-50 to-transparent dark:from-green-950/30 dark:to-transparent">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-8 h-8 text-green-500" />
+              <div>
+                <CardTitle>Đơn hàng ghi nợ</CardTitle>
+                <CardDescription>Hoá đơn #{invoiceId}</CardDescription>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-green-600">
+                {creditAmount ? creditAmount.toLocaleString('vi-VN') : '0'} ₫
+              </p>
+              <p className="text-xs text-muted-foreground">Ghi nợ</p>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-6 space-y-4">
+            <h3 className="font-semibold text-lg">Thông tin ghi nợ</h3>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Số tiền ghi nợ</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {creditAmount ? creditAmount.toLocaleString('vi-VN') : '0'} ₫
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Thời hạn thanh toán</p>
+                <p className="text-lg font-semibold">
+                  {deadline ? new Date(deadline).toLocaleDateString('vi-VN', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  }) : 'Không xác định'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  (Cuối cùng của tháng)
+                </p>
+              </div>
+
+              <div className="border-t border-green-200 dark:border-green-800 pt-4">
+                <p className="text-sm font-semibold mb-2">Hướng dẫn thanh toán</p>
+                <ul className="text-sm space-y-2 text-muted-foreground">
+                  <li>✓ Đơn hàng của bạn đã được xác nhận</li>
+                  <li>✓ Vui lòng thanh toán trước ngày cuối cùng của tháng</li>
+                  <li>✓ Bạn sẽ nhận được thông báo nhắc nợ trước hạn</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button className="flex-1" onClick={() => {
+              clearCart();
+              clearSelectedStore();
+              if (onPaymentSuccess) {
+                onPaymentSuccess();
+              } else {
+                router.push('/shop');
+              }
+            }}>
+              Tiếp tục mua sắm
+            </Button>
+            <Button variant="outline" className="flex-1" onClick={() => {
+              router.push(`/shop/order/${invoiceId}`);
+            }}>
+              Xem đơn hàng
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Original QR Code payment rendering
   return (
-    <Card className="w-full border-primary/20 bg-gradient-to-br from-blue-50 to-transparent dark:from-blue-950/30 dark:to-transparent">
+    <Card className="w-full border-primary/20 bg-linear-to-br from-blue-50 to-transparent dark:from-blue-950/30 dark:to-transparent">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
