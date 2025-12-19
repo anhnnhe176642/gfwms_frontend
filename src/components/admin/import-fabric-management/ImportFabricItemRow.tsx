@@ -178,7 +178,7 @@ export function ImportFabricItemRow({
           <div className="space-y-1">
             <Input
               type="number"
-              placeholder="Dài (cm)"
+              placeholder="Dài (m)"
               value={item.length}
               onChange={handleInputChange('length')}
               onBlur={handleInputBlur('length')}
