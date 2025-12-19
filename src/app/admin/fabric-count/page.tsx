@@ -56,10 +56,11 @@ export default function FabricCountPage() {
 
   // Get params from URL
   const shelfId = searchParams.get('shelfId');
-  const shelfCode = searchParams.get('shelfCode') || 'N/A';
-  const currentQuantity = parseInt(searchParams.get('currentQuantity') || '0');
-  const maxQuantity = parseInt(searchParams.get('maxQuantity') || '0');
   const fabricId = searchParams.get('fabricId');
+
+  // Shelf data states
+  const [shelfData, setShelfData] = useState<any>(null);
+  const [isLoadingShelf, setIsLoadingShelf] = useState(true);
 
   // YOLO Detection states
   const [formData, setFormData] = useState<Partial<YoloDetectFormData>>({
@@ -100,12 +101,41 @@ export default function FabricCountPage() {
   });
   const [isSubmittingAdjustment, setIsSubmittingAdjustment] = useState(false);
 
+  // Fetch shelf data on mount
+  useEffect(() => {
+    if (!shelfId) {
+      toast.error('Không có thông tin kệ');
+      router.back();
+      return;
+    }
+
+    const fetchShelfData = async () => {
+      try {
+        setIsLoadingShelf(true);
+        const data = await warehouseService.getShelfById(shelfId);
+        setShelfData(data);
+      } catch (error) {
+        const message = getServerErrorMessage(error) || 'Không thể tải thông tin kệ';
+        toast.error(message);
+        router.back();
+      } finally {
+        setIsLoadingShelf(false);
+      }
+    };
+
+    fetchShelfData();
+  }, [shelfId, router]);
+
   // Lọc detections dựa trên confidence threshold
   const filteredDetections = React.useMemo(() => {
     if (!detectionResult?.data.detections) return [];
     const allDetections = editedDetections || detectionResult.data.detections;
     return allDetections.filter((d) => d.confidence >= confidenceThreshold);
   }, [detectionResult, editedDetections, confidenceThreshold]);
+
+  const currentQuantity = shelfData?.currentQuantity || 0;
+  const maxQuantity = shelfData?.maxQuantity || 0;
+  const shelfCode = shelfData?.code || 'N/A';
 
   const countedQuantity = filteredDetections.length;
   const difference = countedQuantity - currentQuantity;
@@ -461,6 +491,17 @@ export default function FabricCountPage() {
       });
 
       toast.success('Điều chỉnh số lượng vải thành công');
+      
+      // Reload shelf data
+      if (shelfId) {
+        try {
+          const data = await warehouseService.getShelfById(shelfId);
+          setShelfData(data);
+        } catch (error) {
+          console.error('Error reloading shelf data:', error);
+        }
+      }
+      
       setShowAdjustmentDialog(false);
       setSelectedFabricId('');
       setAdjustmentForm({
@@ -484,6 +525,31 @@ export default function FabricCountPage() {
   const handleBack = () => {
     router.back();
   };
+
+  // Show loading state while fetching shelf data
+  if (isLoadingShelf) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <p className="text-gray-500">Đang tải dữ liệu kệ...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!shelfData) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Không thể tải dữ liệu kệ</p>
+          <Button onClick={handleBack} variant="outline">
+            Quay lại
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

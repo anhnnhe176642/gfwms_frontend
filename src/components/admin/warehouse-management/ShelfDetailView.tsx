@@ -69,9 +69,7 @@ export function ShelfDetailView({ shelfId, warehouseId, onEdit }: ShelfDetailVie
 
   const handleCheckQuantity = () => {
     if (!shelf) return;
-    router.push(
-      `/admin/fabric-count?shelfId=${shelf.id}&shelfCode=${encodeURIComponent(shelf.code)}&currentQuantity=${shelf.currentQuantity}&maxQuantity=${shelf.maxQuantity}`
-    );
+    router.push(`/admin/fabric-count?shelfId=${shelf.id}`);
   };
 
   if (isLoading) {

@@ -111,12 +111,6 @@ export const Sidebar: React.FC = () => {
           icon: Package,
           requiredPermission: PERMISSIONS.FABRICS.MANAGE_SUPPLIER.key,
         },
-        {
-          label: "Đếm vải",
-          href: ROUTES.ADMIN.FABRIC_COUNT.LIST.path,
-          icon: Eye,
-          requiredPermission: PERMISSIONS.YOLO.DETECT.key,
-        },
       ],
     },
     {
