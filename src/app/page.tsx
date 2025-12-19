@@ -70,9 +70,9 @@ export default function Home() {
           </div>
 
           {/* Featured Products */}
-          <div className="px-4">
+          {/* <div className="px-4">
             <FeaturedProducts />
-          </div>
+          </div> */}
 
           {/* Store Map Section */}
           {!isLoadingStores && stores.length > 0 && (
