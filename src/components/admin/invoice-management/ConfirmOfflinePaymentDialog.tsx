@@ -31,7 +31,9 @@ export function ConfirmOfflinePaymentDialog({
   invoice,
   onSuccess,
 }: ConfirmOfflinePaymentDialogProps) {
-  const [amountPaid, setAmountPaid] = useState<string>(String(invoice.totalAmount));
+  const creditAmount = invoice.creditAmount || 0;
+  const amountToPay = invoice.totalAmount - creditAmount;
+  const [amountPaid, setAmountPaid] = useState<string>(String(amountToPay));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleConfirm = async () => {
@@ -47,8 +49,8 @@ export function ConfirmOfflinePaymentDialog({
       return;
     }
 
-    if (amount > invoice.totalAmount) {
-      toast.error(`Số tiền không được vượt quá ${invoice.totalAmount.toLocaleString()}đ`);
+    if (amount > amountToPay) {
+      toast.error(`Số tiền không được vượt quá ${amountToPay.toLocaleString()}đ`);
       return;
     }
 
@@ -57,7 +59,7 @@ export function ConfirmOfflinePaymentDialog({
       await invoiceService.confirmOfflinePayment(invoice.id, amount);
       toast.success(`Xác nhận thanh toán ${amount.toLocaleString()}đ thành công`);
       onOpenChange(false);
-      setAmountPaid(String(invoice.totalAmount));
+      setAmountPaid(String(amountToPay));
       onSuccess();
     } catch (error) {
       const message = getServerErrorMessage(error) || 'Không thể xác nhận thanh toán';
@@ -90,10 +92,20 @@ export function ConfirmOfflinePaymentDialog({
             </p>
           </div>
 
+          {/* Credit Amount - if exists */}
+          {creditAmount > 0 && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-xs text-blue-700 dark:text-blue-200 mb-1">Công nợ được sử dụng</p>
+              <p className="text-lg font-semibold text-blue-600 dark:text-blue-300">
+                -{creditAmount.toLocaleString()}đ
+              </p>
+            </div>
+          )}
+
           {/* Amount Paid */}
           <div className="space-y-2">
             <Label htmlFor="amountPaid" className="text-sm font-medium">
-              Số tiền nhận được
+              Số tiền cần thanh toán {creditAmount > 0 && '(sau khi trừ công nợ)'}
             </Label>
             <Input
               id="amountPaid"
@@ -103,19 +115,19 @@ export function ConfirmOfflinePaymentDialog({
               onChange={(e) => setAmountPaid(e.target.value)}
               disabled={isSubmitting}
               min="1"
-              max={invoice.totalAmount}
+              max={amountToPay}
               maxLength={10}
             />
             <p className="text-xs text-muted-foreground">
-              Tối đa: {invoice.totalAmount.toLocaleString()}đ
+              Tối đa: {amountToPay.toLocaleString()}đ
             </p>
           </div>
 
           {/* Difference */}
-          {amountPaid && parseInt(amountPaid) !== invoice.totalAmount && (
+          {amountPaid && parseInt(amountPaid) !== amountToPay && (
             <div className="p-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <p className="text-xs text-yellow-700 dark:text-yellow-200">
-                Chênh lệch: {(invoice.totalAmount - parseInt(amountPaid)).toLocaleString()}đ
+                Chênh lệch: {(amountToPay - parseInt(amountPaid)).toLocaleString()}đ
               </p>
             </div>
           )}

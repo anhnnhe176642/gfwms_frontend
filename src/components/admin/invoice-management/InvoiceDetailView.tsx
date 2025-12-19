@@ -168,7 +168,7 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
             </Button>
           )}
           {/* Confirm Offline Payment Button - for CREDIT with mixed payment */}
-          {invoice.paymentType === 'CREDIT' && invoice.invoiceStatus !== 'PAID' && (
+          {invoice.paymentType === 'CREDIT' && invoice.invoiceStatus === 'UNPAID' && (
             <Button
               onClick={() => setConfirmPaymentOpen(true)}
               className="gap-2 bg-green-600 hover:bg-green-700"
