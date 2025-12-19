@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { VisibilityState } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { DataTable } from '@/components/ui/data-table';
 import {
   Dialog,
@@ -18,6 +19,7 @@ import { createCreditRequestColumns } from './columns';
 import { creditRequestService } from '@/services/creditRequest.service';
 import { useServerTable } from '@/hooks/useServerTable';
 import { getServerErrorMessage } from '@/lib/errorHandler';
+import { formatCurrency, formatInputCurrency, unformatInputCurrency } from '@/lib/formatters';
 import type { CreditRequestListItem, CreditRequestListParams } from '@/types/creditRequest';
 import { Search, RefreshCw } from 'lucide-react';
 
@@ -30,7 +32,11 @@ export function CreditRequestTable({ initialParams }: CreditRequestTableProps) {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
-  const [requestToAction, setRequestToAction] = useState<number | null>(null);
+  const [requestToAction, setRequestToAction] = useState<CreditRequestListItem | null>(null);
+  const [formData, setFormData] = useState({
+    requestLimit: '',
+    note: '',
+  });
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     email: false, // Hide email column by default
   });
@@ -73,8 +79,12 @@ export function CreditRequestTable({ initialParams }: CreditRequestTableProps) {
   /**
    * Handle approve credit request
    */
-  const handleApproveClick = (requestId: number) => {
-    setRequestToAction(requestId);
+  const handleApproveClick = (request: CreditRequestListItem) => {
+    setRequestToAction(request);
+    setFormData({
+      requestLimit: formatInputCurrency(request.requestLimit),
+      note: '',
+    });
     setActionType('approve');
     setActionDialogOpen(true);
   };
@@ -82,8 +92,12 @@ export function CreditRequestTable({ initialParams }: CreditRequestTableProps) {
   /**
    * Handle reject credit request
    */
-  const handleRejectClick = (requestId: number) => {
-    setRequestToAction(requestId);
+  const handleRejectClick = (request: CreditRequestListItem) => {
+    setRequestToAction(request);
+    setFormData({
+      requestLimit: '',
+      note: '',
+    });
     setActionType('reject');
     setActionDialogOpen(true);
   };
@@ -96,14 +110,18 @@ export function CreditRequestTable({ initialParams }: CreditRequestTableProps) {
 
     setActionLoading(true);
     try {
+      const limit = formData.requestLimit ? unformatInputCurrency(formData.requestLimit) : undefined;
       await creditRequestService.approveCreditRequest({
-        requestId: requestToAction,
+        requestId: requestToAction.id,
         status: 'APPROVED',
+        ...(limit && { requestLimit: limit }),
+        ...(formData.note && { note: formData.note }),
       });
       toast.success('Phê duyệt đơn hạn mức thành công');
       setActionDialogOpen(false);
       setRequestToAction(null);
       setActionType(null);
+      setFormData({ requestLimit: '', note: '' });
       await refresh();
     } catch (err) {
       const message = getServerErrorMessage(err) || 'Không thể phê duyệt đơn hạn mức';
@@ -122,13 +140,15 @@ export function CreditRequestTable({ initialParams }: CreditRequestTableProps) {
     setActionLoading(true);
     try {
       await creditRequestService.rejectCreditRequest({
-        requestId: requestToAction,
+        requestId: requestToAction.id,
         status: 'REJECTED',
+        ...(formData.note && { note: formData.note }),
       });
       toast.success('Từ chối đơn hạn mức thành công');
       setActionDialogOpen(false);
       setRequestToAction(null);
       setActionType(null);
+      setFormData({ requestLimit: '', note: '' });
       await refresh();
     } catch (err) {
       const message = getServerErrorMessage(err) || 'Không thể từ chối đơn hạn mức';
@@ -232,17 +252,57 @@ export function CreditRequestTable({ initialParams }: CreditRequestTableProps) {
 
       {/* Action confirmation dialog */}
       <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {actionType === 'approve' ? 'Phê duyệt đơn hạn mức' : 'Từ chối đơn hạn mức'}
             </DialogTitle>
             <DialogDescription>
               {actionType === 'approve'
-                ? 'Bạn có chắc chắn muốn phê duyệt đơn hạn mức này?'
-                : 'Bạn có chắc chắn muốn từ chối đơn hạn mức này?'}
+                ? `Phê duyệt đơn hạn mức cho ${requestToAction?.user.username}`
+                : `Từ chối đơn hạn mức của ${requestToAction?.user.username}`}
             </DialogDescription>
           </DialogHeader>
+          
+          {requestToAction && (
+            <div className="space-y-4">
+              {/* Display request limit info */}
+              <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
+                <label className="text-sm font-medium text-muted-foreground">Hạn mức mong muốn</label>
+                <p className="text-xl font-bold text-green-600 mt-1">
+                  {formatCurrency(requestToAction.requestLimit)}
+                </p>
+              </div>
+
+              {actionType === 'approve' && (
+                <div>
+                  <label className="text-sm font-medium">Hạn mức mới (VND) (tuỳ chọn)</label>
+                  <Input
+                    type="text"
+                    value={formData.requestLimit}
+                    onChange={(e) => setFormData({ ...formData, requestLimit: formatInputCurrency(e.target.value) })}
+                    placeholder={formatInputCurrency(requestToAction.requestLimit)}
+                    disabled={actionLoading}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Để trống để giữ hạn mức: {formatCurrency(requestToAction.requestLimit)}
+                  </p>
+                </div>
+              )}
+              
+              <div>
+                <label className="text-sm font-medium">Ghi chú</label>
+                <Textarea
+                  value={formData.note}
+                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                  placeholder="Nhập ghi chú (tuỳ chọn)..."
+                  disabled={actionLoading}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
           <DialogFooter>
             <Button
               variant="outline"

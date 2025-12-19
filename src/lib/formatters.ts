@@ -85,6 +85,34 @@ export const formatCurrency = (value: number | undefined | null, currency: strin
 };
 
 /**
+ * Formats input value for display (VND with thousand separators)
+ * Converts raw number to formatted string for input display
+ * @param value - String or number value from input
+ * @returns Formatted string with thousand separators
+ */
+export const formatInputCurrency = (value: string | number): string => {
+  if (!value) return '';
+  
+  // Remove any non-digit characters
+  const numericValue = String(value).replace(/\D/g, '');
+  if (!numericValue) return '';
+  
+  // Format with thousand separators
+  return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
+/**
+ * Unformats input value to get raw number
+ * Converts formatted string back to numeric value
+ * @param value - Formatted string from input
+ * @returns Raw numeric value
+ */
+export const unformatInputCurrency = (value: string): number => {
+  const numericValue = value.replace(/\D/g, '');
+  return numericValue ? Number(numericValue) : 0;
+};
+
+/**
  * Formats datetime to Vietnamese locale
  * @param date - ISO date string or Date object
  * @returns Formatted datetime string (DD/MM/YYYY HH:mm)
@@ -146,6 +174,8 @@ export const formatters = {
   formatDate,
   formatTime,
   formatCurrency,
+  formatInputCurrency,
+  unformatInputCurrency,
   formatDateTime,
   formatRelativeTime,
   formatExpirationTime,

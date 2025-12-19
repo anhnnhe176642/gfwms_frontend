@@ -19,8 +19,8 @@ import { CREDIT_REQUEST_STATUS_OPTIONS, CREDIT_REQUEST_TYPE_OPTIONS } from "@/co
 import { useRouter } from "next/navigation"
 
 export type CreditRequestColumnActions = {
-  onApprove: (requestId: number) => void
-  onReject: (requestId: number) => void
+  onApprove: (request: CreditRequestListItem) => void
+  onReject: (request: CreditRequestListItem) => void
 }
 
 export const createCreditRequestColumns = (
@@ -200,14 +200,14 @@ export const createCreditRequestColumns = (
                 <DropdownMenuLabel>Hành động</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => actions.onApprove(request.id)}
+                  onClick={() => actions.onApprove(request)}
                   className="text-green-600"
                 >
                   <Check className="h-4 w-4 mr-2" />
                   Phê duyệt
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => actions.onReject(request.id)}
+                  onClick={() => actions.onReject(request)}
                   className="text-red-600"
                 >
                   <X className="h-4 w-4 mr-2" />

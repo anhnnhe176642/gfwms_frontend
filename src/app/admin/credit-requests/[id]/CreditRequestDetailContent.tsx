@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { creditRequestService } from '@/services/creditRequest.service';
 import { getServerErrorMessage } from '@/lib/errorHandler';
+import { formatCurrency, formatInputCurrency, unformatInputCurrency } from '@/lib/formatters';
 import { ROUTES } from '@/config/routes';
 import type { CreditRequest } from '@/types/creditRequest';
 import { ArrowLeft, Check, X, Loader2 } from 'lucide-react';
@@ -64,7 +65,7 @@ export function CreditRequestDetailContent({ id }: CreditRequestDetailContentPro
 
   const handleApproveClick = () => {
     setFormData({
-      requestLimit: request?.requestLimit.toString() || '',
+      requestLimit: formatInputCurrency(request?.requestLimit || ''),
       note: '',
     });
     setActionType('approve');
@@ -85,10 +86,11 @@ export function CreditRequestDetailContent({ id }: CreditRequestDetailContentPro
 
     setActionLoading(true);
     try {
+      const limit = formData.requestLimit ? unformatInputCurrency(formData.requestLimit) : undefined;
       await creditRequestService.approveCreditRequest({
         requestId: request.id,
         status: 'APPROVED',
-        ...(formData.requestLimit && { requestLimit: Number(formData.requestLimit) }),
+        ...(limit && { requestLimit: limit }),
         ...(formData.note && { note: formData.note }),
       });
       toast.success('Phê duyệt đơn hạn mức thành công');
@@ -208,7 +210,7 @@ export function CreditRequestDetailContent({ id }: CreditRequestDetailContentPro
                 <div className="border-t pt-6">
                   <label className="text-sm font-medium text-muted-foreground">Hạn mức mong muốn</label>
                   <p className="text-2xl font-bold text-green-600 mt-2">
-                    {request.requestLimit.toLocaleString('vi-VN')} VND
+                    {formatCurrency(request.requestLimit)}
                   </p>
                 </div>
 
@@ -323,15 +325,14 @@ export function CreditRequestDetailContent({ id }: CreditRequestDetailContentPro
                 <div>
                   <label className="text-sm font-medium">Hạn mức (VND)</label>
                   <Input
-                    type="number"
+                    type="text"
                     value={formData.requestLimit}
-                    onChange={(e) => setFormData({ ...formData, requestLimit: e.target.value })}
-                    placeholder={request.requestLimit.toString()}
+                    onChange={(e) => setFormData({ ...formData, requestLimit: formatInputCurrency(e.target.value) })}
+                    placeholder={formatInputCurrency(request.requestLimit)}
                     disabled={actionLoading}
-                    min="0"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Để trống để giữ Hạn mức mong muốn: {request.requestLimit.toLocaleString('vi-VN')} VND
+                    Để trống để giữ Hạn mức mong muốn: {formatCurrency(request.requestLimit)}
                   </p>
                 </div>
               )}
