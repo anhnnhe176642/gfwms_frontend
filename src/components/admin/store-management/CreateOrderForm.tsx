@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -26,16 +26,31 @@ import {
 import { useCreateOrderStore } from '@/store/useCreateOrderStore';
 import { orderService, type PaymentMethod } from '@/services/order.service';
 import { invoiceService } from '@/services/invoice.service';
+import { userService } from '@/services/user.service';
 import { getServerErrorMessage, extractFieldErrors } from '@/lib/errorHandler';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Send, ShoppingCart, QrCode, Banknote, Copy, Check, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Send, ShoppingCart, QrCode, Banknote, Copy, Check, Clock, CheckCircle, AlertCircle, Search, X } from 'lucide-react';
 import { decodeVietQR } from '@/lib/vietqr-parser';
 import type { PaymentQRResponse, PaymentStatusResponse } from '@/types/payment';
+import type { UserListItem } from '@/types/user';
 
 export function CreateOrderForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  
+  // User search state
+  const [phoneInput, setPhoneInput] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<UserListItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Credit info state (from selected user)
+  const [creditLimit, setCreditLimit] = useState<number>(0);
+  const [creditUsed, setCreditUsed] = useState<number>(0);
+  const [creditStatus, setCreditStatus] = useState<'APPROVED' | 'PENDING' | 'REJECTED' | null>(null);
+  const [isCreditLocked, setIsCreditLocked] = useState(false);
   
   // QR Payment Modal State
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -69,12 +84,76 @@ export function CreateOrderForm() {
     setIsSubmitting: setStoreIsSubmitting,
   } = useCreateOrderStore();
 
+  // Debounced search for users by phone
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!phoneInput.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await userService.searchByPhone(phoneInput);
+        setSearchResults(response.data);
+      } catch (error) {
+        console.error('Lỗi tìm kiếm user:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [phoneInput]);
+
   if (!storeId) {
     return <div>Lỗi: Không tìm thấy cửa hàng</div>;
   }
 
   const handleGoBack = () => {
     goToStep1();
+  };
+
+  const handleSelectUser = (user: UserListItem) => {
+    setSelectedUser(user);
+    setPhoneInput('');
+    setSearchResults([]);
+    
+    // Set customer phone
+    setCustomerPhone(user.phone || '');
+    
+    // Update credit info from creditRegistration
+    if (user.creditRegistration) {
+      setCreditLimit(user.creditRegistration.creditLimit || 0);
+      setCreditUsed(user.creditRegistration.creditUsed || 0);
+      setCreditStatus(user.creditRegistration.status as any);
+      setIsCreditLocked(user.creditRegistration.isLocked || false);
+    } else {
+      setCreditLimit(0);
+      setCreditUsed(0);
+      setCreditStatus(null);
+      setIsCreditLocked(false);
+    }
+  };
+
+  const handleClearUser = () => {
+    setSelectedUser(null);
+    setPhoneInput('');
+    setSearchResults([]);
+    setCustomerPhone('');
+    setCreditLimit(0);
+    setCreditUsed(0);
+    setCreditStatus(null);
+    setIsCreditLocked(false);
   };
 
   const copyToClipboard = (text: string, field: string) => {
@@ -247,10 +326,24 @@ export function CreateOrderForm() {
 
   // Calculate summary
   const totalItems = selectedItems.size;
-  const totalQuantity = Array.from(selectedItems.values()).reduce(
-    (sum, item) => sum + item.quantity,
+  const totalMeter = Array.from(selectedItems.values()).reduce(
+    (sum, item) => sum + (item.saleUnit === 'METER' ? item.quantity : 0),
     0
   );
+  const totalRoll = Array.from(selectedItems.values()).reduce(
+    (sum, item) => sum + (item.saleUnit === 'ROLL' ? item.quantity : 0),
+    0
+  );
+  const totalAmount = Array.from(selectedItems.values()).reduce((sum, item) => {
+    const price = item.saleUnit === 'METER' 
+      ? item.fabric.fabricInfo.sellingPricePerMeter 
+      : item.fabric.fabricInfo.sellingPricePerRoll;
+    return sum + (price * item.quantity);
+  }, 0);
+
+  // Calculate credit availability
+  const creditAvailable = creditLimit - creditUsed;
+  const creditExceeded = paymentType === 'CREDIT' && totalAmount > creditAvailable;
 
   return (
     <div className="space-y-6">
@@ -268,7 +361,7 @@ export function CreateOrderForm() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Tạo đơn hàng</h1>
           <p className="text-muted-foreground mt-1">
-            {storeName} • {totalItems} loại vải • {totalQuantity.toLocaleString()} cái
+            {storeName} • {totalItems} loại vải {totalMeter > 0 && `• ${totalMeter.toLocaleString()} mét`} {totalRoll > 0 && `• ${totalRoll.toLocaleString()} cuộn`}
           </p>
         </div>
       </div>
@@ -285,60 +378,163 @@ export function CreateOrderForm() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Customer Phone */}
+                {/* Customer Search */}
                 <div className="space-y-2">
                   <Label htmlFor="customerPhone" className="text-sm font-medium">
-                    Số điện thoại khách
+                    Khách hàng
                   </Label>
-                  <Input
-                    id="customerPhone"
-                    placeholder="0123456789"
-                    value={customerPhone}
-                    onChange={(e) => {
-                      setCustomerPhone(e.target.value);
-                      // Clear error when user starts typing
-                      if (fieldErrors.customerPhone) {
-                        setFieldErrors(prev => {
-                          const newErrors = { ...prev };
-                          delete newErrors.customerPhone;
-                          return newErrors;
-                        });
-                      }
-                    }}
-                    type="tel"
-                    disabled={isSubmitting}
-                    className={fieldErrors.customerPhone ? 'border-destructive focus-visible:ring-destructive' : ''}
-                  />
+                  {selectedUser ? (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex justify-between items-center">
+                      <div>
+                        <p className="font-medium text-sm">{selectedUser.fullname || selectedUser.username}</p>
+                        <p className="text-xs text-muted-foreground">{selectedUser.phone}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearUser}
+                        disabled={isSubmitting}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <div className="flex gap-2">
+                        <div className="flex-1 relative">
+                          <Input
+                            id="customerPhone"
+                            placeholder="Nhập số điện thoại..."
+                            value={phoneInput}
+                            onChange={(e) => setPhoneInput(e.target.value)}
+                            type="tel"
+                            disabled={isSubmitting}
+                            className="pl-10"
+                          />
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                      
+                      {/* Search Results Dropdown */}
+                      {phoneInput && (searchResults.length > 0 || isSearching) && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border rounded-lg shadow-lg z-10">
+                          {isSearching ? (
+                            <div className="p-3 text-center text-sm text-muted-foreground">
+                              Đang tìm kiếm...
+                            </div>
+                          ) : searchResults.length === 0 ? (
+                            <div className="p-3 text-center text-sm text-muted-foreground">
+                              Không tìm thấy khách hàng
+                            </div>
+                          ) : (
+                            <div className="max-h-64 overflow-y-auto">
+                              {searchResults.map((u) => (
+                                <button
+                                  key={u.id}
+                                  type="button"
+                                  onClick={() => handleSelectUser(u)}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-800 flex justify-between items-center border-b last:border-b-0"
+                                >
+                                  <div>
+                                    <p className="font-medium">{u.fullname || u.username}</p>
+                                    <p className="text-xs text-muted-foreground">{u.phone}</p>
+                                  </div>
+                                  {u.creditRegistration && (
+                                    <span className={`text-xs px-2 py-1 rounded ${u.creditRegistration.isLocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                      {!u.creditRegistration.isLocked && 'Được ghi nợ'}
+                                    </span>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {fieldErrors.customerPhone && (
                     <p className="text-xs text-destructive">{fieldErrors.customerPhone}</p>
                   )}
                 </div>
 
-                {/* Payment Type */}
+                {/* Payment Type Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="paymentType" className="text-sm font-medium">
                     Phương thức thanh toán
                   </Label>
                   <Select
                     value={paymentType}
-                    onValueChange={(value: any) => setPaymentType(value)}
-                    disabled={isSubmitting}
+                    onValueChange={(value: any) => {
+                      setPaymentType(value);
+                      // Reset payment method when changing payment type
+                      if (value === 'CASH') {
+                        setPaymentMethod('DIRECT');
+                      }
+                    }}
+                    disabled={isSubmitting || (paymentType === 'CREDIT' && !selectedUser)}
                   >
                     <SelectTrigger id="paymentType">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="CASH">Tiền mặt</SelectItem>
-                      <SelectItem value="CREDIT">Công nợ</SelectItem>
+                      <SelectItem value="CREDIT" disabled={!selectedUser || !selectedUser.creditRegistration || isCreditLocked || creditStatus !== 'APPROVED'}>
+                        Công nợ {!selectedUser && '(Chọn khách hàng)'}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+                  {paymentType === 'CREDIT' && (!selectedUser || !selectedUser.creditRegistration || isCreditLocked || creditStatus !== 'APPROVED') && (
+                    <p className="text-xs text-destructive">
+                      {!selectedUser ? 'Vui lòng chọn khách hàng trước' : isCreditLocked ? 'Tài khoản công nợ đã bị khoá' : creditStatus !== 'APPROVED' ? 'Công nợ chưa được phê duyệt' : 'Khách hàng không có công nợ'}
+                    </p>
+                  )}
                 </div>
 
-                {/* Payment Method (only for CASH) */}
-                {paymentType === 'CASH' && (
+                {/* Credit Info */}
+                {paymentType === 'CREDIT' && selectedUser && selectedUser.creditRegistration && (
+                  <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Hạn mức công nợ</p>
+                        <p className="font-semibold">{creditLimit.toLocaleString()}đ</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Đã sử dụng</p>
+                        <p className="font-semibold">{creditUsed.toLocaleString()}đ</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Khả dụng</p>
+                        <p className={`font-semibold ${creditAvailable < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                          {Math.max(0, creditAvailable).toLocaleString()}đ
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Tổng tiền đơn</p>
+                        <p className={`font-semibold ${creditExceeded ? 'text-destructive' : ''}`}>
+                          {totalAmount.toLocaleString()}đ
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {creditExceeded && (
+                      <div className="rounded-lg bg-red-100 dark:bg-red-900/30 p-2 border border-red-300 dark:border-red-700">
+                        <p className="text-sm text-red-800 dark:text-red-400 font-medium">
+                          ⚠️ Tổng tiền ({totalAmount.toLocaleString()}đ) vượt mức khả dụng ({creditAvailable.toLocaleString()}đ)
+                        </p>
+                        <p className="text-xs text-red-700 dark:text-red-500 mt-1">
+                          Vui lòng chọn hình thức thanh toán bổ sung bên dưới
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Payment Method */}
+                {(paymentType === 'CASH' || creditExceeded) && (
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">
-                      Hình thức thanh toán
+                      {paymentType === 'CREDIT' ? 'Hình thức thanh toán bổ sung' : 'Hình thức thanh toán'}
                     </Label>
                     <div className="flex gap-4">
                       <label className="flex items-center gap-2 cursor-pointer">
@@ -431,30 +627,61 @@ export function CreateOrderForm() {
             <CardContent className="space-y-4">
               {/* Selected Items */}
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {Array.from(selectedItems.values()).map((item) => (
-                  <div
-                    key={item.fabricId}
-                    className="pb-2 border-b text-sm last:border-b-0"
-                  >
-                    <div className="font-medium truncate">
-                      {item.fabric.fabricInfo.category} ({item.fabric.fabricInfo.color})
+                {Array.from(selectedItems.values()).map((item) => {
+                  const unitPrice = item.saleUnit === 'METER' 
+                    ? item.fabric.fabricInfo.sellingPricePerMeter 
+                    : item.fabric.fabricInfo.sellingPricePerRoll;
+                  const itemTotal = unitPrice * item.quantity;
+                  
+                  return (
+                    <div
+                      key={item.fabricId}
+                      className="pb-2 border-b text-sm last:border-b-0"
+                    >
+                      <div className="font-medium truncate">
+                        {item.fabric.fabricInfo.category} ({item.fabric.fabricInfo.color})
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                        <span>
+                          {item.quantity} {item.saleUnit === 'METER' ? 'mét' : 'cuộn'} × {unitPrice.toLocaleString()}đ
+                        </span>
+                        <span className="font-medium text-foreground">
+                          {itemTotal.toLocaleString()}đ
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {item.quantity} {item.saleUnit === 'METER' ? 'meter' : 'roll'}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Summary */}
               <div className="space-y-2 pt-4 border-t">
+                {selectedUser && (
+                  <div className="pb-3 border-b">
+                    <p className="text-xs text-muted-foreground mb-1">Khách hàng</p>
+                    <p className="font-medium text-sm">{selectedUser.fullname || selectedUser.username}</p>
+                    <p className="text-xs text-muted-foreground">{selectedUser.phone}</p>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span>Loại vải:</span>
                   <span className="font-medium">{totalItems}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Tổng số lượng:</span>
-                  <span className="font-medium">{totalQuantity.toLocaleString()}</span>
+                {totalMeter > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Tổng mét:</span>
+                    <span className="font-medium">{totalMeter.toLocaleString()} m</span>
+                  </div>
+                )}
+                {totalRoll > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Tổng cuộn:</span>
+                    <span className="font-medium">{totalRoll.toLocaleString()} cuộn</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm font-semibold pt-2 border-t">
+                  <span>Tổng tiền:</span>
+                  <span className="text-primary">{totalAmount.toLocaleString()}đ</span>
                 </div>
                 <div className="flex justify-between text-sm pt-2 border-t">
                   <span>Loại thanh toán:</span>
@@ -462,6 +689,34 @@ export function CreateOrderForm() {
                     {paymentType === 'CASH' ? 'Tiền mặt' : 'Công nợ'}
                   </span>
                 </div>
+                {paymentType === 'CREDIT' && selectedUser?.creditRegistration && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Khả dụng:</span>
+                      <span className={`font-medium ${creditAvailable < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        {Math.max(0, creditAvailable).toLocaleString()}đ
+                      </span>
+                    </div>
+                    {creditExceeded && (
+                      <div className="flex justify-between text-sm">
+                        <span>Hình thức bổ sung:</span>
+                        <span className="font-medium flex items-center gap-1">
+                          {paymentMethod === 'QR' ? (
+                            <>
+                              <QrCode className="h-3 w-3" />
+                              QR Code
+                            </>
+                          ) : (
+                            <>
+                              <Banknote className="h-3 w-3" />
+                              Tiền mặt
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
                 {paymentType === 'CASH' && (
                   <div className="flex justify-between text-sm">
                     <span>Hình thức:</span>

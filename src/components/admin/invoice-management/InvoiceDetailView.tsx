@@ -157,8 +157,18 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
-          {/* Confirm Offline Payment Button */}
+          {/* Confirm Offline Payment Button - for CASH */}
           {invoice.paymentType === 'CASH' && invoice.invoiceStatus !== 'PAID' && (
+            <Button
+              onClick={() => setConfirmPaymentOpen(true)}
+              className="gap-2 bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Xác nhận thanh toán tiền mặt
+            </Button>
+          )}
+          {/* Confirm Offline Payment Button - for CREDIT with mixed payment */}
+          {invoice.paymentType === 'CREDIT' && invoice.invoiceStatus !== 'PAID' && (
             <Button
               onClick={() => setConfirmPaymentOpen(true)}
               className="gap-2 bg-green-600 hover:bg-green-700"
@@ -368,33 +378,33 @@ export function InvoiceDetailView({ invoiceId }: InvoiceDetailViewProps) {
                 <CreditCard className="h-4 w-4" />
                 Thông tin thanh toán
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-muted/50 p-4 rounded-lg">
-                <div>
-                  <p className="text-muted-foreground">Mã giao dịch</p>
-                  <p className="font-mono font-medium">{invoice.payment.transactionId || 'N/A'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm bg-muted/50 p-4 rounded-lg">
+                <div className="col-span-1">
+                  <p className="text-muted-foreground text-xs mb-1">Mã giao dịch</p>
+                  <p className="font-mono font-medium break-all text-xs">{invoice.payment.transactionId || 'N/A'}</p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Phương thức</p>
+                <div className="col-span-1">
+                  <p className="text-muted-foreground text-xs mb-1">Phương thức</p>
                   <p className="font-medium">
                     {PAYMENT_METHOD_LABELS[invoice.payment.paymentMethod] ||
                       invoice.payment.paymentMethod}
                   </p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Ngày thanh toán</p>
+                <div className="col-span-1">
+                  <p className="text-muted-foreground text-xs mb-1">Ngày thanh toán</p>
                   <p className="font-medium">
                     {new Date(invoice.payment.paymentDate).toLocaleDateString('vi-VN')}
                   </p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Số tiền</p>
+                <div className="col-span-1">
+                  <p className="text-muted-foreground text-xs mb-1">Số tiền</p>
                   <p className="font-medium text-green-600">
                     {invoice.payment.amount.toLocaleString('vi-VN')} ₫
                   </p>
                 </div>
                 {invoice.payment.notes && (
-                  <div className="col-span-4">
-                    <p className="text-muted-foreground">Ghi chú</p>
+                  <div className="col-span-1 md:col-span-2 lg:col-span-4">
+                    <p className="text-muted-foreground text-xs mb-1">Ghi chú</p>
                     <p className="font-medium">{invoice.payment.notes}</p>
                   </div>
                 )}

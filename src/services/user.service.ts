@@ -153,6 +153,17 @@ export const userService = {
   removeAllUserWarehouses: async (userId: string | number): Promise<void> => {
     await api.delete(`/v1/warehouse-managers/remove-all/${userId}`);
   },
+
+  /**
+   * Tìm kiếm users theo số điện thoại
+   */
+  searchByPhone: async (phone: string): Promise<{ message: string; data: UserListItem[]; total: number }> => {
+    const response = await api.get<{ message: string; data: UserListItem[]; total: number }>(
+      `${BASE_PATH}/search/by-phone`,
+      { params: { phone } }
+    );
+    return response.data;
+  },
 };
 
 export default userService;
