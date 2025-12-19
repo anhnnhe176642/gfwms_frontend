@@ -197,7 +197,7 @@ export const Sidebar: React.FC = () => {
           label: "Yêu cầu xuất kho",
           href: `/admin/stores/${id}/export-requests`,
           icon: TruckIcon,
-          requiredPermission: PERMISSIONS.EXPORT_FABRICS.VIEW_LIST.key,
+          requiredPermission: PERMISSIONS.EXPORT_FABRIC_REQUESTS.VIEW_LIST.key,
         },
       ],
     },
